@@ -3,6 +3,7 @@
 - [Real-Estate-Maintenance-Optimizer](#real-estate-maintenance-optimizer)
   - [English](#english)
     - [📌 Project Overview](#-project-overview)
+    - [📌 Prototype](#-prototype)
     - [🚀 Features \& Epics (MVP)](#-features--epics-mvp)
       - [1. 📅 Appointment Overview (`Term Overview`)](#1--appointment-overview-term-overview)
       - [2. ➕ Appointment Creation (`Term creation`)](#2--appointment-creation-term-creation)
@@ -41,7 +42,8 @@ The core objective of the project is to help a property management company optim
 
 This project is a **smart appointment and route scheduling application** tailored for field service technicians and tradespeople. It automates schedule optimization, minimizes travel times between jobs, and simplifies material tracking on the go.
 
----
+### Prototype
+You can find the prototype here: https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 
 ### 🚀 Features & Epics (MVP)
 
