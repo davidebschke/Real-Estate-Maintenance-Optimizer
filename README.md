@@ -16,6 +16,7 @@
   - [📋 Backlog \& Future Features (`Backlog/Issues`)](#-backlog--future-features-backlogissues)
   - [German](#german)
     - [📌 Projektübersicht](#-projektübersicht)
+    - [📌 Prototyp](#-prototyp)
     - [🚀 Features \& Epics (MVP)](#-features--epics-mvp-1)
       - [1. 📅 Terminübersicht](#1--terminübersicht)
       - [2. ➕ Terminerstellung](#2--terminerstellung)
@@ -91,7 +92,10 @@ Das Projekt soll im Kern einer Immobilienverwaltung helfen Wartungen zu optimier
 
 Diese Anwendung ist ein intelligentes System zur **Termin- und Tourenplanung**, das speziell auf die Bedürfnisse von Handwerkern und Außendienstmitarbeitern zugeschnitten ist. Das Ziel ist es, Fahrzeiten zu minimieren, die Tagesnutzung zu maximieren und administrative Aufwände unterwegs zu reduzieren.
 
----
+### Prototyp
+Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
+
+<img width="3420" height="1304" alt="image" src="https://github.com/user-attachments/assets/5910b825-23d0-41d3-9ad9-86d68b14ccaf" />
 
 ### 🚀 Features & Epics (MVP)
 
