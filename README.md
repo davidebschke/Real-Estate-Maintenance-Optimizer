@@ -45,6 +45,9 @@ This project is a **smart appointment and route scheduling application** tailore
 ### Prototype
 You can find the prototype here: https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 
+<img width="3420" height="1304" alt="image" src="https://github.com/user-attachments/assets/5910b825-23d0-41d3-9ad9-86d68b14ccaf" />
+
+
 ### 🚀 Features & Epics (MVP)
 
 #### 1. 📅 Appointment Overview (`Term Overview`)
