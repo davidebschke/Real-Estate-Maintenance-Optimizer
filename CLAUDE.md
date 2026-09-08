@@ -37,10 +37,17 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 | Data Access              | Spring Data JPA             |
 | Mail Sending             | Spring Mail                 |
 
-### 2.3 Database
-| Area       | Technology  |
-|------------|-------------|
-| Database   | PostgreSQL  |
+### 2.3 Databases
+
+The architecture uses a polyglot persistence approach with two separate databases:
+
+| Area                             | Technology  | Hosting               |
+|-----------------------------------|-------------|------------------------|
+| Relational (User / Auth)         | PostgreSQL  | Supabase / Neon.tech   |
+| NoSQL (Appointments & Objects)    | MongoDB     | MongoDB Atlas          |
+
+- **PostgreSQL** stores user and authentication data, accessed via Spring Data JPA.
+- **MongoDB** stores appointments and their associated objects.
 
 ### 2.4 AI / Intelligence
 | Area       | Technology   |
