@@ -110,7 +110,7 @@ com.<organization>.realestatemaintainceoptimizer
 
 ### 4.1 `.claude` Directory
 
-- `.claude/rules/` — binding project rules extracted from this file, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`). Each section below references its corresponding rule file.
+- `.claude/rules/` — binding project rules extracted from this file, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`, `testing.md`). Each section below references its corresponding rule file.
 - `.claude/skills/` — project-specific Claude skills. Currently empty (`.gitkeep`).
 
 ## 5. Coding Conventions
@@ -138,9 +138,7 @@ Binding coding conventions (variable names, comments, function/method design, co
 
 ## 8. Tests
 
-*Not yet present.* Recommended:
-- Frontend: Vitest + Vue Test Utils
-- Backend: JUnit 5 + Mockito, Testcontainers for PostgreSQL integration tests
+Binding testing conventions are defined in [`.claude/rules/testing.md`](.claude/rules/testing.md).
 
 ## 9. Git Workflow
 
@@ -149,6 +147,6 @@ Binding Git workflow (remote, main branch, code owner, branch/PR process) is def
 ## 10. Notes for Claude Code
 
 - Before generating any code, check whether the actual folder structure has already changed (keep this document up to date accordingly).
-- All files under `.claude/rules/` are binding in addition to this document, including the coding conventions (Section 5) and Git workflow (Section 9) referenced above.
+- All files under `.claude/rules/` are binding in addition to this document, including the coding conventions (Section 5), testing conventions (Section 8), and Git workflow (Section 9) referenced above.
 - `.claude/skills/` holds project-specific Claude skills (currently empty).
 - Review security-relevant changes (Spring Security, JWT) especially carefully and never merge without tests.
