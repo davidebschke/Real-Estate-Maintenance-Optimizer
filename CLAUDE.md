@@ -116,16 +116,17 @@ com.<organization>.realestatemaintainceoptimizer
 ## 6. Features & Epics (MVP)
 
 1. **Appointment Overview** – short view (calendar) and detailed view (full job context).
-2. **Appointment Creation** – input form as well as voice/audio capture for hands-free use.
+2. **Appointment Creation** – manual input via form only in the MVP.
 3. **Location-Based Planning** – automatic grouping by location to reduce travel time.
 4. **Time-Based Planning** – automatic scheduling with buffer times, templates for standard tasks (e.g. basement cleaning).
 5. **Material Planning** – assigning required material to an appointment to avoid extra trips.
-6. **Route Optimization** – Google Maps / Apple Maps integration directly in the appointment overview.
+6. **Route Optimization** – runs exclusively via Leaflet.
 7. **Fixed Appointments** – locking individual appointments against automatic AI rescheduling.
 8. **Recurring Appointments** – automatic standing orders (e.g. inspection every 3 months).
 
 ### 6.1 Backlog
 - Native app port for Android & iOS.
+- Voice/audio capture for appointment creation (hands-free use).
 
 ## 7. Build & Run
 
