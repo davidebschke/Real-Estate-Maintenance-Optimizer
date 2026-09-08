@@ -54,6 +54,7 @@ Stand dieser Datei: nur Projekt-Dokumentation vorhanden (`README.md`, `LICENSE`,
 Vorhandene Branches:
 - `main` (Hauptbranch)
 - `4-chore-refaktor-folder-structure-from-frontend` (geplante Ordnerstruktur-Überarbeitung Frontend)
+- `5-chore-add-claudemd-file-in-claude` (Erstellung/Pflege der `CLAUDE.md`)
 
 Sobald Code hinzugefügt wird, muss Abschnitt 4 (Ordnerstruktur) und Abschnitt 7 (Build & Run) durch die tatsächlichen Gegebenheiten ersetzt werden.
 
@@ -99,7 +100,8 @@ com.<organisation>.realestatemaintainceoptimizer
 ## 5. Coding-Konventionen
 
 - **Variablennamen:** ausnahmslos auf Englisch.
-- **Kommentare:** kurz und knapp, ausschließlich auf Englisch oder Hochdeutsch — keine weiteren Sprachen, auch nicht in Methodennamen.
+- **Kommentare:** kurz und knapp, ausschließlich auf Englisch — keine weiteren Sprachen, auch nicht in Methodennamen.
+- **Dokumentations-Kommentare:** im Frontend JSDoc (TSDoc bei TypeScript), im Backend JavaDoc — Beschreibung jeweils maximal ein Satz.
 - **Funktionen/Methoden:** immer wiederverwertbar (reusable) konzipieren, keine Einmal-Lösungen für Spezialfälle.
 - **Commit-Messages:** aussagekräftig, Conventional-Commits-Stil (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`), wie in der bisherigen Historie bereits praktiziert.
 - **Branch-Namen:** Schema `<issue-nr>-<kurzbeschreibung>` (z. B. `4-chore-refaktor-folder-structure-from-frontend`).
