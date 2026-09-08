@@ -62,6 +62,7 @@ Existing branches:
 - `main` (main branch)
 - `4-chore-refaktor-folder-structure-from-frontend` (planned frontend folder structure refactor)
 - `5-chore-add-claudemd-file-in-claude` (creation/maintenance of `CLAUDE.md`)
+- `6-updating-claude-guidelines` (extracts binding rules into `.claude/rules/` and adds `.claude/skills/`)
 
 Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
 
@@ -84,6 +85,9 @@ Real-Estate-Maintenance-Optimizer/
 │   ├── src/main/resources/        # application.yml, migrations
 │   ├── src/test/java/...          # JUnit tests
 │   └── pom.xml (or build.gradle)
+├── .claude/
+│   ├── rules/                      # binding rules extracted from this file (coding conventions, git workflow, ...)
+│   └── skills/                     # project-specific Claude skills
 ├── .github/
 │   └── ISSUE_TEMPLATE/
 ├── README.md
@@ -104,13 +108,14 @@ com.<organization>.realestatemaintainceoptimizer
 └── config/         # general configuration
 ```
 
+### 4.1 `.claude` Directory
+
+- `.claude/rules/` — binding project rules extracted from this file, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`). Each section below references its corresponding rule file.
+- `.claude/skills/` — project-specific Claude skills. Currently empty (`.gitkeep`).
+
 ## 5. Coding Conventions
 
-- **Variable names:** always in English.
-- **Comments:** only allowed as documentation comments — JSDoc (TSDoc for TypeScript) in the frontend, JavaDoc in the backend, description limited to one sentence, exclusively in English. Methods must be self-explanatory; no inline explanatory comments.
-- **Functions/methods:** always designed to be reusable, no one-off solutions for special cases.
-- **Commit messages:** meaningful, Conventional Commits style (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`), as already practiced in the existing history.
-- **Branch names:** scheme `<issue-number>-<short-description>` (e.g. `4-chore-refaktor-folder-structure-from-frontend`).
+Binding coding conventions (variable names, comments, function/method design, commit messages, branch naming) are defined in [`.claude/rules/coding-conventions.md`](.claude/rules/coding-conventions.md). This file is binding for every code change in this repository.
 
 ## 6. Features & Epics (MVP)
 
@@ -139,13 +144,11 @@ com.<organization>.realestatemaintainceoptimizer
 
 ## 9. Git Workflow
 
-- Remote `origin`: https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer
-- Main branch: `main`
-- CODEOWNER: `@davidebschke` (see `.github/CODEOWNERS.md`)
-- New features/fixes via feature branches and pull requests against `main`.
+Binding Git workflow (remote, main branch, code owner, branch/PR process) is defined in [`.claude/rules/git-workflow.md`](.claude/rules/git-workflow.md).
 
 ## 10. Notes for Claude Code
 
 - Before generating any code, check whether the actual folder structure has already changed (keep this document up to date accordingly).
-- Section 5 (Coding Conventions) is binding for every code change in this repository.
+- All files under `.claude/rules/` are binding in addition to this document, including the coding conventions (Section 5) and Git workflow (Section 9) referenced above.
+- `.claude/skills/` holds project-specific Claude skills (currently empty).
 - Review security-relevant changes (Spring Security, JWT) especially carefully and never merge without tests.
