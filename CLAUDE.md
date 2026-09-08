@@ -1,82 +1,82 @@
 # CLAUDE.md
 
-Diese Datei liefert Claude Code (und anderen KI-Assistenten) den notwendigen Kontext und die verbindlichen Richtlinien für die Arbeit in diesem Repository.
+This file provides Claude Code (and other AI assistants) with the necessary context and binding guidelines for working in this repository.
 
-## 1. Projektübersicht
+## 1. Project Overview
 
-**Real-Estate-Maintenance-Optimizer** ist ein intelligentes System zur Termin- und Tourenplanung für Handwerker und Außendienstmitarbeiter in der Immobilienverwaltung.
+**Real-Estate-Maintenance-Optimizer** is an intelligent system for appointment and route scheduling for tradespeople and field service technicians in property management.
 
-### 1.1 Kernziel
-Wartungen einer Immobilienverwaltung optimieren, indem:
-- Anfahrtswege reduziert werden,
-- Termine anhand von Ort und Dauer besser abgestimmt werden,
-- Materialfahrten und benötigtes Material berücksichtigt werden,
-- die potenzielle Dauer neuer Termine anhand ähnlicher vorheriger Termine geschätzt wird mithilfe von KI unterstützung.
+### 1.1 Core Goal
+Optimize property management maintenance by:
+- reducing travel distances,
+- better coordinating appointments based on location and duration,
+- accounting for material trips and required material,
+- estimating the potential duration of new appointments based on similar previous appointments with AI support.
 
-Ergebnis: Zeit- und Kostenersparnis für das Unternehmen, geringere Betriebskosten, zufriedenere Mieter.
+Result: time and cost savings for the company, lower operating costs, happier tenants.
 
-### 1.2 Prototyp
+### 1.2 Prototype
 https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 
 ## 2. Tech Stack
 
 ### 2.1 Frontend
-| Bereich            | Technologie       |
+| Area              | Technology        |
 |--------------------|-------------------|
 | Framework          | Vue.js 3          |
-| UI-Komponenten     | PrimeVue 4        |
-| Kalender-Ansicht   | Vue.cal           |
+| UI Components      | PrimeVue 4        |
+| Calendar View      | Vue.cal           |
 | Routing            | Vue Router        |
-| HTTP-Client        | Axios             |
+| HTTP Client        | Axios             |
 
 ### 2.2 Backend
-| Bereich                  | Technologie                |
+| Area                     | Technology                  |
 |--------------------------|-----------------------------|
-| Sprache / Framework      | Java, Spring Boot 3        |
-| Authentifizierung        | Spring Security, JJWT (JSON Web Token) |
-| Datenzugriff             | Spring Data JPA             |
-| E-Mail-Versand           | Spring Mail                 |
+| Language / Framework     | Java, Spring Boot 3        |
+| Authentication           | Spring Security, JJWT (JSON Web Token) |
+| Data Access              | Spring Data JPA             |
+| Mail Sending             | Spring Mail                 |
 
-### 2.3 Datenbank
-| Bereich    | Technologie |
+### 2.3 Database
+| Area       | Technology  |
 |------------|-------------|
-| Datenbank  | PostgreSQL  |
+| Database   | PostgreSQL  |
 
-### 2.4 KI / Intelligence
-| Bereich    | Technologie  |
+### 2.4 AI / Intelligence
+| Area       | Technology   |
 |------------|--------------|
 | Framework  | LangChain4j  |
 
-## 3. Repository-Status
+## 3. Repository Status
 
-Stand dieser Datei: nur Projekt-Dokumentation vorhanden (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Es existiert noch **kein Quellcode** für Frontend oder Backend.
+Status of this file: only project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). There is **no source code** yet for frontend or backend.
 
-Vorhandene Branches:
-- `main` (Hauptbranch)
-- `4-chore-refaktor-folder-structure-from-frontend` (geplante Ordnerstruktur-Überarbeitung Frontend)
-- `5-chore-add-claudemd-file-in-claude` (Erstellung/Pflege der `CLAUDE.md`)
+Existing branches:
+- `main` (main branch)
+- `4-chore-refaktor-folder-structure-from-frontend` (planned frontend folder structure refactor)
+- `5-chore-add-claudemd-file-in-claude` (creation/maintenance of `CLAUDE.md`)
 
-Sobald Code hinzugefügt wird, muss Abschnitt 4 (Ordnerstruktur) und Abschnitt 7 (Build & Run) durch die tatsächlichen Gegebenheiten ersetzt werden.
+Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
 
-## 4. Empfohlene Ordnerstruktur (Monorepo)
+## 4. Recommended Folder Structure (Monorepo)
 
 ```
 Real-Estate-Maintenance-Optimizer/
-├── frontend/                      # Vue.js 3 Anwendung
+├── frontend/                      # Vue.js 3 application
 │   ├── src/
-│   │   ├── components/            # wiederverwendbare UI-Bausteine
-│   │   ├── views/                 # Seiten / Routen-Ziele
-│   │   ├── router/                # Vue Router Konfiguration
-│   │   ├── services/              # Axios API-Clients
-│   │   ├── stores/                # State Management
-│   │   └── composables/           # wiederverwendbare Vue Composition-Functions
+│   │   ├── components/            # reusable UI building blocks
+│   │   ├── views/                 # pages / route targets
+│   │   ├── router/                # Vue Router configuration
+│   │   ├── services/              # Axios API clients
+│   │   ├── stores/                # state management
+│   │   └── composables/           # reusable Vue Composition functions
 │   ├── public/
 │   └── package.json
-├── backend/                       # Spring Boot Anwendung
-│   ├── src/main/java/...          # Java-Quellcode (Controller, Service, Repository, Entity)
-│   ├── src/main/resources/        # application.yml, Migrations
-│   ├── src/test/java/...          # JUnit-Tests
-│   └── pom.xml (oder build.gradle)
+├── backend/                       # Spring Boot application
+│   ├── src/main/java/...          # Java source code (controller, service, repository, entity)
+│   ├── src/main/resources/        # application.yml, migrations
+│   ├── src/test/java/...          # JUnit tests
+│   └── pom.xml (or build.gradle)
 ├── .github/
 │   └── ISSUE_TEMPLATE/
 ├── README.md
@@ -84,61 +84,61 @@ Real-Estate-Maintenance-Optimizer/
 └── CLAUDE.md
 ```
 
-Backend-Paketstruktur (Vorschlag, klassisch nach Schichten):
+Backend package structure (proposal, classic layered approach):
 ```
-com.<organisation>.realestatemaintainceoptimizer
-├── controller/     # REST-Endpunkte
-├── service/        # Geschäftslogik
-├── repository/     # Spring Data JPA Repositories
-├── entity/         # JPA-Entitäten
-├── dto/            # Data Transfer Objects
-├── security/       # JWT / Spring Security Konfiguration
-├── ai/             # LangChain4j Integration
-└── config/         # allgemeine Konfiguration
+com.<organization>.realestatemaintainceoptimizer
+├── controller/     # REST endpoints
+├── service/        # business logic
+├── repository/     # Spring Data JPA repositories
+├── entity/         # JPA entities
+├── dto/            # data transfer objects
+├── security/       # JWT / Spring Security configuration
+├── ai/             # LangChain4j integration
+└── config/         # general configuration
 ```
 
-## 5. Coding-Konventionen
+## 5. Coding Conventions
 
-- **Variablennamen:** ausnahmslos auf Englisch.
-- **Kommentare:** kurz und knapp, ausschließlich auf Englisch — keine weiteren Sprachen, auch nicht in Methodennamen.
-- **Dokumentations-Kommentare:** im Frontend JSDoc (TSDoc bei TypeScript), im Backend JavaDoc — Beschreibung jeweils maximal ein Satz.
-- **Funktionen/Methoden:** immer wiederverwertbar (reusable) konzipieren, keine Einmal-Lösungen für Spezialfälle.
-- **Commit-Messages:** aussagekräftig, Conventional-Commits-Stil (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`), wie in der bisherigen Historie bereits praktiziert.
-- **Branch-Namen:** Schema `<issue-nr>-<kurzbeschreibung>` (z. B. `4-chore-refaktor-folder-structure-from-frontend`).
+- **Variable names:** always in English.
+- **Comments:** short and concise, exclusively in English — no other languages, including method names.
+- **Documentation comments:** JSDoc (TSDoc for TypeScript) in the frontend, JavaDoc in the backend — description limited to one sentence.
+- **Functions/methods:** always designed to be reusable, no one-off solutions for special cases.
+- **Commit messages:** meaningful, Conventional Commits style (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`), as already practiced in the existing history.
+- **Branch names:** scheme `<issue-number>-<short-description>` (e.g. `4-chore-refaktor-folder-structure-from-frontend`).
 
 ## 6. Features & Epics (MVP)
 
-1. **Terminübersicht** – Kurzansicht (Kalender) und Detailansicht (voller Auftragskontext).
-2. **Terminerstellung** – Eingabemaske sowie Sprach-/Audio-Erfassung für freihändige Nutzung.
-3. **Ortsabhängige Planung** – automatische Gruppierung nach Standort zur Fahrzeitreduzierung.
-4. **Zeitbasierte Planung** – automatische Terminvergabe mit Pufferzeiten, Vorlagen für Standardaufgaben (z. B. Kellerreinigung).
-5. **Materialplanung** – Zuordnung von benötigtem Material zum Termin, um Extra-Fahrten zu vermeiden.
-6. **Routenoptimierung** – Google-Maps- / Apple-Maps-Integration direkt in der Terminübersicht.
-7. **Unverschiebbare Termine** – Fixierung einzelner Termine gegen automatische KI-Umplanung.
-8. **Wiederkehrende Termine** – automatische Daueraufträge (z. B. Inspektion alle 3 Monate).
+1. **Appointment Overview** – short view (calendar) and detailed view (full job context).
+2. **Appointment Creation** – input form as well as voice/audio capture for hands-free use.
+3. **Location-Based Planning** – automatic grouping by location to reduce travel time.
+4. **Time-Based Planning** – automatic scheduling with buffer times, templates for standard tasks (e.g. basement cleaning).
+5. **Material Planning** – assigning required material to an appointment to avoid extra trips.
+6. **Route Optimization** – Google Maps / Apple Maps integration directly in the appointment overview.
+7. **Fixed Appointments** – locking individual appointments against automatic AI rescheduling.
+8. **Recurring Appointments** – automatic standing orders (e.g. inspection every 3 months).
 
 ### 6.1 Backlog
-- Native App-Portierung für Android & iOS.
+- Native app port for Android & iOS.
 
 ## 7. Build & Run
 
-*Noch nicht definiert – wird ergänzt, sobald das Frontend- und Backend-Grundgerüst existiert (erwartet: `npm install && npm run dev` für das Frontend, `mvn spring-boot:run` bzw. `./gradlew bootRun` für das Backend).*
+*Not yet defined – will be added once the frontend and backend scaffolding exists (expected: `npm install && npm run dev` for the frontend, `mvn spring-boot:run` or `./gradlew bootRun` for the backend).*
 
 ## 8. Tests
 
-*Noch nicht vorhanden.* Empfohlen:
+*Not yet present.* Recommended:
 - Frontend: Vitest + Vue Test Utils
-- Backend: JUnit 5 + Mockito, Testcontainers für PostgreSQL-Integrationstests
+- Backend: JUnit 5 + Mockito, Testcontainers for PostgreSQL integration tests
 
-## 9. Git-Workflow
+## 9. Git Workflow
 
 - Remote `origin`: https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer
-- Hauptbranch: `main`
-- CODEOWNER: `@davidebschke` (siehe `.github/CODEOWNERS.md`)
-- Neue Features/Fixes über Feature-Branches und Pull Requests gegen `main`.
+- Main branch: `main`
+- CODEOWNER: `@davidebschke` (see `.github/CODEOWNERS.md`)
+- New features/fixes via feature branches and pull requests against `main`.
 
-## 10. Hinweise für Claude Code
+## 10. Notes for Claude Code
 
-- Vor jeder Code-Generierung prüfen, ob sich die tatsächliche Ordnerstruktur bereits geändert hat (dieses Dokument entsprechend aktuell halten).
-- Abschnitt 5 (Coding-Konventionen) ist verbindlich für jede Code-Änderung in diesem Repository.
-- Sicherheitsrelevante Änderungen (Spring Security, JWT) besonders sorgfältig prüfen und nicht ungetestet mergen.
+- Before generating any code, check whether the actual folder structure has already changed (keep this document up to date accordingly).
+- Section 5 (Coding Conventions) is binding for every code change in this repository.
+- Review security-relevant changes (Spring Security, JWT) especially carefully and never merge without tests.
