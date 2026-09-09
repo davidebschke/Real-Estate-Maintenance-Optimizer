@@ -56,13 +56,14 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: only project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). There is **no source code** yet for frontend or backend.
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). The backend folder structure (empty package skeleton) has been created; there is **no source code** yet for frontend or backend.
 
 Existing branches:
 - `main` (main branch)
 - `4-chore-refaktor-folder-structure-from-frontend` (planned frontend folder structure refactor)
 - `5-chore-add-claudemd-file-in-claude` (creation/maintenance of `CLAUDE.md`)
 - `6-updating-claude-guidelines` (extracts binding rules into `.claude/rules/` and adds `.claude/skills/`)
+- `7-chore-add-backend-folder-structure` (creates the backend folder structure and backend READMEs)
 
 Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
 
