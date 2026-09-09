@@ -71,7 +71,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 - Attach required tools and materials directly to jobs to prevent extra supply runs.
 
 #### 6. 🚗 Route Optimization (`Fast route planning`)
-- Direct **Google Maps / Apple Maps integration** within the appointment summary.
+- Route optimization and map display run exclusively via **Leaflet**, embedded directly in the appointment summary.
 
 #### 7. 🔒 Fixed Appointments (`Unrescheduled terms`)
 - Lock specific appointments so automated AI scheduling leaves them untouched.
@@ -119,7 +119,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 - Zuordnung von benötigtem Material direkt zum Termin, um unnötige Fahrten zum Lager oder Baumarkt zu vermeiden.
 
 #### 6. 🚗 Routenoptimierung 
-- Direkt integrierter **Maps-Link** in der Kurzübersicht für den schnellen Start der Navigation.
+- Routenoptimierung und Kartenanzeige laufen ausschließlich über **Leaflet**, direkt in der Terminübersicht eingebettet.
 
 #### 7. 🔒 Unverschiebbare Termine 
 - Fixierte Termine werden durch den KI-Optimierungsalgorithmus nicht verändert.
@@ -148,7 +148,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 * **Data Access & Mail:** Spring Data JPA, Spring Mail
 
 ### 🗄️ Datenbank
-* **Database:** PostgreSQL
+* **Database:** PostgreSQL (User/Auth), MongoDB (Termine & Objekte / Appointments & Objects)
 
 ### 🤖 AI / Intelligence
 * **Framework:** LangChain4j
