@@ -56,14 +56,9 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). The backend folder structure (empty package skeleton) has been created; there is **no source code** yet for frontend or backend.
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). The backend has a minimal Maven/Spring Boot skeleton (`pom.xml`, application entry point); there is **no source code** yet for the frontend, and no business logic yet in the backend.
 
-Existing branches:
-- `main` (main branch)
-- `4-chore-refaktor-folder-structure-from-frontend` (planned frontend folder structure refactor)
-- `5-chore-add-claudemd-file-in-claude` (creation/maintenance of `CLAUDE.md`)
-- `6-updating-claude-guidelines` (extracts binding rules into `.claude/rules/` and adds `.claude/skills/`)
-- `7-chore-add-backend-folder-structure` (creates the backend folder structure and backend READMEs)
+Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
 
 Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
 
@@ -135,7 +130,8 @@ Binding coding conventions (variable names, comments, function/method design, co
 
 ## 7. Build & Run
 
-*Not yet defined – will be added once the frontend and backend scaffolding exists (expected: `npm install && npm run dev` for the frontend, `mvn spring-boot:run` or `./gradlew bootRun` for the backend).*
+Backend: `mvn spring-boot:run` (requires Java 25 and Maven; not yet verified on all developer machines — check locally before relying on it).
+Frontend: not yet defined.
 
 ## 8. Tests
 
