@@ -56,31 +56,34 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). The backend has a minimal Maven/Spring Boot skeleton (`pom.xml`, application entry point); there is **no source code** yet for the frontend, and no business logic yet in the backend.
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Both frontend and backend have an initialized project skeleton — frontend: Vue 3 / Vite scaffold with routing, Pinia store, Vitest and Playwright configured (`frontend/src`, `frontend/e2e`); backend: Maven/Spring Boot skeleton (`pom.xml`, application entry point). **No business logic, views, or REST endpoints exist yet** in either part.
 
 Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
 
 Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
 
-## 4. Recommended Folder Structure (Monorepo)
+## 4. Folder Structure (Monorepo)
 
 ```
 Real-Estate-Maintenance-Optimizer/
-├── frontend/                      # Vue.js 3 application
+├── frontend/                      # Vue.js 3 application (Vite)
 │   ├── src/
 │   │   ├── components/            # reusable UI building blocks
 │   │   ├── views/                 # pages / route targets
 │   │   ├── router/                # Vue Router configuration
 │   │   ├── services/              # Axios API clients
-│   │   ├── stores/                # state management
-│   │   └── composables/           # reusable Vue Composition functions
+│   │   ├── stores/                # state management (Pinia)
+│   │   ├── composables/           # reusable Vue Composition functions
+│   │   └── __tests__/             # Vitest unit tests
+│   ├── e2e/                       # Playwright end-to-end tests
 │   ├── public/
 │   └── package.json
 ├── backend/                       # Spring Boot application
-│   ├── src/main/java/...          # Java source code (controller, service, repository, entity)
+│   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
+│   │                               # Java source code (controller, service, repository, entity)
 │   ├── src/main/resources/        # application.yml, migrations
 │   ├── src/test/java/...          # JUnit tests
-│   └── pom.xml (or build.gradle)
+│   └── pom.xml
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from this file (coding conventions, git workflow, ...)
 │   └── skills/                     # project-specific Claude skills
@@ -93,7 +96,7 @@ Real-Estate-Maintenance-Optimizer/
 
 Backend package structure (proposal, classic layered approach):
 ```
-com.<organization>.realestatemaintainceoptimizer
+com.remo.realestatemaintainceoptimizer
 ├── controller/     # REST endpoints
 ├── service/        # business logic
 ├── repository/     # Spring Data JPA repositories
@@ -130,8 +133,8 @@ Binding coding conventions (variable names, comments, function/method design, co
 
 ## 7. Build & Run
 
-Backend: `mvn spring-boot:run` (requires Java 25 and Maven; not yet verified on all developer machines — check locally before relying on it).
-Frontend: not yet defined.
+Backend: `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 3.5.1 via `pom.xml`).
+Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright) for tests.
 
 ## 8. Tests
 
