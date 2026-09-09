@@ -32,7 +32,7 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 ### 2.2 Backend
 | Area                     | Technology                  |
 |--------------------------|-----------------------------|
-| Language / Framework     | Java, Spring Boot 3        |
+| Language / Framework     | Java 25 (LTS), Spring Boot 3 |
 | Authentication           | Spring Security, JJWT (JSON Web Token) |
 | Data Access              | Spring Data JPA             |
 | Mail Sending             | Spring Mail                 |
