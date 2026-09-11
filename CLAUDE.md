@@ -56,7 +56,7 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend still has only the initial Maven/Spring Boot skeleton (`pom.xml`, application entry point), **no business logic or REST endpoints yet**. Frontend now contains a first real feature: the application header (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`) and a German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`). Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend still has only the initial Maven/Spring Boot skeleton (`pom.xml`, application entry point), **no business logic or REST endpoints yet**. Frontend now contains a first real feature: the application header (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`), a German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`), and its component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`). Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
 
 Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
 
@@ -80,6 +80,8 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── locales/
 │   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json)
 │   │   │   └── en/                # English UI texts, mirrors the de/ structure
+│   │   ├── styles/
+│   │   │   └── layout/            # one CSS file per components/layout building block (e.g. app-header.css)
 │   │   └── __tests__/             # Vitest unit tests
 │   ├── e2e/                       # Playwright end-to-end tests
 │   ├── public/
