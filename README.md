@@ -3,7 +3,7 @@
 - [Real-Estate-Maintenance-Optimizer](#real-estate-maintenance-optimizer)
   - [English](#english)
     - [📌 Project Overview](#-project-overview)
-    - [📌 Prototype](#-prototype)
+    - [Prototype](#prototype)
     - [🚀 Features \& Epics (MVP)](#-features--epics-mvp)
       - [1. 📅 Appointment Overview (`Term Overview`)](#1--appointment-overview-term-overview)
       - [2. ➕ Appointment Creation (`Term creation`)](#2--appointment-creation-term-creation)
@@ -13,10 +13,13 @@
       - [6. 🚗 Route Optimization (`Fast route planning`)](#6--route-optimization-fast-route-planning)
       - [7. 🔒 Fixed Appointments (`Unrescheduled terms`)](#7--fixed-appointments-unrescheduled-terms)
       - [8. 🔄 Recurring Appointments (`Recurring appointments`)](#8--recurring-appointments-recurring-appointments)
-  - [📋 Backlog \& Future Features (`Backlog/Issues`)](#-backlog--future-features-backlogissues)
+    - [📋 Backlog \& Future Features (`Backlog/Issues`)](#-backlog--future-features-backlogissues)
+    - [🐳 Docker \& Deployment](#-docker--deployment)
+      - [Local Development with Docker](#local-development-with-docker)
+      - [Deployment](#deployment)
   - [German](#german)
     - [📌 Projektübersicht](#-projektübersicht)
-    - [📌 Prototyp](#-prototyp)
+    - [Prototyp](#prototyp)
     - [🚀 Features \& Epics (MVP)](#-features--epics-mvp-1)
       - [1. 📅 Terminübersicht](#1--terminübersicht)
       - [2. ➕ Terminerstellung](#2--terminerstellung)
@@ -27,6 +30,9 @@
       - [7. 🔒 Unverschiebbare Termine](#7--unverschiebbare-termine)
       - [8. 🔄 Wiederkehrende Termine](#8--wiederkehrende-termine)
     - [📋 Backlog \& Zukünftige Features (`Backlog/Issues`)](#-backlog--zukünftige-features-backlogissues)
+    - [🐳 Docker \& Deployment](#-docker--deployment-1)
+      - [Lokale Entwicklung mit Docker](#lokale-entwicklung-mit-docker)
+      - [Deployment](#deployment-1)
   - [🧰 Tech Stack](#-tech-stack)
     - [🖥️ Frontend](#️-frontend)
     - [☁️ Backend](#️-backend)
@@ -81,9 +87,29 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 ---
 
-## 📋 Backlog & Future Features (`Backlog/Issues`)
+### 📋 Backlog & Future Features (`Backlog/Issues`)
 
 - Native mobile porting to **Android** & **iOS**
+
+### 🐳 Docker & Deployment
+
+#### Local Development with Docker
+
+Both services are planned to run in containers, each with its own multi-stage `Dockerfile` and orchestrated locally via Docker Compose (not yet added to the repository):
+
+- **Frontend:** built with Vite, then served by nginx.
+- **Backend:** built with Maven, packaged as an executable jar, run on a slim JRE base image.
+
+PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas) and are **not** part of the Compose setup.
+
+#### Deployment
+
+| Service  | Platform                    | Notes                                                             |
+|----------|------------------------------|---------------------------------------------------------------------|
+| Frontend | **Netlify**                  | Build command `npm run build`, publish directory `frontend/dist`   |
+| Backend  | **Render.com** or **Fly.io** | Deployed from the backend's Dockerfile; both platforms can build and run the container directly |
+
+Both platforms are intended to build directly from the repository's Dockerfiles once added — no separate CI image registry is planned for the MVP.
 
 ## German
 Das Projekt soll im Kern einer Immobilienverwaltung helfen Wartungen zu optimieren. Dies soll geschehen indem Anfahrtswege reduziert werden, Termine anhand des Ortes und der dauer besser abgestimmt werden und die potenzielle Dauer von Terminen eingeschätzt werden aufgrund von vorran gegangenen Terminen ähnlichen Kontextes. Das Unternehmen spart damit nicht nur Zeit sondern auch bares Geld. Zusätzlich könnten Betriebskosten dadurch gesenkt werden . Dies würde auch den Mieter freuen. Mehr wird später kommen.
@@ -132,6 +158,26 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 - Native App-Portierung für **Android** und **iOS**
 
+### 🐳 Docker & Deployment
+
+#### Lokale Entwicklung mit Docker
+
+Beide Services sollen künftig containerisiert laufen, jeweils mit eigenem mehrstufigen (`multi-stage`) `Dockerfile` und lokaler Orchestrierung über Docker Compose (noch nicht im Repository vorhanden):
+
+- **Frontend:** gebaut mit Vite, ausgeliefert über nginx.
+- **Backend:** gebaut mit Maven, als ausführbares Jar verpackt, betrieben auf einem schlanken JRE-Basis-Image.
+
+PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas) und sind **nicht** Teil des Compose-Setups.
+
+#### Deployment
+
+| Service   | Plattform                     | Hinweise                                                                |
+|-----------|--------------------------------|--------------------------------------------------------------------------|
+| Frontend  | **Netlify**                    | Build-Befehl `npm run build`, Publish-Verzeichnis `frontend/dist`       |
+| Backend   | **Render.com** oder **Fly.io** | Deployment aus dem Dockerfile des Backends; beide Plattformen können den Container direkt bauen und starten |
+
+Beide Plattformen sollen künftig direkt aus den Dockerfiles im Repository bauen, sobald diese vorhanden sind — für das MVP ist keine separate CI-Image-Registry geplant.
+
 ------------
 
 ## 🧰 Tech Stack
@@ -152,3 +198,4 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 ### 🤖 AI / Intelligence
 * **Framework:** LangChain4j
+
