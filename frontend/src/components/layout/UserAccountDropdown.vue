@@ -39,20 +39,4 @@ function toggleMenu(event: MouseEvent): void {
   </div>
 </template>
 
-<style scoped>
-.user-account-dropdown__trigger {
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: var(--remo-header-text-color, #ffffff);
-  cursor: pointer;
-  font-size: 1.14rem;
-  font-weight: 500;
-  padding: 0.6rem 0.9rem;
-  transition: background-color 0.15s ease-in-out;
-}
-
-.user-account-dropdown__trigger:hover {
-  background-color: var(--remo-header-hover-color, #374151);
-}
-</style>
+<style scoped src="@/styles/layout/user-account-dropdown.css"></style>

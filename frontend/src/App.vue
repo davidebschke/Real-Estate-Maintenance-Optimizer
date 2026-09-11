@@ -10,8 +10,4 @@ import AppHeader from '@/components/layout/AppHeader.vue'
   </main>
 </template>
 
-<style scoped>
-.app-content {
-  padding: 1.5rem;
-}
-</style>
+<style scoped src="@/styles/app.css"></style>

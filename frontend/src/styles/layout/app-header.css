@@ -1,0 +1,46 @@
+.app-header {
+  align-items: center;
+  background-color: var(--remo-header-bg-color, #000000);
+  border-bottom: 1px solid var(--remo-header-border-color, #1f2937);
+  box-sizing: border-box;
+  display: flex;
+  gap: 1.8rem;
+  height: 4.8rem;
+  justify-content: space-between;
+  left: 0;
+  padding: 0 1.8rem;
+  position: sticky;
+  right: 0;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.app-header__brand {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.app-header__logo {
+  height: 2.4rem;
+  width: 2.4rem;
+}
+
+.app-header__brand-name {
+  color: var(--remo-header-text-color, #ffffff);
+  font-size: 1.32rem;
+  font-weight: 700;
+}
+
+.app-header__navigation {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.app-header__actions {
+  align-items: center;
+  display: flex;
+  gap: 0.9rem;
+}

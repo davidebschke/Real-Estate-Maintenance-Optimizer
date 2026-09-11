@@ -25,31 +25,4 @@ const { isActive, setLocale } = useLocale()
   </div>
 </template>
 
-<style scoped>
-.language-switch {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.language-switch__option {
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: var(--remo-header-text-muted-color, #9ca3af);
-  cursor: pointer;
-  font-size: 1.02rem;
-  font-weight: 600;
-  padding: 0.42rem 0.6rem;
-  transition:
-    background-color 0.15s ease-in-out,
-    color 0.15s ease-in-out;
-}
-
-.language-switch__option:hover {
-  background-color: var(--remo-header-hover-color, #374151);
-}
-
-.language-switch__option--active {
-  color: var(--remo-header-active-color, #ffffff);
-}
-</style>
+<style scoped src="@/styles/layout/language-switch.css"></style>

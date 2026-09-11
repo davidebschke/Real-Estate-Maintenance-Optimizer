@@ -14,13 +14,4 @@ const { t } = useI18n()
   />
 </template>
 
-<style scoped>
-.appointment-button.p-button {
-  background-color: #ffffff;
-  border-color: #ffffff;
-  color: #000000;
-  font-size: 1.05rem;
-  opacity: 1;
-  padding: 0.45rem 0.75rem;
-}
-</style>
+<style scoped src="@/styles/layout/appointment-button.css"></style>
