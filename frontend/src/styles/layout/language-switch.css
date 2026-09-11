@@ -1,6 +1,6 @@
 .language-switch {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.38rem;
 }
 
 .language-switch__option {
@@ -9,9 +9,9 @@
   border-radius: 6px;
   color: var(--remo-header-text-muted-color, #9ca3af);
   cursor: pointer;
-  font-size: 1.02rem;
+  font-size: 1.28rem;
   font-weight: 600;
-  padding: 0.42rem 0.6rem;
+  padding: 0.53rem 0.75rem;
   transition:
     background-color 0.15s ease-in-out,
     color 0.15s ease-in-out;

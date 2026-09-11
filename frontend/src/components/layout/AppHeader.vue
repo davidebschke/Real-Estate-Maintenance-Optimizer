@@ -22,9 +22,9 @@ const { isPopupVisible } = useNavigation()
     <NavigationMenu class="app-header__navigation" />
 
     <div class="app-header__actions">
-      <AppointmentButton />
       <LanguageSwitch />
       <UserAccountDropdown />
+      <AppointmentButton />
     </div>
 
     <ComingSoonDialog v-model:visible="isPopupVisible" />
