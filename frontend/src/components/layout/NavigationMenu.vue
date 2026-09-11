@@ -41,7 +41,7 @@ function handleClick(key: NavigationKey): void {
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: var(--remo-header-text-color, #1f2937);
+  color: var(--remo-header-text-color, #ffffff);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -51,6 +51,6 @@ function handleClick(key: NavigationKey): void {
 
 .navigation-menu__link:hover,
 .navigation-menu__link:focus-visible {
-  background-color: var(--remo-header-hover-color, #e5e7eb);
+  background-color: var(--remo-header-hover-color, #374151);
 }
 </style>

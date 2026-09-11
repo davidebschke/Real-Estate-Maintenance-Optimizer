@@ -6,5 +6,5 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Button :label="t('header.appointment.createButton')" severity="primary" size="small" disabled />
+  <Button :label="t('header.appointment.createButton')" severity="secondary" size="small" disabled />
 </template>

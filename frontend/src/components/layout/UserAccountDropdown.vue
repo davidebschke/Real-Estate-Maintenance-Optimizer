@@ -44,7 +44,7 @@ function toggleMenu(event: MouseEvent): void {
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: var(--remo-header-text-color, #1f2937);
+  color: var(--remo-header-text-color, #ffffff);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -53,6 +53,6 @@ function toggleMenu(event: MouseEvent): void {
 }
 
 .user-account-dropdown__trigger:hover {
-  background-color: var(--remo-header-hover-color, #e5e7eb);
+  background-color: var(--remo-header-hover-color, #374151);
 }
 </style>

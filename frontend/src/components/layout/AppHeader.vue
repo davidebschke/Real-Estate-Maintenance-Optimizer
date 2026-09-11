@@ -34,8 +34,8 @@ const { isPopupVisible } = useNavigation()
 <style scoped>
 .app-header {
   align-items: center;
-  background-color: var(--remo-header-bg-color, #ffffff);
-  border-bottom: 1px solid var(--remo-header-border-color, #e5e7eb);
+  background-color: var(--remo-header-bg-color, #000000);
+  border-bottom: 1px solid var(--remo-header-border-color, #1f2937);
   box-sizing: border-box;
   display: flex;
   gap: 1.5rem;
@@ -62,7 +62,7 @@ const { isPopupVisible } = useNavigation()
 }
 
 .app-header__brand-name {
-  color: var(--remo-header-text-color, #1f2937);
+  color: var(--remo-header-text-color, #ffffff);
   font-size: 1.1rem;
   font-weight: 700;
 }

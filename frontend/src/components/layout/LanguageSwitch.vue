@@ -35,7 +35,7 @@ const { isActive, setLocale } = useLocale()
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: var(--remo-header-text-muted-color, #6b7280);
+  color: var(--remo-header-text-muted-color, #9ca3af);
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
@@ -46,10 +46,10 @@ const { isActive, setLocale } = useLocale()
 }
 
 .language-switch__option:hover {
-  background-color: var(--remo-header-hover-color, #e5e7eb);
+  background-color: var(--remo-header-hover-color, #374151);
 }
 
 .language-switch__option--active {
-  color: var(--remo-header-active-color, #2563eb);
+  color: var(--remo-header-active-color, #ffffff);
 }
 </style>
