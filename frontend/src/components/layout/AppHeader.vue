@@ -38,11 +38,11 @@ const { isPopupVisible } = useNavigation()
   border-bottom: 1px solid var(--remo-header-border-color, #1f2937);
   box-sizing: border-box;
   display: flex;
-  gap: 1.5rem;
-  height: 4rem;
+  gap: 1.8rem;
+  height: 4.8rem;
   justify-content: space-between;
   left: 0;
-  padding: 0 1.5rem;
+  padding: 0 1.8rem;
   position: sticky;
   right: 0;
   top: 0;
@@ -57,13 +57,13 @@ const { isPopupVisible } = useNavigation()
 }
 
 .app-header__logo {
-  height: 2rem;
-  width: 2rem;
+  height: 2.4rem;
+  width: 2.4rem;
 }
 
 .app-header__brand-name {
   color: var(--remo-header-text-color, #ffffff);
-  font-size: 1.1rem;
+  font-size: 1.32rem;
   font-weight: 700;
 }
 
@@ -76,6 +76,6 @@ const { isPopupVisible } = useNavigation()
 .app-header__actions {
   align-items: center;
   display: flex;
-  gap: 0.75rem;
+  gap: 0.9rem;
 }
 </style>

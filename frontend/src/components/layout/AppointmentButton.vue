@@ -19,6 +19,8 @@ const { t } = useI18n()
   background-color: #ffffff;
   border-color: #ffffff;
   color: #000000;
+  font-size: 1.05rem;
   opacity: 1;
+  padding: 0.45rem 0.75rem;
 }
 </style>

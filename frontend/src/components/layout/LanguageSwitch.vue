@@ -28,7 +28,7 @@ const { isActive, setLocale } = useLocale()
 <style scoped>
 .language-switch {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .language-switch__option {
@@ -37,9 +37,9 @@ const { isActive, setLocale } = useLocale()
   border-radius: 6px;
   color: var(--remo-header-text-muted-color, #9ca3af);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1.02rem;
   font-weight: 600;
-  padding: 0.35rem 0.5rem;
+  padding: 0.42rem 0.6rem;
   transition:
     background-color 0.15s ease-in-out,
     color 0.15s ease-in-out;

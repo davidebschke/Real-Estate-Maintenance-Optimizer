@@ -46,9 +46,9 @@ function toggleMenu(event: MouseEvent): void {
   border-radius: 6px;
   color: var(--remo-header-text-color, #ffffff);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 1.14rem;
   font-weight: 500;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.9rem;
   transition: background-color 0.15s ease-in-out;
 }
 

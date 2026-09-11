@@ -31,7 +31,7 @@ function handleClick(key: NavigationKey): void {
 <style scoped>
 .navigation-menu__list {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -43,9 +43,9 @@ function handleClick(key: NavigationKey): void {
   border-radius: 6px;
   color: var(--remo-header-text-color, #ffffff);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 1.14rem;
   font-weight: 500;
-  padding: 0.5rem 0.875rem;
+  padding: 0.6rem 1.05rem;
   transition: background-color 0.15s ease-in-out;
 }
 
