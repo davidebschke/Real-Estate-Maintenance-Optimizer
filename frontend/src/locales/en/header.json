@@ -16,9 +16,11 @@
       "en": "EN"
     },
     "account": {
+      "switchAccount": "Switch account",
       "menu": {
-        "profile": "Profile",
-        "settings": "Settings",
+        "profile": "Profile & Settings",
+        "vehicle": "My Vehicle & Storage",
+        "notifications": "Notifications",
         "logout": "Log out"
       }
     },

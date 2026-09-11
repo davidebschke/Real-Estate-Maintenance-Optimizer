@@ -16,9 +16,11 @@
       "en": "EN"
     },
     "account": {
+      "switchAccount": "Konto wechseln",
       "menu": {
-        "profile": "Profil",
-        "settings": "Einstellungen",
+        "profile": "Profil & Einstellungen",
+        "vehicle": "Mein Fahrzeug & Lager",
+        "notifications": "Benachrichtigungen",
         "logout": "Abmelden"
       }
     },
