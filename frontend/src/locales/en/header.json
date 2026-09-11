@@ -1,0 +1,31 @@
+{
+  "header": {
+    "brand": "Remo",
+    "nav": {
+      "overview": "Overview",
+      "calendar": "Calendar",
+      "statistics": "Statistics",
+      "properties": "Properties"
+    },
+    "comingSoon": {
+      "title": "Coming soon",
+      "message": "This page is still under construction."
+    },
+    "language": {
+      "de": "DE",
+      "en": "EN"
+    },
+    "account": {
+      "switchAccount": "Switch account",
+      "menu": {
+        "profile": "Profile & Settings",
+        "vehicle": "My Vehicle & Storage",
+        "notifications": "Notifications",
+        "logout": "Log out"
+      }
+    },
+    "appointment": {
+      "createButton": "+ Appointment"
+    }
+  }
+}

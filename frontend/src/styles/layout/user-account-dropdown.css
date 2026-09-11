@@ -1,0 +1,156 @@
+.user-account-dropdown__trigger {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--remo-header-text-color, #ffffff);
+  cursor: pointer;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  transition: background-color 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.user-account-dropdown__trigger:hover {
+  background-color: var(--remo-header-hover-color, #374151);
+}
+
+.user-account-dropdown__avatar {
+  align-items: center;
+  border-radius: 999px;
+  color: #ffffff;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.user-account-dropdown__identity {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.user-account-dropdown__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.user-account-dropdown__role {
+  color: var(--remo-header-text-muted-color, #9ca3af);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.user-account-dropdown__chevron {
+  color: var(--remo-header-text-muted-color, #9ca3af);
+  font-size: 0.75rem;
+  margin-left: 0.15rem;
+}
+
+.user-account-dropdown__header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.user-account-dropdown__header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-account-dropdown__email {
+  color: var(--remo-header-text-muted-color, #9ca3af);
+  font-size: 0.8rem;
+}
+
+.user-account-dropdown__divider {
+  background-color: #374151;
+  height: 1px;
+  margin: 0.5rem 0;
+}
+
+.user-account-dropdown__section-label {
+  color: var(--remo-header-text-muted-color, #9ca3af);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.user-account-dropdown__account-list,
+.user-account-dropdown__menu {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.user-account-dropdown__account-option {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.5rem;
+  text-align: left;
+  transition: background-color 0.15s ease-in-out;
+  width: 100%;
+}
+
+.user-account-dropdown__account-option:hover {
+  background-color: #374151;
+}
+
+.user-account-dropdown__account-option--active {
+  background-color: #111827;
+}
+
+.user-account-dropdown__check {
+  color: #22c55e;
+  margin-left: auto;
+}
+
+.user-account-dropdown__menu-item {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.5rem;
+  text-align: left;
+  transition: background-color 0.15s ease-in-out;
+  width: 100%;
+}
+
+.user-account-dropdown__menu-item:hover {
+  background-color: #374151;
+}
+
+.user-account-dropdown__logout {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #f87171;
+  cursor: pointer;
+  display: block;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.5rem;
+  text-align: left;
+  transition: background-color 0.15s ease-in-out;
+  width: 100%;
+}
+
+.user-account-dropdown__logout:hover {
+  background-color: #374151;
+}

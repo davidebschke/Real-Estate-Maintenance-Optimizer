@@ -1,0 +1,17 @@
+.user-account-dropdown__popover.p-popover {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+}
+
+.user-account-dropdown__popover.p-popover::before,
+.user-account-dropdown__popover.p-popover::after {
+  display: none;
+}
+
+.user-account-dropdown__popover .p-popover-content {
+  color: #ffffff;
+  padding: 1rem;
+  width: 20rem;
+}
