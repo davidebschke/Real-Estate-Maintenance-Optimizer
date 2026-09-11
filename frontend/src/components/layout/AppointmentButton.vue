@@ -6,5 +6,19 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Button :label="t('header.appointment.createButton')" severity="secondary" size="small" disabled />
+  <Button
+    class="appointment-button"
+    :label="t('header.appointment.createButton')"
+    size="small"
+    disabled
+  />
 </template>
+
+<style scoped>
+.appointment-button.p-button {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #000000;
+  opacity: 1;
+}
+</style>
