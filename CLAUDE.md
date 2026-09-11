@@ -56,11 +56,11 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Both frontend and backend have an initialized project skeleton — frontend: Vue 3 / Vite scaffold with routing, Pinia store, Vitest and Playwright configured (`frontend/src`, `frontend/e2e`); backend: Maven/Spring Boot skeleton (`pom.xml`, application entry point). **No business logic, views, or REST endpoints exist yet** in either part.
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend still has only the initial Maven/Spring Boot skeleton (`pom.xml`, application entry point), **no business logic or REST endpoints yet**. Frontend now contains a first real feature: the application header (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`) and a German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`). Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
 
 Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
 
-Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be replaced with the actual state.
+Once further code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be reviewed and kept in sync with the actual state.
 
 ## 4. Folder Structure (Monorepo)
 
@@ -68,12 +68,18 @@ Once code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) mus
 Real-Estate-Maintenance-Optimizer/
 ├── frontend/                      # Vue.js 3 application (Vite)
 │   ├── src/
-│   │   ├── components/            # reusable UI building blocks
+│   │   ├── assets/icons/          # SVG icons (e.g. brand logo)
+│   │   ├── components/
+│   │   │   └── layout/            # app-wide layout building blocks (e.g. AppHeader and its parts)
 │   │   ├── views/                 # pages / route targets
 │   │   ├── router/                # Vue Router configuration
 │   │   ├── services/              # Axios API clients
 │   │   ├── stores/                # state management (Pinia)
-│   │   ├── composables/           # reusable Vue Composition functions
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useNavigation, useLocale)
+│   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
+│   │   ├── locales/
+│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json)
+│   │   │   └── en/                # English UI texts, mirrors the de/ structure
 │   │   └── __tests__/             # Vitest unit tests
 │   ├── e2e/                       # Playwright end-to-end tests
 │   ├── public/
