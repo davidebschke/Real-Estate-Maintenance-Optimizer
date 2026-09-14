@@ -1,0 +1,31 @@
+.app-footer {
+  align-items: center;
+  background-color: var(--remo-footer-bg-color, #000000);
+  border-top: 1px solid var(--remo-footer-border-color, #1f2937);
+  bottom: 0;
+  box-sizing: border-box;
+  display: flex;
+  height: 2.5rem;
+  justify-content: space-between;
+  left: 0;
+  padding: 0 2.25rem;
+  position: fixed;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.app-footer__copyright {
+  color: var(--remo-footer-text-color, #ffffff);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 37.5rem) {
+  .app-footer {
+    flex-direction: column;
+    gap: 0.25rem;
+    height: auto;
+    justify-content: center;
+    padding: 0.5rem 1.13rem;
+  }
+}
