@@ -41,7 +41,8 @@
   background-color: var(--remo-header-hover-color, #374151);
 }
 
-@media (max-width: 48rem) {
+/* Breakpoint must stay in sync with app-header.css, which wraps the header actions onto a second row at the same width */
+@media (max-width: 87.5rem) {
   .navigation-menu {
     display: flex;
     flex: 1;
