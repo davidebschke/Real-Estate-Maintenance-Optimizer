@@ -8,7 +8,7 @@ const { t } = useI18n()
 <template>
   <Button
     class="appointment-button"
-    :label="t('header.appointment.createButton')"
+    :label="t('header.appointment.newDataButton')"
     size="small"
     disabled
   />

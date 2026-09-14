@@ -25,7 +25,7 @@
       }
     },
     "appointment": {
-      "createButton": "+ Termin"
+      "newDataButton": "+ Termin"
     }
   }
 }
