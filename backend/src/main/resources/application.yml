@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: real-estate-maintenance-optimizer
+  messages:
+    basename: locales/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
