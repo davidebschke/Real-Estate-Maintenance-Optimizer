@@ -40,7 +40,9 @@ class LocalizationConfigTest {
 
     @Test
     void fallsBackToDefaultBundleForUnsupportedLocale() {
-        String message = messageSource.getMessage("common.error.generic", null, Locale.FRENCH);
+        Locale iso639PrivateUseLocale = Locale.forLanguageTag("xx-XX");
+
+        String message = messageSource.getMessage("common.error.generic", null, iso639PrivateUseLocale);
 
         assertThat(message).isEqualTo("An unexpected error occurred.");
     }
@@ -59,9 +61,10 @@ class LocalizationConfigTest {
     }
 
     @Test
-    void resolvesEnglishForUnsupportedAcceptLanguageHeader() {
+    void resolvesEnglishForReservedPrivateUseAcceptLanguageHeader() {
+        String iso639PrivateUseLanguageTag = "xx-XX";
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Accept-Language", "fr-FR");
+        request.addHeader("Accept-Language", iso639PrivateUseLanguageTag);
 
         Locale resolvedLocale = localeResolver.resolveLocale(request);
 
