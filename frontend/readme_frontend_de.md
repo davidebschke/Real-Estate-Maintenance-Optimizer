@@ -14,12 +14,19 @@ Statische Dateien, die vom Build-Prozess unveraendert uebernommen werden, z. B. 
 ### `src/`
 Wurzelverzeichnis des eigentlichen Anwendungscodes, unterteilt in:
 
-- **`components/`** – Wiederverwendbare UI-Bausteine (z. B. Buttons, Karten, Formularfelder, Kalender-Widgets), die in mehreren Views eingesetzt werden. Ein Component pro Datei, Dateiname in PascalCase (z. B. `AppointmentCard.vue`). Keine Business-Logik oder direkte API-Aufrufe in Components; dafuer `composables/` bzw. `services/` nutzen.
+- **`components/`** – Wiederverwendbare UI-Bausteine (z. B. Buttons, Karten, Formularfelder, Kalender-Widgets), die in mehreren Views eingesetzt werden. Ein Component pro Datei, Dateiname in PascalCase (z. B. `AppointmentCard.vue`). Keine Business-Logik oder direkte API-Aufrufe in Components; dafuer `composables/` bzw. `services/` nutzen. App-weite Layout-Bausteine liegen in `components/layout/` (z. B. `AppHeader.vue`, `AppFooter.vue`, `NavigationMenu.vue`).
 - **`views/`** – Seiten bzw. Routenziele der Anwendung, z. B. Terminuebersicht, Terminerstellung, Materialplanung. Eine View pro Route, Dateiname meist mit Suffix `View` (z. B. `AppointmentOverviewView.vue`). Views orchestrieren Components und enthalten selbst moeglichst wenig eigene Logik.
 - **`router/`** – Zentrale Konfiguration von Vue Router: Routen-Definitionen, Zuordnung zu Views, Navigation Guards und Lazy-Loading. Eine zentrale `index.ts`/`index.js` als Einstiegspunkt, Routen mit sprechenden `name`-Attributen.
 - **`services/`** – Axios-basierte API-Clients fuer die Kommunikation mit dem Spring-Boot-Backend. Ein Service pro fachlicher Domaene (z. B. `appointmentService`, `materialService`), zentrale Axios-Instanz mit Basis-URL und Interceptoren (z. B. fuer JWT).
 - **`stores/`** – Globales State-Management, z. B. angemeldeter Benutzer, geladene Termine, aktuelle Filtereinstellungen. Ein Store pro fachlichem Bereich (z. B. `authStore`, `appointmentStore`); kein direkter API-Zugriff im Store, dafuer `services/` verwenden.
 - **`composables/`** – Wiederverwendbare Vue-Composition-Functions zur Kapselung von reaktiver Logik, die in mehreren Components oder Views benoetigt wird. Namenskonvention `useXxx` (z. B. `useAppointmentDuration`), enthaelt reine Logik ohne UI-Darstellung.
+- **`i18n/`** – Zentrales `vue-i18n`-Setup; erstellt und exportiert die i18n-Instanz der Anwendung und fuehrt alle Uebersetzungsdateien aus `locales/` zusammen.
+- **`locales/`** – Uebersetzungsdateien fuer statische UI-Texte, aufgeteilt in `de/` (aktive Standardsprache) und `en/` (Fallback-Sprache), eine JSON-Datei pro Feature-Namespace (z. B. `header.json`, `footer.json`). Siehe `CLAUDE.md`, Abschnitt "Coding Conventions", zur Regel, dass alle uebrigen Bezeichner auf Englisch bleiben.
+- **`styles/`** – Component-Styles, ausgelagert aus den `.vue`-Dateien und ueber `<style scoped src="...">` eingebunden, spiegelt die Ordnerstruktur von `components/` (z. B. `styles/layout/` fuer `components/layout/`).
+- **`__tests__/`** – Vitest-Unit-Tests (Component- und Composable-Tests), eine Spec-Datei pro Quelldatei.
+
+### `e2e/`
+Playwright-End-to-End-Tests, ausfuehrbar ueber `npm run test:e2e`.
 
 ### `package.json`
 Abhaengigkeiten und Build-/Start-Skripte.

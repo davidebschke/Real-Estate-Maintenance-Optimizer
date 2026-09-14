@@ -56,13 +56,26 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend now has a first REST endpoint: `GET /api/version` (`VersionController`, `dto/VersionResponse`), which reports the application version currently packaged from `pom.xml` via Spring Boot's `BuildProperties` (generated at build time through the `spring-boot-maven-plugin` `build-info` goal, bound to the `generate-resources` phase so it runs before compilation/tests). Cross-origin access from the frontend dev server is allowed via `CorsConfig` (`config/`), whose allowed origin is configured through `remo.frontend.base-url` in `application.yml`. Backend also has a German/English translation setup for dynamic (server-generated) text: `backend/src/main/resources/locales/` (`messages.properties`, `messages_de.properties`, `messages_en.properties`, resolved via Spring's `MessageSource`) plus `LocalizationConfig` (`backend/src/main/java/.../config/`), which resolves the request locale from the `Accept-Language` header, falling back to English when no supported locale is requested (the base `messages.properties` bundle also holds the English texts, matching this fallback). Frontend now contains two real features: the application header and the application footer (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`, `useAppVersion`), a first Axios-based service (`services/versionService.ts`, calling the backend version endpoint), a German/English translation setup for static UI text via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`, German as the active default locale, English as `fallbackLocale` for missing keys), and its component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`). The footer is a narrow, black, fixed bar pinned to the bottom of the viewport (`App.vue` wraps header/content/footer in a flex column with `min-height: 100vh`) showing a copyright notice and the backend-reported version, and is responsive like the header. Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
+Project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches. Once further code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be reviewed and kept in sync with the actual state.
 
-Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
+### 3.1 Backend
 
-Once further code is added, Section 4 (Folder Structure) and Section 7 (Build & Run) must be reviewed and kept in sync with the actual state.
+- First REST endpoint: `GET /api/version` (`VersionController`, `dto/VersionResponse`), which reports the application version currently packaged from `pom.xml` via Spring Boot's `BuildProperties` (generated at build time through the `spring-boot-maven-plugin` `build-info` goal, bound to the `generate-resources` phase so it runs before compilation/tests).
+- Cross-origin access from the frontend dev server is allowed via `CorsConfig` (`config/`), whose allowed origin is configured through `remo.frontend.base-url` in `application.yml`.
+- German/English translation setup for dynamic (server-generated) text: `backend/src/main/resources/locales/` (`messages.properties`, `messages_de.properties`, `messages_en.properties`, resolved via Spring's `MessageSource`) plus `LocalizationConfig` (`backend/src/main/java/.../config/`), which resolves the request locale from the `Accept-Language` header, falling back to English when no supported locale is requested (the base `messages.properties` bundle also holds the English texts, matching this fallback).
 
-**Version check:** `pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.1.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
+### 3.2 Frontend
+
+- **Layout:** the application header and the application footer (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4. The footer is a narrow, black, fixed bar pinned to the bottom of the viewport (`App.vue` wraps header/content/footer in a flex column with `min-height: 100vh`) showing a copyright notice and the backend-reported version, and is responsive like the header.
+- **Navigation:** implemented via Vue Router (`frontend/src/router/index.ts`). The four main navigation entries (Overview/`Übersicht`, Calendar/`Kalender`, Statistics/`Statistik`, Properties/`Immobilien`) each route to a dedicated view under `frontend/src/views/` (`OverviewView.vue`, `CalendarView.vue`, `StatisticsView.vue`, `PropertiesView.vue`), which currently render only a localized placeholder sentence (e.g. "Hier ist die Übersichtsseite") via the reusable `components/ViewPlaceholder.vue`. `NavigationMenu.vue` renders its links as `RouterLink`s (active entry highlighted via `router-link-exact-active`) and the header logo/brand name (`AppHeader.vue`) link back to the overview page.
+- **Composables & services:** reusable composables (`useLocale`, `useAppVersion`) and a first Axios-based service (`services/versionService.ts`, calling the backend version endpoint).
+- **i18n (static UI text):** German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`), German as the active default locale, English as `fallbackLocale` for missing keys.
+- **Styles:** component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`).
+- **Not yet implemented:** appointment creation and account management — only non-functional placeholders (disabled button, example dropdown data).
+
+### 3.3 Version Tracking
+
+`pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.1.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
 
 ## 4. Folder Structure (Monorepo)
 
@@ -72,20 +85,22 @@ Real-Estate-Maintenance-Optimizer/
 │   ├── src/
 │   │   ├── assets/icons/          # SVG icons (e.g. brand logo)
 │   │   ├── components/
-│   │   │   └── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter and their parts)
-│   │   ├── views/                 # pages / route targets
-│   │   ├── router/                # Vue Router configuration
+│   │   │   ├── ViewPlaceholder.vue # reusable placeholder content block used by the not-yet-implemented views
+│   │   │   └── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
+│   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
+│   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts)
 │   │   ├── stores/                # state management (Pinia)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useNavigation, useLocale, useAppVersion)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
-│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json)
+│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json)
 │   │   │   └── en/                # English UI texts, mirrors the de/ structure
 │   │   ├── styles/
-│   │   │   └── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css)
+│   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
+│   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts)
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json

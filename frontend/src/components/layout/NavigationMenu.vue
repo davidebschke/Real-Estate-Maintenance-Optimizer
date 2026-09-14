@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useNavigation, type NavigationKey } from '@/composables/useNavigation'
+import type { NavigationKey } from '@/router'
 
 /** List of top-level navigation entries rendered in a fixed, reusable order. */
 const navigationEntries: NavigationKey[] = ['overview', 'calendar', 'statistics', 'properties']
 
 const { t } = useI18n()
-const { selectNavigationEntry } = useNavigation()
 const isMobileMenuOpen = ref(false)
 
 defineExpose({ navigationEntries })
 
-/** Forwards the click of a navigation entry to the shared navigation composable and closes the mobile menu. */
-function handleClick(key: NavigationKey): void {
-  selectNavigationEntry(key)
+/** Closes the collapsed mobile navigation list after a link was followed. */
+function closeMobileMenu(): void {
   isMobileMenuOpen.value = false
 }
 
@@ -38,9 +37,9 @@ function toggleMobileMenu(): void {
 
     <ul class="navigation-menu__list" :class="{ 'navigation-menu__list--open': isMobileMenuOpen }">
       <li v-for="entry in navigationEntries" :key="entry" class="navigation-menu__item">
-        <button type="button" class="navigation-menu__link" @click="handleClick(entry)">
+        <RouterLink :to="{ name: entry }" class="navigation-menu__link" @click="closeMobileMenu">
           {{ t(`header.nav.${entry}`) }}
-        </button>
+        </RouterLink>
       </li>
     </ul>
   </nav>

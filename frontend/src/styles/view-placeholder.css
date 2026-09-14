@@ -1,0 +1,5 @@
+.view-placeholder {
+  color: var(--remo-text-color, #1f2937);
+  font-size: 1.25rem;
+  margin: 0;
+}
