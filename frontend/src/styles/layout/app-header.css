@@ -44,3 +44,33 @@
   display: flex;
   gap: 1.13rem;
 }
+
+@media (max-width: 48rem) {
+  .app-header {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    height: auto;
+    padding: 1rem 1.5rem;
+  }
+
+  .app-header__actions {
+    flex: 1 0 100%;
+    gap: 0.75rem;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 30rem) {
+  .app-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .app-header__brand-name {
+    font-size: 1.3rem;
+  }
+
+  .app-header__logo {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+}

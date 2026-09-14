@@ -1,0 +1,6 @@
+.footer-version {
+  color: var(--remo-footer-text-color, #ffffff);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}

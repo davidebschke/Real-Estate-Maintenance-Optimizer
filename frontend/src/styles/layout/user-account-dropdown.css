@@ -154,3 +154,9 @@
 .user-account-dropdown__logout:hover {
   background-color: #374151;
 }
+
+@media (max-width: 30rem) {
+  .user-account-dropdown__trigger .user-account-dropdown__identity {
+    display: none;
+  }
+}

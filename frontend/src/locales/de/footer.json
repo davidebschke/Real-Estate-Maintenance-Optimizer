@@ -1,0 +1,6 @@
+{
+  "footer": {
+    "copyright": "© {year} Remo",
+    "version": "Version: {version}"
+  }
+}
