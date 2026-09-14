@@ -9,15 +9,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.servlet.LocaleResolver;
 
 /**
- * Verifies that dynamic backend messages resolve for German and English and fall back correctly for unsupported locales.
+ * Verifies that dynamic backend messages resolve for German and English and fall back to English in case of doubt.
  */
 @SpringBootTest
 class LocalizationConfigTest {
 
     @Autowired
     private MessageSource messageSource;
+
+    @Autowired
+    private LocaleResolver localeResolver;
 
     @Test
     void resolvesGermanMessage() {
@@ -37,12 +42,29 @@ class LocalizationConfigTest {
     void fallsBackToDefaultBundleForUnsupportedLocale() {
         String message = messageSource.getMessage("common.error.generic", null, Locale.FRENCH);
 
-        assertThat(message).isEqualTo("Ein unerwarteter Fehler ist aufgetreten.");
+        assertThat(message).isEqualTo("An unexpected error occurred.");
     }
 
     @Test
     void throwsForMissingKey() {
         assertThatThrownBy(() -> messageSource.getMessage("common.error.doesNotExist", null, Locale.GERMAN))
                 .isInstanceOf(NoSuchMessageException.class);
+    }
+
+    @Test
+    void resolvesEnglishWhenAcceptLanguageHeaderIsMissing() {
+        Locale resolvedLocale = localeResolver.resolveLocale(new MockHttpServletRequest());
+
+        assertThat(resolvedLocale).isEqualTo(Locale.ENGLISH);
+    }
+
+    @Test
+    void resolvesEnglishForUnsupportedAcceptLanguageHeader() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Accept-Language", "fr-FR");
+
+        Locale resolvedLocale = localeResolver.resolveLocale(request);
+
+        assertThat(resolvedLocale).isEqualTo(Locale.ENGLISH);
     }
 }

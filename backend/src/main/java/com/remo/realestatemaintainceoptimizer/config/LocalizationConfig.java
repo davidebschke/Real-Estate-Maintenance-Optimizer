@@ -14,12 +14,12 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 public class LocalizationConfig {
 
     /**
-     * Restricts locale resolution to German and English, defaulting to German when no supported locale is requested.
+     * Restricts locale resolution to German and English, defaulting to English when no supported locale is requested.
      */
     @Bean
     public LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.GERMAN);
+        localeResolver.setDefaultLocale(Locale.ENGLISH);
         localeResolver.setSupportedLocales(List.of(Locale.GERMAN, Locale.ENGLISH));
         return localeResolver;
     }
