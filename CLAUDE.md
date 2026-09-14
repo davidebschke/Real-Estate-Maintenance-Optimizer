@@ -56,7 +56,7 @@ The architecture uses a polyglot persistence approach with two separate database
 
 ## 3. Repository Status
 
-Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend still has only the initial Maven/Spring Boot skeleton (`pom.xml`, application entry point), **no business logic or REST endpoints yet**. Frontend now contains a first real feature: the application header (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`), a German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`), and its component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`). Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
+Status of this file: project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/ISSUE_TEMPLATE`). Backend still has only the initial Maven/Spring Boot skeleton (`pom.xml`, application entry point), **no business logic or REST endpoints yet**, but now has a German/English translation setup for dynamic (server-generated) text: `backend/src/main/resources/locales/` (`messages.properties`, `messages_de.properties`, `messages_en.properties`, resolved via Spring's `MessageSource`) plus `LocalizationConfig` (`backend/src/main/java/.../config/`), which resolves the request locale from the `Accept-Language` header, defaulting to German. Frontend now contains a first real feature: the application header (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4, including reusable composables (`useNavigation`, `useLocale`), a German/English translation setup for static UI text via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`), and its component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`). Navigation targets, appointment creation, and account management are not implemented yet — only non-functional placeholders (popup notice, disabled button, example dropdown data).
 
 Current branch status is not tracked in this file — run `git branch -a` for the up-to-date list of local and remote branches.
 
@@ -88,8 +88,11 @@ Real-Estate-Maintenance-Optimizer/
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │                               # Java source code (controller, service, repository, entity)
-│   ├── src/main/resources/        # application.yml, migrations
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution)
+│   │   └── ...                    # further Java source code (controller, service, repository, entity)
+│   ├── src/main/resources/
+│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename)
+│   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (default), messages_de.properties, messages_en.properties
 │   ├── src/test/java/...          # JUnit tests
 │   └── pom.xml
 ├── .claude/
@@ -141,7 +144,7 @@ Binding coding conventions (variable names, comments, function/method design, co
 
 ## 7. Build & Run
 
-Backend: `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 3.5.1 via `pom.xml`).
+Backend: `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`).
 Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright) for tests.
 
 ## 8. Tests
