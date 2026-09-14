@@ -5,3 +5,8 @@ spring:
     basename: locales/messages
     encoding: UTF-8
     fallback-to-system-locale: false
+
+remo:
+  frontend:
+    # Origin allowed to call the backend REST API (Vite dev server default port)
+    base-url: http://localhost:5173
