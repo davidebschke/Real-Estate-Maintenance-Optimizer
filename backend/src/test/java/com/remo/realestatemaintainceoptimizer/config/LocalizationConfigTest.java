@@ -62,9 +62,9 @@ class LocalizationConfigTest {
 
     @Test
     void resolvesEnglishForReservedPrivateUseAcceptLanguageHeader() {
-        String iso639PrivateUseLanguageTag = "xx-XX";
+        String fallbackTestLanguageTag = "xx-XX";
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Accept-Language", iso639PrivateUseLanguageTag);
+        request.addHeader("Accept-Language", fallbackTestLanguageTag);
 
         Locale resolvedLocale = localeResolver.resolveLocale(request);
 
