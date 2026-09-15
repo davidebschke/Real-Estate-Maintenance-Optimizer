@@ -1,5 +1,22 @@
 {
   "calendar": {
-    "content": "Hier ist die Kalenderseite"
+    "toolbar": {
+      "previous": "Vorherige Periode",
+      "next": "Nächste Periode",
+      "today": "Heute",
+      "hint": "Termin anklicken für Details · „+ Termin\" oben rechts zum Anlegen",
+      "viewSwitcher": "Ansicht wählen",
+      "views": {
+        "day": "Tag",
+        "week": "Woche",
+        "month": "Monat",
+        "year": "Jahr"
+      }
+    },
+    "dayHeader": {
+      "appointmentCountSingular": "{count} Termin",
+      "appointmentCountPlural": "{count} Termine",
+      "travelDistance": "{km} km"
+    }
   }
 }
