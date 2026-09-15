@@ -10,3 +10,6 @@ remo:
   frontend:
     # Origin allowed to call the backend REST API (Vite dev server default port)
     base-url: http://localhost:5173
+  storage:
+    # Folder (relative to the working directory) holding appointments as JSON files until a database replaces it
+    directory: ExampleTerms
