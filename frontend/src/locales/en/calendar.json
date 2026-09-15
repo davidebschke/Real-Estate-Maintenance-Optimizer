@@ -1,5 +1,22 @@
 {
   "calendar": {
-    "content": "Here is the calendar page"
+    "toolbar": {
+      "previous": "Previous period",
+      "next": "Next period",
+      "today": "Today",
+      "hint": "Click an appointment for details · use \"+ Appointment\" at the top right to create one",
+      "viewSwitcher": "Choose view",
+      "views": {
+        "day": "Day",
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      }
+    },
+    "dayHeader": {
+      "appointmentCountSingular": "{count} appointment",
+      "appointmentCountPlural": "{count} appointments",
+      "travelDistance": "{km} km"
+    }
   }
 }

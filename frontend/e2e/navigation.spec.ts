@@ -13,7 +13,7 @@ test.describe('main navigation', () => {
     await page.goto('/')
 
     await page.getByRole('link', { name: 'Kalender' }).click()
-    await expect(page.getByText('Hier ist die Kalenderseite')).toBeVisible()
+    await expect(page.locator('.calendar-toolbar')).toBeVisible()
     await expect(page).toHaveURL('/calendar')
 
     await page.getByRole('link', { name: 'Statistik' }).click()

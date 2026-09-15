@@ -67,8 +67,9 @@ Project documentation exists (`README.md`, `LICENSE`, `SECURITY.md`, `.github/IS
 ### 3.2 Frontend
 
 - **Layout:** the application header and the application footer (`frontend/src/components/layout/`), built with Vue 3 and PrimeVue 4. The footer is a narrow, black, fixed bar pinned to the bottom of the viewport (`App.vue` wraps header/content/footer in a flex column with `min-height: 100vh`) showing a copyright notice and the backend-reported version, and is responsive like the header.
-- **Navigation:** implemented via Vue Router (`frontend/src/router/index.ts`). The four main navigation entries (Overview/`Übersicht`, Calendar/`Kalender`, Statistics/`Statistik`, Properties/`Immobilien`) each route to a dedicated view under `frontend/src/views/` (`OverviewView.vue`, `CalendarView.vue`, `StatisticsView.vue`, `PropertiesView.vue`), which currently render only a localized placeholder sentence (e.g. "Hier ist die Übersichtsseite") via the reusable `components/ViewPlaceholder.vue`. `NavigationMenu.vue` renders its links as `RouterLink`s (active entry highlighted via `router-link-exact-active`) and the header logo/brand name (`AppHeader.vue`) link back to the overview page.
-- **Composables & services:** reusable composables (`useLocale`, `useAppVersion`) and a first Axios-based service (`services/versionService.ts`, calling the backend version endpoint).
+- **Navigation:** implemented via Vue Router (`frontend/src/router/index.ts`). The four main navigation entries (Overview/`Übersicht`, Calendar/`Kalender`, Statistics/`Statistik`, Properties/`Immobilien`) each route to a dedicated view under `frontend/src/views/` (`OverviewView.vue`, `CalendarView.vue`, `StatisticsView.vue`, `PropertiesView.vue`). `OverviewView.vue`, `StatisticsView.vue` and `PropertiesView.vue` currently render only a localized placeholder sentence (e.g. "Hier ist die Übersichtsseite") via the reusable `components/ViewPlaceholder.vue`; `CalendarView.vue` renders the calendar (see below). `NavigationMenu.vue` renders its links as `RouterLink`s (active entry highlighted via `router-link-exact-active`) and the header logo/brand name (`AppHeader.vue`) link back to the overview page.
+- **Calendar:** `CalendarView.vue` renders `components/calendar/AppCalendar.vue`, a `vue-cal` 4.10.2-based day/week/month/year calendar (dark theme matching the design reference, custom toolbar with a localized date-range title, previous/today/next navigation and a view switcher, plus per-day appointment-count/travel-distance headers via the `weekday-heading` slot and colored per-category event cards via the `event` slot). Navigating to `/calendar` through the main navigation always shows today in the week view, since the view/date state lives in `CalendarView`'s component instance and is re-initialized fresh on every mount (no `keep-alive`). `composables/useCalendarNavigation.ts` wraps view switching, previous/next/today (delegated to vue-cal's exposed instance methods, since `selectedDate` has no `v-model`) and locale-aware range-title formatting; `composables/useCalendarAppointments.ts` converts `Appointment` domain objects (`types/appointment.ts`) into vue-cal events and per-day summaries — currently backed by an empty, easily swappable appointments array, since there is no backend appointment API yet (Section 3.1) and no route/distance calculation (Feature 6, Section 6). Because vue-cal ships no TypeScript types, `types/vue-cal.ts` holds hand-written types and `types/vue-cal-shims.d.ts` is the ambient module shim (referenced explicitly from `tsconfig.vitest.json`, since ambient `.d.ts` files are not picked up automatically via module-resolution the way typed imports are).
+- **Composables & services:** reusable composables (`useLocale`, `useAppVersion`, `useCalendarNavigation`, `useCalendarAppointments`) and a first Axios-based service (`services/versionService.ts`, calling the backend version endpoint).
 - **i18n (static UI text):** German/English translation setup via `vue-i18n` (`frontend/src/locales/`, `frontend/src/i18n/`), German as the active default locale, English as `fallbackLocale` for missing keys.
 - **Styles:** component styles extracted into `frontend/src/styles/` (referenced via `<style scoped src="...">`).
 - **Not yet implemented:** appointment creation and account management — only non-functional placeholders (disabled button, example dropdown data).
@@ -86,21 +87,25 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── assets/icons/          # SVG icons (e.g. brand logo)
 │   │   ├── components/
 │   │   │   ├── ViewPlaceholder.vue # reusable placeholder content block used by the not-yet-implemented views
-│   │   │   └── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
+│   │   │   ├── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
+│   │   │   └── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts)
 │   │   ├── stores/                # state management (Pinia)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments)
+│   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
+│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
 │   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json)
 │   │   │   └── en/                # English UI texts, mirrors the de/ structure
 │   │   ├── styles/
 │   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
+│   │   │   ├── calendar/          # one CSS file per components/calendar building block (e.g. app-calendar.css, calendar-toolbar.css)
 │   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts)
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts)
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json
