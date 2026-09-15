@@ -218,4 +218,4 @@ function requestDelete() {
   </Drawer>
 </template>
 
-<style scoped src="@/styles/appointments/appointment-detail-drawer.css"></style>
+<style src="@/styles/appointments/appointment-detail-drawer.css"></style>

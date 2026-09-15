@@ -217,4 +217,4 @@ function cancel() {
   </Dialog>
 </template>
 
-<style scoped src="@/styles/appointments/appointment-form-dialog.css"></style>
+<style src="@/styles/appointments/appointment-form-dialog.css"></style>
