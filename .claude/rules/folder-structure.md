@@ -82,6 +82,6 @@ com.remo.realestatemaintainceoptimizer
 ## `.claude` Directory
 
 - `.claude/rules/` — binding project rules extracted from `CLAUDE.md`, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`, `testing.md`, `documentation.md`, `folder-structure.md`). Each corresponding section in `CLAUDE.md` references its rule file.
-- `.claude/skills/` — project-specific Claude skills. Currently empty (`.gitkeep`).
+- `.claude/skills/` — project-specific Claude skills: `wiki-sync/SKILL.md` (Wiki update workflow per [`wiki.md`](wiki.md)) and `docs-consistency-check/SKILL.md` (post-change documentation review per [`documentation.md`](documentation.md)).
 
 For the current, detailed implementation status of the backend and frontend (which controllers/services/components exist, what they do), see `backend/readme_backend_en.md` / `readme_backend_de.md` and `frontend/readme_frontend_en.md` / `readme_frontend_de.md` instead of this file — this file only tracks the physical folder layout.
