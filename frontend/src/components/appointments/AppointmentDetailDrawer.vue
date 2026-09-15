@@ -156,19 +156,27 @@ function requestDelete() {
           />
         </template>
         <div v-else class="appointment-detail-drawer__schedule-form">
+          <label for="appointment-detail-day">{{ t('appointments.form.dayLabel') }}</label>
           <Select
+            input-id="appointment-detail-day"
             v-model="scheduleForm.day"
             :options="dayOptions"
             option-label="label"
             option-value="value"
           />
+          <label for="appointment-detail-time">{{ t('appointments.form.timeLabel') }}</label>
           <Select
+            input-id="appointment-detail-time"
             v-model="scheduleForm.time"
             :options="timeOptions"
             option-label="label"
             option-value="value"
           />
+          <label for="appointment-detail-duration">{{
+            t('appointments.form.durationLabel')
+          }}</label>
           <Select
+            input-id="appointment-detail-duration"
             v-model="scheduleForm.durationMinutes"
             :options="durationOptions"
             option-label="label"

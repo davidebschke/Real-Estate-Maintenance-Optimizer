@@ -19,7 +19,7 @@ const selectedProperty = computed(
       {{ t('appointments.form.property.label') }}
     </label>
     <Select
-      id="appointment-property"
+      input-id="appointment-property"
       v-model="modelValue"
       class="appointment-property-select__input"
       :options="exampleProperties"

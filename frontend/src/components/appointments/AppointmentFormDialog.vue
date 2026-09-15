@@ -153,7 +153,7 @@ function cancel() {
       <div class="appointment-form-dialog__field">
         <label for="appointment-day">{{ t('appointments.form.dayLabel') }}</label>
         <Select
-          id="appointment-day"
+          input-id="appointment-day"
           v-model="form.day"
           :options="dayOptions"
           option-label="label"
@@ -163,7 +163,7 @@ function cancel() {
       <div class="appointment-form-dialog__field">
         <label for="appointment-time">{{ t('appointments.form.timeLabel') }}</label>
         <Select
-          id="appointment-time"
+          input-id="appointment-time"
           v-model="form.time"
           :options="timeOptions"
           option-label="label"
@@ -173,7 +173,7 @@ function cancel() {
       <div class="appointment-form-dialog__field">
         <label for="appointment-duration">{{ t('appointments.form.durationLabel') }}</label>
         <Select
-          id="appointment-duration"
+          input-id="appointment-duration"
           v-model="form.durationMinutes"
           :options="durationOptions"
           option-label="label"
@@ -194,6 +194,8 @@ function cancel() {
       <Select
         v-if="form.recurring"
         v-model="form.recurrenceIntervalMonths"
+        input-id="appointment-recurrence-interval"
+        :aria-label="t('appointments.form.recurringLabel')"
         class="appointment-form-dialog__recurrence-interval"
         :options="recurrenceIntervalOptions"
         option-label="label"
