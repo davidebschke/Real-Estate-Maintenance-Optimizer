@@ -1,0 +1,32 @@
+.appointment-ai-suggestion-banner {
+  align-items: center;
+  background-color: var(--remo-appointment-ai-banner-bg-color, #3a2c1a);
+  border: 1px solid var(--remo-appointment-ai-banner-border-color, #b98a45);
+  border-radius: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.appointment-ai-suggestion-banner__text {
+  color: var(--remo-appointment-ai-banner-text-color, #eadcc4);
+  flex: 1 1 16rem;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.appointment-ai-suggestion-banner__action {
+  background-color: var(--remo-appointment-ai-banner-border-color, #b98a45);
+  border-color: var(--remo-appointment-ai-banner-border-color, #b98a45);
+  color: #1a1408;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .appointment-ai-suggestion-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
