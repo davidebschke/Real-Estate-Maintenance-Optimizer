@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { i18n } from '@/i18n'
 import AppCalendar from '@/components/calendar/AppCalendar.vue'
 
@@ -10,7 +11,7 @@ afterEach(() => {
 describe('AppCalendar', () => {
   it('renders the toolbar defaulting to the week view', () => {
     const wrapper = mount(AppCalendar, {
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n, createPinia()] },
     })
 
     expect(wrapper.find('.calendar-toolbar').exists()).toBe(true)
@@ -22,7 +23,7 @@ describe('AppCalendar', () => {
 
   it('switches the active view when a different view button is clicked', async () => {
     const wrapper = mount(AppCalendar, {
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n, createPinia()] },
     })
 
     const dayButton = wrapper
