@@ -1,0 +1,21 @@
+.appointment-property-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.appointment-property-select__label {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.appointment-property-select__input {
+  width: 100%;
+}
+
+.appointment-property-select__address {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
+  margin: 0;
+}

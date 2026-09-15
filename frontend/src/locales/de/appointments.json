@@ -1,0 +1,72 @@
+{
+  "appointments": {
+    "form": {
+      "title": "Termin anlegen",
+      "titleLabel": "Titel",
+      "titlePlaceholder": "z. B. Kellerreinigung Q3",
+      "property": {
+        "label": "Objekt",
+        "placeholder": "Objekt wählen",
+        "sourceHint": "aus Objektstammdaten"
+      },
+      "descriptionLabel": "Beschreibung",
+      "descriptionPlaceholder": "Was ist zu tun? Zugang, Ansprechpartner, Besonderheiten.",
+      "dayLabel": "Tag",
+      "timeLabel": "Uhrzeit",
+      "durationLabel": "Dauer",
+      "duration": {
+        "options": {
+          "oneHour": "1 Std",
+          "twoHours": "2 Std",
+          "threeHours": "3 Std",
+          "fourHours": "4 Std",
+          "allDay": "Ganztägig"
+        }
+      },
+      "lockedLabel": "Unverschiebbar (Termin mit Dritten, z. B. TÜV)",
+      "recurringLabel": "Dauerauftrag — wiederholen",
+      "recurrenceIntervalPlaceholder": "Intervall wählen",
+      "recurrence": {
+        "options": {
+          "monthly": "jeden Monat",
+          "quarterly": "alle 3 Monate",
+          "semiAnnually": "alle 6 Monate",
+          "yearly": "jährlich"
+        }
+      },
+      "materials": {
+        "label": "Material für den Tag",
+        "placeholder": "+ Material, Enter"
+      },
+      "aiSuggestion": {
+        "text": "Die KI schlägt Mi, 12.08. um 14:00 vor — direkt nach der Wartung Rheinblick, gleicher Stadtteil. Das spart 34 km.",
+        "applyButton": "Vorschlag übernehmen"
+      },
+      "submit": "Termin anlegen",
+      "cancel": "Abbrechen"
+    },
+    "detail": {
+      "back": "‹ Zurück",
+      "lockedBadge": "unverschiebbar",
+      "recurringBadge": "Dauerauftrag · alle {months} Monate",
+      "descriptionHeading": "Beschreibung",
+      "noDescription": "Keine Beschreibung hinterlegt.",
+      "materialsHeading": "Material",
+      "scheduleHeading": "Termin",
+      "lockedHint": "Dieser Termin ist unverschiebbar und kann nicht verlegt werden.",
+      "moveButton": "Verschieben",
+      "saveScheduleButton": "Speichern",
+      "historyHeading": "Historie",
+      "deleteButton": "Termin löschen",
+      "deleteConfirm": {
+        "header": "Termin löschen",
+        "singleMessage": "Soll dieser Termin wirklich gelöscht werden?",
+        "confirm": "Löschen",
+        "cancel": "Abbrechen",
+        "recurringMessage": "Dies ist ein Dauerauftrag. Sollen auch alle weiteren Termine dieser Serie gelöscht werden?",
+        "allFollowing": "Auch alle weiteren löschen",
+        "onlyThisOne": "Nur diesen Termin"
+      }
+    }
+  }
+}

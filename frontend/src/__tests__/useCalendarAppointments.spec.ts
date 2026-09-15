@@ -1,20 +1,35 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
+import { useAppointmentsStore } from '@/stores/appointments'
 import type { Appointment } from '@/types/appointment'
 
 /** Builds a sample appointment for tests, with overridable fields. */
 function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
   return {
     id: '1',
+    seriesId: null,
     title: 'Heizungswartung',
+    propertyId: 'property-1',
     propertyName: 'Sonnenhof',
+    propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+    description: '',
     category: 'maintenance',
     start: new Date(2026, 7, 10, 8, 30),
     end: new Date(2026, 7, 10, 10, 0),
+    locked: false,
+    recurring: false,
+    recurrenceIntervalMonths: null,
+    materials: [],
+    history: [],
     travelDistanceKm: 12,
     ...overrides,
   }
 }
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+})
 
 describe('useCalendarAppointments', () => {
   it('starts with no appointments and no calendar events', () => {
@@ -25,12 +40,14 @@ describe('useCalendarAppointments', () => {
   })
 
   it('converts an appointment into a vue-cal event with formatted date-times and a category class', () => {
-    const { appointments, events } = useCalendarAppointments()
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment()]
 
-    appointments.value = [createAppointment()]
+    const { events } = useCalendarAppointments()
 
     expect(events.value).toEqual([
       {
+        appointmentId: '1',
         start: '2026-08-10 08:30',
         end: '2026-08-10 10:00',
         title: 'Heizungswartung',
@@ -47,9 +64,8 @@ describe('useCalendarAppointments', () => {
   })
 
   it('aggregates the appointment count and travel distance for a given day only', () => {
-    const { appointments, getDaySummary } = useCalendarAppointments()
-
-    appointments.value = [
+    const store = useAppointmentsStore()
+    store.appointments = [
       createAppointment({ id: '1', travelDistanceKm: 12 }),
       createAppointment({
         id: '2',
@@ -64,6 +80,8 @@ describe('useCalendarAppointments', () => {
         travelDistanceKm: 5,
       }),
     ]
+
+    const { getDaySummary } = useCalendarAppointments()
 
     expect(getDaySummary(new Date(2026, 7, 10))).toEqual({
       appointmentCount: 2,

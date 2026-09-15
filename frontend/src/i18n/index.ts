@@ -11,11 +11,29 @@ import statisticsDe from '@/locales/de/statistics.json'
 import statisticsEn from '@/locales/en/statistics.json'
 import propertiesDe from '@/locales/de/properties.json'
 import propertiesEn from '@/locales/en/properties.json'
+import appointmentsDe from '@/locales/de/appointments.json'
+import appointmentsEn from '@/locales/en/appointments.json'
 
 /** Merges all namespaced message files into one locale bundle. */
 const messages = {
-  de: { ...headerDe, ...footerDe, ...overviewDe, ...calendarDe, ...statisticsDe, ...propertiesDe },
-  en: { ...headerEn, ...footerEn, ...overviewEn, ...calendarEn, ...statisticsEn, ...propertiesEn },
+  de: {
+    ...headerDe,
+    ...footerDe,
+    ...overviewDe,
+    ...calendarDe,
+    ...statisticsDe,
+    ...propertiesDe,
+    ...appointmentsDe,
+  },
+  en: {
+    ...headerEn,
+    ...footerEn,
+    ...overviewEn,
+    ...calendarEn,
+    ...statisticsEn,
+    ...propertiesEn,
+    ...appointmentsEn,
+  },
 }
 
 /** Configures vue-i18n with German as default and English as fallback locale. */

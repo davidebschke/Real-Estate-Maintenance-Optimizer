@@ -1,8 +1,10 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { useAppointmentsStore } from '@/stores/appointments'
 import type { Appointment } from '@/types/appointment'
 
 /** Single event object in the shape vue-cal expects, derived from an `Appointment`. */
 export interface VueCalEvent {
+  appointmentId: string
   start: string
   end: string
   title: string
@@ -18,7 +20,8 @@ export interface DayAppointmentSummary {
 
 /** Provides reusable access to the appointments shown on the calendar, in vue-cal's event format and as per-day summaries. */
 export function useCalendarAppointments() {
-  const appointments = ref<Appointment[]>([])
+  const store = useAppointmentsStore()
+  const appointments = computed(() => store.appointments)
 
   const events = computed<VueCalEvent[]>(() => appointments.value.map(toVueCalEvent))
 
@@ -44,6 +47,7 @@ export function useCalendarAppointments() {
 /** Converts an `Appointment` into the event object vue-cal renders on its grid. */
 function toVueCalEvent(appointment: Appointment): VueCalEvent {
   return {
+    appointmentId: appointment.id,
     start: toVueCalDateTime(appointment.start),
     end: toVueCalDateTime(appointment.end),
     title: appointment.title,

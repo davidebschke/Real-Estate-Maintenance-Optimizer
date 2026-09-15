@@ -1,0 +1,72 @@
+{
+  "appointments": {
+    "form": {
+      "title": "Create appointment",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. basement cleaning Q3",
+      "property": {
+        "label": "Property",
+        "placeholder": "Choose a property",
+        "sourceHint": "from property master data"
+      },
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "What needs to be done? Access, contact person, special notes.",
+      "dayLabel": "Day",
+      "timeLabel": "Time",
+      "durationLabel": "Duration",
+      "duration": {
+        "options": {
+          "oneHour": "1 hr",
+          "twoHours": "2 hrs",
+          "threeHours": "3 hrs",
+          "fourHours": "4 hrs",
+          "allDay": "All day"
+        }
+      },
+      "lockedLabel": "Not movable (appointment with a third party, e.g. inspection)",
+      "recurringLabel": "Standing order — repeat",
+      "recurrenceIntervalPlaceholder": "Choose an interval",
+      "recurrence": {
+        "options": {
+          "monthly": "every month",
+          "quarterly": "every 3 months",
+          "semiAnnually": "every 6 months",
+          "yearly": "yearly"
+        }
+      },
+      "materials": {
+        "label": "Materials for the day",
+        "placeholder": "+ Material, Enter"
+      },
+      "aiSuggestion": {
+        "text": "The AI suggests Wed, 08/12 at 2:00 PM — right after the Rheinblick maintenance, same neighborhood. That saves 34 km.",
+        "applyButton": "Apply suggestion"
+      },
+      "submit": "Create appointment",
+      "cancel": "Cancel"
+    },
+    "detail": {
+      "back": "‹ Back",
+      "lockedBadge": "not movable",
+      "recurringBadge": "Standing order · every {months} months",
+      "descriptionHeading": "Description",
+      "noDescription": "No description provided.",
+      "materialsHeading": "Materials",
+      "scheduleHeading": "Schedule",
+      "lockedHint": "This appointment is not movable and cannot be rescheduled.",
+      "moveButton": "Reschedule",
+      "saveScheduleButton": "Save",
+      "historyHeading": "History",
+      "deleteButton": "Delete appointment",
+      "deleteConfirm": {
+        "header": "Delete appointment",
+        "singleMessage": "Do you really want to delete this appointment?",
+        "confirm": "Delete",
+        "cancel": "Cancel",
+        "recurringMessage": "This is a standing order. Should every following appointment in this series be deleted too?",
+        "allFollowing": "Delete all following too",
+        "onlyThisOne": "Only this appointment"
+      }
+    }
+  }
+}
