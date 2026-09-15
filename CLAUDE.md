@@ -119,7 +119,8 @@ Binding Git workflow (remote, main branch, code owner, branch/PR process) is def
 ## 10. Notes for Claude Code
 
 - Binding documentation conventions are defined in [`.claude/rules/documentation.md`](.claude/rules/documentation.md). `CLAUDE.md` must be reviewed and updated every time something changes in the repository.
-- All files under `.claude/rules/` are binding in addition to this document, including the coding conventions (Section 5), the folder structure (Section 4), testing conventions (Section 8), and Git workflow (Section 9) referenced above.
+- All files under `.claude/rules/` are binding in addition to this document, including the coding conventions (Section 5), the folder structure (Section 4), testing conventions (Section 8), Git workflow (Section 9), and the GitHub Wiki sync rule ([`.claude/rules/wiki.md`](.claude/rules/wiki.md)) referenced above.
+- After every content-relevant change (not a pure typo/formatting fix), check whether the corresponding page(s) in the project's GitHub Wiki also need updating — see [`.claude/rules/wiki.md`](.claude/rules/wiki.md) for which source files map to which Wiki pages and how to push the update.
 - `CLAUDE.md` itself must stay a short entry point/router: detailed, fast-changing implementation status belongs in `backend/readme_backend_*.md` / `frontend/readme_frontend_*.md`, the full folder tree belongs in `.claude/rules/folder-structure.md`, and full feature descriptions belong in `README.md` — Sections 3, 4 and 6 of this file only hold short summaries pointing to those files. When implementation status changes, update the readmes (or `folder-structure.md`), not a long prose block here.
 - `.claude/skills/` holds project-specific Claude skills (currently empty).
 - Review security-relevant changes (Spring Security, JWT) especially carefully and never merge without tests.
