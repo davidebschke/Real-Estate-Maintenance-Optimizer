@@ -2,7 +2,8 @@
 
 Binding documentation conventions for the Real-Estate-Maintenance-Optimizer repository. Referenced from `CLAUDE.md`, Section 10.
 
-- `CLAUDE.md` must be checked every time something changes in the repository (code, folder structure, branches, dependencies) and updated accordingly if it no longer reflects the current state.
-- Before generating any code, check whether the actual folder structure has already changed and update Section 4 accordingly.
-- Keep `README.md` and the files under `.claude/rules/` in sync with the actual project state.
-- Whenever the frontend or backend folder structure, technologies, or conventions change, check `frontend/readme_frontend_de.md`, `frontend/readme_frontend_en.md`, `backend/readme_backend_de.md`, and `backend/readme_backend_en.md`, and update them if they no longer reflect the current state. Keep both language versions of each pair in sync with each other.
+- `CLAUDE.md` must be checked every time something changes in the repository (code, folder structure, branches, dependencies) and updated accordingly if it no longer reflects the current state. `CLAUDE.md` itself stays a short entry point: it must not accumulate detailed implementation-status prose or the full folder tree — those live in the canonical locations below, and `CLAUDE.md` only links to them.
+- **Canonical location for detailed implementation status** (which controllers/services/components exist, what they do, why): `backend/readme_backend_de.md` / `readme_backend_en.md` and `frontend/readme_frontend_de.md` / `readme_frontend_en.md`. Update these whenever backend or frontend functionality, folder structure, technologies, or conventions change; keep both language versions of each pair in sync with each other. `CLAUDE.md` Section 3 only holds a short summary pointing here.
+- **Canonical location for the folder tree**: `.claude/rules/folder-structure.md`. Before generating any code, check whether the actual folder structure has already changed and update that file accordingly. `CLAUDE.md` Section 4 only links to it.
+- **Canonical location for full feature descriptions**: the root `README.md` (English & German). `CLAUDE.md` Section 6 only holds a short reference list pointing here.
+- Keep `README.md` and all files under `.claude/rules/` in sync with the actual project state.
