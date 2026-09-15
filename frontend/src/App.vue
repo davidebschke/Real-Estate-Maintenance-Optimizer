@@ -1,7 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterView } from 'vue-router'
+import ConfirmDialog from 'primevue/confirmdialog'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import AppointmentFormDialog from '@/components/appointments/AppointmentFormDialog.vue'
+import AppointmentDetailDrawer from '@/components/appointments/AppointmentDetailDrawer.vue'
+import { useAppointmentsStore } from '@/stores/appointments'
+
+const appointmentsStore = useAppointmentsStore()
+
+/** Whether the detail drawer is open, derived from which appointment (if any) is active. */
+const isDetailVisible = computed({
+  get: () => appointmentsStore.activeDetailAppointmentId !== null,
+  set: (value: boolean) => {
+    if (!value) appointmentsStore.closeDetail()
+  },
+})
 </script>
 
 <template>
@@ -11,6 +26,13 @@ import AppFooter from '@/components/layout/AppFooter.vue'
       <RouterView />
     </main>
     <AppFooter />
+
+    <AppointmentFormDialog v-model:visible="appointmentsStore.isCreateDialogOpen" />
+    <AppointmentDetailDrawer
+      v-model:visible="isDetailVisible"
+      :appointment-id="appointmentsStore.activeDetailAppointmentId"
+    />
+    <ConfirmDialog />
   </div>
 </template>
 

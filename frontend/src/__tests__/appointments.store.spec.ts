@@ -87,7 +87,10 @@ describe('useAppointmentsStore', () => {
 
     await store.moveAppointment('1', { start: moved.start, durationMinutes: 60 })
 
-    expect(appointmentService.moveAppointment).toHaveBeenCalledWith('1', { start: moved.start, durationMinutes: 60 })
+    expect(appointmentService.moveAppointment).toHaveBeenCalledWith('1', {
+      start: moved.start,
+      durationMinutes: 60,
+    })
     expect(store.appointments).toEqual([moved])
   })
 

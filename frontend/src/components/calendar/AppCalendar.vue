@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import VueCal from 'vue-cal'
 import 'vue-cal/dist/vuecal.css'
 import deLocale from 'vue-cal/dist/i18n/de.es.js'
@@ -10,15 +10,26 @@ import CalendarEventCard from '@/components/calendar/CalendarEventCard.vue'
 import { useLocale } from '@/composables/useLocale'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
-import type { VueCalSlotEvent, VueCalWeekdayHeading } from '@/types/vue-cal'
+import { useAppointmentsStore } from '@/stores/appointments'
+import type { VueCalEventClickEvent, VueCalSlotEvent, VueCalWeekdayHeading } from '@/types/vue-cal'
 
 const { currentLocale } = useLocale()
 const { vueCalRef, activeView, rangeLabel, handleViewChange, goToPrevious, goToNext, goToToday } =
   useCalendarNavigation()
 const { events, getDaySummary } = useCalendarAppointments()
+const appointmentsStore = useAppointmentsStore()
 
 /** Locale bundle for vue-cal's own built-in labels (weekday/month names), matching the active app locale. */
 const vueCalLocale = computed(() => (currentLocale.value === 'de' ? deLocale : enLocale))
+
+/** Opens the detail view for the clicked appointment. */
+function handleEventClick(event: VueCalEventClickEvent) {
+  appointmentsStore.openDetail(event.appointmentId)
+}
+
+onMounted(() => {
+  appointmentsStore.fetchAppointments()
+})
 </script>
 
 <template>
@@ -43,6 +54,7 @@ const vueCalLocale = computed(() => (currentLocale.value === 'de' ? deLocale : e
       :time-step="60"
       :hide-title-bar="true"
       :hide-view-selector="true"
+      :on-event-click="handleEventClick"
       @view-change="handleViewChange"
     >
       <template #weekday-heading="{ heading }: { heading: VueCalWeekdayHeading }">

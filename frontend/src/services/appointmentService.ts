@@ -73,16 +73,25 @@ export async function createAppointment(payload: CreateAppointmentPayload): Prom
 }
 
 /** Reschedules an unlocked appointment to a new start and duration. */
-export async function moveAppointment(id: string, payload: MoveAppointmentPayload): Promise<Appointment> {
-  const { data } = await axios.patch<AppointmentResponseDto>(`${apiBaseUrl}/api/appointments/${id}/schedule`, {
-    start: toLocalDateTimeString(payload.start),
-    durationMinutes: payload.durationMinutes,
-  })
+export async function moveAppointment(
+  id: string,
+  payload: MoveAppointmentPayload,
+): Promise<Appointment> {
+  const { data } = await axios.patch<AppointmentResponseDto>(
+    `${apiBaseUrl}/api/appointments/${id}/schedule`,
+    {
+      start: toLocalDateTimeString(payload.start),
+      durationMinutes: payload.durationMinutes,
+    },
+  )
   return toAppointment(data)
 }
 
 /** Deletes an appointment; scope "series" also deletes every not-yet-past occurrence of its recurring series. */
-export async function deleteAppointment(id: string, scope: AppointmentDeleteScope = 'single'): Promise<void> {
+export async function deleteAppointment(
+  id: string,
+  scope: AppointmentDeleteScope = 'single',
+): Promise<void> {
   await axios.delete(`${apiBaseUrl}/api/appointments/${id}`, { params: { scope } })
 }
 
@@ -103,7 +112,10 @@ function toAppointment(dto: AppointmentResponseDto): Appointment {
     recurring: dto.recurring,
     recurrenceIntervalMonths: dto.recurrenceIntervalMonths,
     materials: dto.materials,
-    history: dto.history.map((entry) => ({ timestamp: new Date(entry.timestamp), message: entry.message })),
+    history: dto.history.map((entry) => ({
+      timestamp: new Date(entry.timestamp),
+      message: entry.message,
+    })),
     travelDistanceKm: 0,
   }
 }

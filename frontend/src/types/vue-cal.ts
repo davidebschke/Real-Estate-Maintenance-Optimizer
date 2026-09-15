@@ -16,6 +16,7 @@ export interface VueCalWeekdayHeading {
 
 /** Event data passed to the `event` scoped slot, with start/end already parsed into `Date` objects. */
 export interface VueCalSlotEvent {
+  appointmentId: string
   start: Date
   end: Date
   title: string
@@ -25,11 +26,17 @@ export interface VueCalSlotEvent {
 
 /** Event object in the shape the `events` prop expects, with start/end as `YYYY-MM-DD HH:mm` strings. */
 export interface VueCalEventInput {
+  appointmentId: string
   start: string
   end: string
   title: string
   content: string
   class: string
+}
+
+/** Payload vue-cal passes to the `event-click` listener when an event is clicked. */
+export interface VueCalEventClickEvent {
+  appointmentId: string
 }
 
 /** Props accepted by the vue-cal component that this application actually uses. */
@@ -43,6 +50,7 @@ export interface VueCalProps {
   timeStep?: number
   hideTitleBar?: boolean
   hideViewSelector?: boolean
+  onEventClick?: (event: VueCalEventClickEvent, domEvent: Event) => void
 }
 
 /** Public instance API exposed by vue-cal through a template ref. */

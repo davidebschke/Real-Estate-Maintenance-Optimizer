@@ -1,7 +1,11 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as appointmentService from '@/services/appointmentService'
-import type { AppointmentDeleteScope, CreateAppointmentPayload, MoveAppointmentPayload } from '@/services/appointmentService'
+import type {
+  AppointmentDeleteScope,
+  CreateAppointmentPayload,
+  MoveAppointmentPayload,
+} from '@/services/appointmentService'
 import type { Appointment } from '@/types/appointment'
 
 /** Holds every appointment and the create/detail overlay state shared across the app. */

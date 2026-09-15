@@ -1,0 +1,117 @@
+.appointment-detail-drawer {
+  width: min(28rem, 100vw);
+}
+
+.appointment-detail-drawer :deep(.p-drawer-content) {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.appointment-detail-drawer__back {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+}
+
+.appointment-detail-drawer__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.appointment-detail-drawer__badge {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-radius: 999px;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+}
+
+.appointment-detail-drawer__badge--locked {
+  background-color: var(--remo-appointment-ai-banner-bg-color, #3a2c1a);
+  color: var(--remo-appointment-ai-banner-border-color, #b98a45);
+}
+
+.appointment-detail-drawer__title {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.appointment-detail-drawer__property {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.appointment-detail-drawer__section h3 {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.375rem;
+  text-transform: uppercase;
+}
+
+.appointment-detail-drawer__section p {
+  margin: 0;
+}
+
+.appointment-detail-drawer__materials,
+.appointment-detail-drawer__history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.appointment-detail-drawer__materials li::before {
+  content: '✓ ';
+  color: var(--remo-calendar-accent-color, #3b82f6);
+}
+
+.appointment-detail-drawer__history li {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+}
+
+.appointment-detail-drawer__locked-hint {
+  color: var(--remo-appointment-ai-banner-border-color, #b98a45);
+  font-size: 0.85rem;
+}
+
+.appointment-detail-drawer__schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.appointment-detail-drawer__schedule-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.appointment-detail-drawer__schedule-actions button[type='button'] {
+  background: none;
+  border: none;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.appointment-detail-drawer__delete {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 30rem) {
+  .appointment-detail-drawer {
+    width: 100vw;
+  }
+}
