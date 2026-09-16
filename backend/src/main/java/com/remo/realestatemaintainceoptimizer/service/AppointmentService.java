@@ -93,7 +93,8 @@ public class AppointmentService {
                     request.recurring(),
                     request.recurrenceIntervalMonths(),
                     materials,
-                    List.of(new HistoryEntry(Instant.now(), HistoryEventType.CREATED, List.of())));
+                    List.of(new HistoryEntry(Instant.now(), HistoryEventType.CREATED, List.of())),
+                    null);
 
             repository.save(occurrence);
             if (occurrenceIndex == 0) {
