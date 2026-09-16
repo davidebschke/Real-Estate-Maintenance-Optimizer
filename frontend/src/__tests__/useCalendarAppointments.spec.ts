@@ -23,6 +23,8 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     materials: [],
     history: [],
     travelDistanceKm: 12,
+    actualEnd: null,
+    completed: false,
     ...overrides,
   }
 }

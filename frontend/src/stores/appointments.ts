@@ -33,6 +33,20 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     return moved
   }
 
+  /** Marks an appointment as completed with the current time as its actual end, and refreshes the local list. */
+  async function completeAppointment(id: string) {
+    const completed = await appointmentService.completeAppointment(id)
+    await fetchAppointments()
+    return completed
+  }
+
+  /** Reverts a completed appointment back to its not-yet-completed state, and refreshes the local list. */
+  async function reopenAppointment(id: string) {
+    const reopened = await appointmentService.reopenAppointment(id)
+    await fetchAppointments()
+    return reopened
+  }
+
   /** Deletes an appointment (optionally its whole recurring series) and refreshes the local list. */
   async function deleteAppointment(id: string, scope: AppointmentDeleteScope = 'single') {
     await appointmentService.deleteAppointment(id, scope)
@@ -66,6 +80,8 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     fetchAppointments,
     createAppointment,
     moveAppointment,
+    completeAppointment,
+    reopenAppointment,
     deleteAppointment,
     openCreateDialog,
     closeCreateDialog,
