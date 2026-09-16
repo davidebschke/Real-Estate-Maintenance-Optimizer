@@ -176,6 +176,8 @@ public class AppointmentService {
         String messageKey = switch (entry.type()) {
             case CREATED -> "appointment.history.created";
             case MOVED -> "appointment.history.moved";
+            case COMPLETED -> "appointment.history.completed";
+            case REOPENED -> "appointment.history.reopened";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
     }

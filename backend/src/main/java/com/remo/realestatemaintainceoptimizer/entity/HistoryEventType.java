@@ -5,5 +5,7 @@ package com.remo.realestatemaintainceoptimizer.entity;
  */
 public enum HistoryEventType {
     CREATED,
-    MOVED
+    MOVED,
+    COMPLETED,
+    REOPENED
 }
