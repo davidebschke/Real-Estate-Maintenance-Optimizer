@@ -8,7 +8,7 @@
     "card": {
       "openAppointments": "Open appointments",
       "completedAppointments": "Completed appointments",
-      "nextAppointment": "Next appointment",
+      "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment"
     }
   }

@@ -105,13 +105,14 @@ describe('PropertyCard', () => {
         property: createProperty(),
         openCount: 1,
         completedCount: 0,
-        nextAppointment: createAppointment({ id: '42' }),
+        nextAppointment: createAppointment({ id: '42', title: 'Heizungswartung' }),
       },
       global: { plugins: [i18n] },
     })
 
     const link = wrapper.find('.property-card__next-appointment')
     expect(link.exists()).toBe(true)
+    expect(link.text()).toContain('Nächster Termin: Heizungswartung')
     expect(link.text()).toContain('20.08.2026')
 
     await link.trigger('click')

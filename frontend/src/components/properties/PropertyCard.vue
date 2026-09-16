@@ -60,7 +60,7 @@ const nextAppointmentLabel = computed(() => {
       @click="$emit('open-appointment', nextAppointment.id)"
     >
       <span class="property-card__next-appointment-label">{{
-        t('properties.card.nextAppointment')
+        t('properties.card.nextAppointment', { title: nextAppointment.title })
       }}</span>
       <span class="property-card__next-appointment-value">{{ nextAppointmentLabel }}</span>
     </button>

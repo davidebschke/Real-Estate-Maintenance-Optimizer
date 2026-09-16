@@ -8,7 +8,7 @@
     "card": {
       "openAppointments": "Offene Aufträge",
       "completedAppointments": "Erledigte Aufträge",
-      "nextAppointment": "Nächster Termin",
+      "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin"
     }
   }
