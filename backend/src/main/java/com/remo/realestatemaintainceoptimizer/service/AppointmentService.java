@@ -169,7 +169,9 @@ public class AppointmentService {
                 appointment.recurring(),
                 appointment.recurrenceIntervalMonths(),
                 appointment.materials(),
-                history);
+                history,
+                appointment.actualEnd(),
+                appointment.completed());
     }
 
     private String localize(HistoryEntry entry, Locale locale) {
