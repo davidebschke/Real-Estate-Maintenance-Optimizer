@@ -7,3 +7,4 @@ Binding coding conventions for the Real-Estate-Maintenance-Optimizer repository.
 - **Functions/methods:** always designed to be reusable, no one-off solutions for special cases.
 - **Commit messages:** meaningful, Conventional Commits style (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`), as already practiced in the existing history.
 - **Branch names:** scheme `<issue-number>-<short-description>` (e.g. `4-chore-refaktor-folder-structure-from-frontend`).
+- **Minimal-diff editing:** when changing existing code or documentation, edit only the specific line(s)/sentence(s) that actually need to change, not the surrounding section, function, or file, unless the task explicitly calls for a rewrite of that larger scope. Use a targeted edit rather than rewriting a whole block just to change one part of it.
