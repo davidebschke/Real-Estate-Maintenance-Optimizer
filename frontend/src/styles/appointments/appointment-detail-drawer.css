@@ -66,6 +66,11 @@
   color: var(--remo-appointment-ai-banner-border-color, #b98a45);
 }
 
+.appointment-detail-drawer__badge--completed {
+  background-color: var(--remo-appointment-completed-bg-color, #1e3a2a);
+  color: var(--remo-appointment-completed-color, #4ade80);
+}
+
 .appointment-detail-drawer__title {
   color: var(--remo-calendar-text-color, #f5f5f5);
   font-size: 1.5rem;
@@ -152,8 +157,10 @@
   font-size: 1rem;
 }
 
-.appointment-detail-drawer__delete {
-  align-self: flex-start;
+.appointment-detail-drawer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-top: 1rem;
 }
 

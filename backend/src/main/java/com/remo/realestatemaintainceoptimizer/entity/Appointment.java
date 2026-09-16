@@ -21,7 +21,15 @@ public record Appointment(
         boolean recurring,
         Integer recurrenceIntervalMonths,
         List<String> materials,
-        List<HistoryEntry> history) {
+        List<HistoryEntry> history,
+        LocalDateTime actualEnd) {
+
+    /**
+     * Returns whether this appointment has been marked as completed.
+     */
+    public boolean completed() {
+        return actualEnd != null;
+    }
 
     /**
      * Returns a copy of this appointment with new schedule bounds and an appended history entry.
@@ -30,7 +38,17 @@ public record Appointment(
         return new Appointment(
                 id, seriesId, title, propertyId, propertyName, propertyAddress, description,
                 newStart, newEnd, locked, recurring, recurrenceIntervalMonths, materials,
-                appendedHistory(historyEntry));
+                appendedHistory(historyEntry), actualEnd);
+    }
+
+    /**
+     * Returns a copy of this appointment with a new actual-end/completion state and an appended history entry.
+     */
+    public Appointment withActualEnd(LocalDateTime newActualEnd, HistoryEntry historyEntry) {
+        return new Appointment(
+                id, seriesId, title, propertyId, propertyName, propertyAddress, description,
+                start, end, locked, recurring, recurrenceIntervalMonths, materials,
+                appendedHistory(historyEntry), newActualEnd);
     }
 
     private List<HistoryEntry> appendedHistory(HistoryEntry historyEntry) {

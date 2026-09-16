@@ -25,6 +25,8 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     materials: [],
     history: [],
     travelDistanceKm: 0,
+    actualEnd: null,
+    completed: false,
     ...overrides,
   }
 }
@@ -34,6 +36,8 @@ beforeEach(() => {
   vi.mocked(appointmentService.fetchAppointments).mockReset()
   vi.mocked(appointmentService.createAppointment).mockReset()
   vi.mocked(appointmentService.moveAppointment).mockReset()
+  vi.mocked(appointmentService.completeAppointment).mockReset()
+  vi.mocked(appointmentService.reopenAppointment).mockReset()
   vi.mocked(appointmentService.deleteAppointment).mockReset()
 })
 
@@ -92,6 +96,30 @@ describe('useAppointmentsStore', () => {
       durationMinutes: 60,
     })
     expect(store.appointments).toEqual([moved])
+  })
+
+  it('completes an appointment and refreshes the list', async () => {
+    const completed = createAppointment({ completed: true, actualEnd: new Date(2026, 7, 11, 14, 30) })
+    vi.mocked(appointmentService.completeAppointment).mockResolvedValue(completed)
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([completed])
+    const store = useAppointmentsStore()
+
+    await store.completeAppointment('1')
+
+    expect(appointmentService.completeAppointment).toHaveBeenCalledWith('1')
+    expect(store.appointments).toEqual([completed])
+  })
+
+  it('reopens a completed appointment and refreshes the list', async () => {
+    const reopened = createAppointment({ completed: false, actualEnd: null })
+    vi.mocked(appointmentService.reopenAppointment).mockResolvedValue(reopened)
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([reopened])
+    const store = useAppointmentsStore()
+
+    await store.reopenAppointment('1')
+
+    expect(appointmentService.reopenAppointment).toHaveBeenCalledWith('1')
+    expect(store.appointments).toEqual([reopened])
   })
 
   it('deletes an appointment with the given scope and refreshes the list', async () => {

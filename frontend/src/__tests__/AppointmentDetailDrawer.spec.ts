@@ -33,6 +33,8 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     materials: ['Kehrmaschine'],
     history: [{ timestamp: new Date(2026, 7, 1, 10, 0), message: 'Termin erstellt.' }],
     travelDistanceKm: 0,
+    actualEnd: null,
+    completed: false,
     ...overrides,
   }
 }
@@ -41,6 +43,8 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
   vi.mocked(appointmentService.moveAppointment).mockReset()
+  vi.mocked(appointmentService.completeAppointment).mockReset()
+  vi.mocked(appointmentService.reopenAppointment).mockReset()
   vi.mocked(appointmentService.deleteAppointment).mockReset()
   document.body.innerHTML = ''
 })
@@ -104,6 +108,38 @@ describe('AppointmentDetailDrawer', () => {
       '1',
       expect.objectContaining({ start: new Date(2026, 7, 12, 9, 0), durationMinutes: 60 }),
     )
+  })
+
+  it('marks an appointment as completed', async () => {
+    vi.mocked(appointmentService.completeAppointment).mockResolvedValue(
+      createAppointment({ completed: true, actualEnd: new Date(2026, 7, 11, 14, 30) }),
+    )
+    const { wrapper } = await mountDrawer(createAppointment())
+
+    const completeButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Als erledigt markieren')
+    await completeButton!.trigger('click')
+    await flushPromises()
+
+    expect(appointmentService.completeAppointment).toHaveBeenCalledWith('1')
+  })
+
+  it('shows a completed badge and a revert button for a completed appointment', async () => {
+    vi.mocked(appointmentService.reopenAppointment).mockResolvedValue(createAppointment())
+    const { wrapper } = await mountDrawer(
+      createAppointment({ completed: true, actualEnd: new Date(2026, 7, 11, 14, 30) }),
+    )
+
+    expect(document.body.querySelector('.appointment-detail-drawer__badge--completed')).not.toBeNull()
+
+    const reopenButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Erledigt-Status zurücksetzen')
+    await reopenButton!.trigger('click')
+    await flushPromises()
+
+    expect(appointmentService.reopenAppointment).toHaveBeenCalledWith('1')
   })
 
   it('asks for confirmation and deletes the appointment', async () => {

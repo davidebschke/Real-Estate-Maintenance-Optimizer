@@ -20,5 +20,7 @@ public record AppointmentResponse(
         boolean recurring,
         Integer recurrenceIntervalMonths,
         List<String> materials,
-        List<HistoryEntryResponse> history) {
+        List<HistoryEntryResponse> history,
+        LocalDateTime actualEnd,
+        boolean completed) {
 }

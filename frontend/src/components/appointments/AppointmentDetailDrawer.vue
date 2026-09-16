@@ -42,6 +42,14 @@ const scheduleRangeLabel = computed(() => {
   return `${dayFormatter.format(appointment.value.start)} · ${timeFormatter.format(appointment.value.start)}–${timeFormatter.format(appointment.value.end)}`
 })
 
+const actualEndTimeLabel = computed(() => {
+  if (!appointment.value?.actualEnd) return ''
+  return new Intl.DateTimeFormat(currentLocale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(appointment.value.actualEnd)
+})
+
 const timeOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value, 120))
 const durationOptions = computed(() =>
@@ -90,6 +98,18 @@ function close() {
   visible.value = false
 }
 
+/** Marks the appointment as completed with the current time as its actual end. */
+async function markCompleted() {
+  if (!appointment.value) return
+  await store.completeAppointment(appointment.value.id)
+}
+
+/** Reverts the appointment back to its not-yet-completed state. */
+async function reopen() {
+  if (!appointment.value) return
+  await store.reopenAppointment(appointment.value.id)
+}
+
 /** Asks for delete confirmation, then deletes the appointment and closes the detail view. */
 function requestDelete() {
   const current = appointment.value
@@ -123,6 +143,12 @@ function requestDelete() {
               months: appointment.recurrenceIntervalMonths,
             })
           }}
+        </span>
+        <span
+          v-if="appointment.completed"
+          class="appointment-detail-drawer__badge appointment-detail-drawer__badge--completed"
+        >
+          {{ t('appointments.detail.completedBadge', { time: actualEndTimeLabel }) }}
         </span>
       </div>
 
@@ -207,13 +233,31 @@ function requestDelete() {
         </ul>
       </section>
 
-      <Button
-        class="appointment-detail-drawer__delete"
-        :label="t('appointments.detail.deleteButton')"
-        severity="danger"
-        size="small"
-        @click="requestDelete"
-      />
+      <div class="appointment-detail-drawer__actions">
+        <Button
+          v-if="!appointment.completed"
+          class="appointment-detail-drawer__complete"
+          :label="t('appointments.detail.completeButton')"
+          severity="success"
+          size="small"
+          @click="markCompleted"
+        />
+        <Button
+          v-else
+          class="appointment-detail-drawer__reopen"
+          :label="t('appointments.detail.reopenButton')"
+          severity="secondary"
+          size="small"
+          @click="reopen"
+        />
+        <Button
+          class="appointment-detail-drawer__delete"
+          :label="t('appointments.detail.deleteButton')"
+          severity="danger"
+          size="small"
+          @click="requestDelete"
+        />
+      </div>
     </template>
   </Drawer>
 </template>

@@ -48,3 +48,9 @@
   border-left-color: #8a6fd8;
   color: #d6ccf0;
 }
+
+.calendar-event--completed .calendar-event-card {
+  background-color: #262a2c;
+  border-left-color: #6b7280;
+  color: #a9afb8;
+}

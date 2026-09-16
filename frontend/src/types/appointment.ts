@@ -25,4 +25,6 @@ export interface Appointment {
   materials: string[]
   history: AppointmentHistoryEntry[]
   travelDistanceKm: number
+  actualEnd: Date | null
+  completed: boolean
 }

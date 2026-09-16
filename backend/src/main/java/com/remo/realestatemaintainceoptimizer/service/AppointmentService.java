@@ -93,7 +93,8 @@ public class AppointmentService {
                     request.recurring(),
                     request.recurrenceIntervalMonths(),
                     materials,
-                    List.of(new HistoryEntry(Instant.now(), HistoryEventType.CREATED, List.of())));
+                    List.of(new HistoryEntry(Instant.now(), HistoryEventType.CREATED, List.of())),
+                    null);
 
             repository.save(occurrence);
             if (occurrenceIndex == 0) {
@@ -123,6 +124,32 @@ public class AppointmentService {
         Appointment moved = appointment.withSchedule(newStart, newEnd, moveEntry);
         repository.save(moved);
         return toResponse(moved);
+    }
+
+    /**
+     * Marks an appointment as completed with the current time as its actual end.
+     */
+    public AppointmentResponse complete(String id) {
+        Appointment appointment = loadOrThrow(id);
+        LocalDateTime actualEnd = LocalDateTime.now();
+        HistoryEntry completedEntry = new HistoryEntry(
+                Instant.now(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(actualEnd)));
+
+        Appointment completed = appointment.withActualEnd(actualEnd, completedEntry);
+        repository.save(completed);
+        return toResponse(completed);
+    }
+
+    /**
+     * Reverts a completed appointment back to its not-yet-completed state.
+     */
+    public AppointmentResponse reopen(String id) {
+        Appointment appointment = loadOrThrow(id);
+        HistoryEntry reopenedEntry = new HistoryEntry(Instant.now(), HistoryEventType.REOPENED, List.of());
+
+        Appointment reopened = appointment.withActualEnd(null, reopenedEntry);
+        repository.save(reopened);
+        return toResponse(reopened);
     }
 
     /**
@@ -168,13 +195,17 @@ public class AppointmentService {
                 appointment.recurring(),
                 appointment.recurrenceIntervalMonths(),
                 appointment.materials(),
-                history);
+                history,
+                appointment.actualEnd(),
+                appointment.completed());
     }
 
     private String localize(HistoryEntry entry, Locale locale) {
         String messageKey = switch (entry.type()) {
             case CREATED -> "appointment.history.created";
             case MOVED -> "appointment.history.moved";
+            case COMPLETED -> "appointment.history.completed";
+            case REOPENED -> "appointment.history.reopened";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
     }

@@ -1,11 +1,13 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import axios from 'axios'
 import {
+  completeAppointment,
   createAppointment,
   deleteAppointment,
   fetchAppointment,
   fetchAppointments,
   moveAppointment,
+  reopenAppointment,
 } from '@/services/appointmentService'
 import type { AppointmentResponseDto } from '@/services/appointmentService'
 
@@ -28,6 +30,8 @@ function createDto(overrides: Partial<AppointmentResponseDto> = {}): Appointment
     recurrenceIntervalMonths: null,
     materials: ['Kehrmaschine'],
     history: [{ timestamp: '2026-08-01T10:00:00Z', message: 'Termin erstellt.' }],
+    actualEnd: null,
+    completed: false,
     ...overrides,
   }
 }
@@ -99,6 +103,25 @@ describe('appointmentService', () => {
       expect.stringContaining('/api/appointments/1/schedule'),
       { start: '2026-08-12T09:00:00', durationMinutes: 60 },
     )
+  })
+
+  it('completes an appointment', async () => {
+    vi.mocked(axios.patch).mockResolvedValue({ data: createDto({ completed: true, actualEnd: '2026-08-11T14:30:00' }) })
+
+    const appointment = await completeAppointment('1')
+
+    expect(axios.patch).toHaveBeenCalledWith(expect.stringContaining('/api/appointments/1/complete'))
+    expect(appointment.completed).toBe(true)
+    expect(appointment.actualEnd).toEqual(new Date('2026-08-11T14:30:00'))
+  })
+
+  it('reopens a completed appointment', async () => {
+    vi.mocked(axios.patch).mockResolvedValue({ data: createDto() })
+
+    const appointment = await reopenAppointment('1')
+
+    expect(axios.patch).toHaveBeenCalledWith(expect.stringContaining('/api/appointments/1/reopen'))
+    expect(appointment.completed).toBe(false)
   })
 
   it('deletes an appointment with the given scope', async () => {

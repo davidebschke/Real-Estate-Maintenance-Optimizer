@@ -65,14 +65,14 @@ The detailed, current implementation status (which controllers/services/componen
 - `GET /api/version` (`VersionController`) reports the application version from `pom.xml`.
 - Cross-origin access from the frontend dev server is allowed via `CorsConfig`, origin configured through `remo.frontend.base-url`.
 - German/English translation for dynamic (server-generated) text via Spring's `MessageSource` (`backend/src/main/resources/locales/`, `LocalizationConfig`).
-- **Appointments (create/read/move/delete):** fully implemented via `AppointmentController`/`AppointmentService`, including recurrence materialization and locking.
+- **Appointments (create/read/move/delete/complete):** fully implemented via `AppointmentController`/`AppointmentService`, including recurrence materialization, locking, and a completed status (`PATCH .../complete` sets `actualEnd` to now, `PATCH .../reopen` reverts it).
   - **Storage (temporary, deviates from §2.3):** `AppointmentFileRepository` persists each appointment as its own JSON file under `remo.storage.directory` (gitignored) instead of MongoDB — a temporary prototype mechanism; a real database is expected to replace it later without changing the REST contract.
 
 ### 3.2 Frontend
 
 - **Layout & navigation:** header/footer and the four main routed views implemented; `OverviewView`, `StatisticsView` and `PropertiesView` currently render only a placeholder, `CalendarView` renders the calendar.
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events.
-- **Appointments (create/read/move/delete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`).
+- **Appointments (create/read/move/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time.
 - **i18n (static UI text):** German/English via `vue-i18n`, German as the active default locale, English as `fallbackLocale`.
 - **Not yet implemented:** account management (non-functional placeholder only). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
 

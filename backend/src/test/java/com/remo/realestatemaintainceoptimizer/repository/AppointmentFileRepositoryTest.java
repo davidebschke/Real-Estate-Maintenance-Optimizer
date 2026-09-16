@@ -96,6 +96,7 @@ class AppointmentFileRepositoryTest {
                 seriesId != null,
                 seriesId != null ? 3 : null,
                 List.of("Kehrmaschine"),
-                List.of(new HistoryEntry(Instant.parse("2026-08-01T10:00:00Z"), HistoryEventType.CREATED, List.of())));
+                List.of(new HistoryEntry(Instant.parse("2026-08-01T10:00:00Z"), HistoryEventType.CREATED, List.of())),
+                null);
     }
 }

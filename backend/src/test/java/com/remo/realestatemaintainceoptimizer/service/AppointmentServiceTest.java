@@ -92,6 +92,29 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void completingAnAppointmentSetsActualEndAndAppendsHistory() {
+        AppointmentResponse created = service.create(createRequest(false, null));
+
+        AppointmentResponse completed = service.complete(created.id());
+
+        assertThat(completed.completed()).isTrue();
+        assertThat(completed.actualEnd()).isNotNull();
+        assertThat(completed.history()).hasSize(2);
+    }
+
+    @Test
+    void reopeningACompletedAppointmentClearsActualEnd() {
+        AppointmentResponse created = service.create(createRequest(false, null));
+        service.complete(created.id());
+
+        AppointmentResponse reopened = service.reopen(created.id());
+
+        assertThat(reopened.completed()).isFalse();
+        assertThat(reopened.actualEnd()).isNull();
+        assertThat(reopened.history()).hasSize(3);
+    }
+
+    @Test
     void deletingWithSingleScopeRemovesOnlyThatOccurrence() {
         AppointmentResponse firstOccurrence = service.create(createRequest(true, 3));
 
