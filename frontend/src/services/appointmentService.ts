@@ -23,6 +23,8 @@ export interface AppointmentResponseDto {
   recurrenceIntervalMonths: number | null
   materials: string[]
   history: AppointmentHistoryEntryDto[]
+  actualEnd: string | null
+  completed: boolean
 }
 
 /** Payload for creating a new appointment. */
@@ -87,6 +89,22 @@ export async function moveAppointment(
   return toAppointment(data)
 }
 
+/** Marks an appointment as completed with the current time as its actual end. */
+export async function completeAppointment(id: string): Promise<Appointment> {
+  const { data } = await axios.patch<AppointmentResponseDto>(
+    `${apiBaseUrl}/api/appointments/${id}/complete`,
+  )
+  return toAppointment(data)
+}
+
+/** Reverts a completed appointment back to its not-yet-completed state. */
+export async function reopenAppointment(id: string): Promise<Appointment> {
+  const { data } = await axios.patch<AppointmentResponseDto>(
+    `${apiBaseUrl}/api/appointments/${id}/reopen`,
+  )
+  return toAppointment(data)
+}
+
 /** Deletes an appointment; scope "series" also deletes every not-yet-past occurrence of its recurring series. */
 export async function deleteAppointment(
   id: string,
@@ -117,6 +135,8 @@ function toAppointment(dto: AppointmentResponseDto): Appointment {
       message: entry.message,
     })),
     travelDistanceKm: 0,
+    actualEnd: dto.actualEnd ? new Date(dto.actualEnd) : null,
+    completed: dto.completed,
   }
 }
 
