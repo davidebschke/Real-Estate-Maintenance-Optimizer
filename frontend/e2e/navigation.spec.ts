@@ -21,7 +21,7 @@ test.describe('main navigation', () => {
     await expect(page).toHaveURL('/statistics')
 
     await page.getByRole('link', { name: 'Immobilien' }).click()
-    await expect(page.getByText('Hier ist die Immobilienseite')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Objekte' })).toBeVisible()
     await expect(page).toHaveURL('/properties')
   })
 

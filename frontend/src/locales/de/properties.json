@@ -1,5 +1,15 @@
 {
   "properties": {
-    "content": "Hier ist die Immobilienseite"
+    "list": {
+      "heading": "Objekte",
+      "empty": "Es sind noch keine Objekte hinterlegt.",
+      "loadError": "Die Objekte konnten nicht geladen werden."
+    },
+    "card": {
+      "openAppointments": "Offene Aufträge",
+      "completedAppointments": "Erledigte Aufträge",
+      "nextAppointment": "Nächster Termin",
+      "noNextAppointment": "Kein anstehender Termin"
+    }
   }
 }

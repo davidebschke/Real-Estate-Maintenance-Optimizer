@@ -8,13 +8,18 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import { i18n } from '@/i18n'
 import AppointmentFormDialog from '@/components/appointments/AppointmentFormDialog.vue'
 import * as appointmentService from '@/services/appointmentService'
+import * as propertyService from '@/services/propertyService'
 
 vi.mock('@/services/appointmentService')
+vi.mock('@/services/propertyService')
 
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(appointmentService.createAppointment).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+  vi.mocked(propertyService.fetchProperties).mockResolvedValue([
+    { id: '1', name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld', icon: 'pi-building' },
+  ])
   document.body.innerHTML = ''
 })
 
