@@ -127,6 +127,32 @@ public class AppointmentService {
     }
 
     /**
+     * Marks an appointment as completed with the current time as its actual end.
+     */
+    public AppointmentResponse complete(String id) {
+        Appointment appointment = loadOrThrow(id);
+        LocalDateTime actualEnd = LocalDateTime.now();
+        HistoryEntry completedEntry = new HistoryEntry(
+                Instant.now(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(actualEnd)));
+
+        Appointment completed = appointment.withActualEnd(actualEnd, completedEntry);
+        repository.save(completed);
+        return toResponse(completed);
+    }
+
+    /**
+     * Reverts a completed appointment back to its not-yet-completed state.
+     */
+    public AppointmentResponse reopen(String id) {
+        Appointment appointment = loadOrThrow(id);
+        HistoryEntry reopenedEntry = new HistoryEntry(Instant.now(), HistoryEventType.REOPENED, List.of());
+
+        Appointment reopened = appointment.withActualEnd(null, reopenedEntry);
+        repository.save(reopened);
+        return toResponse(reopened);
+    }
+
+    /**
      * Deletes a single appointment, or every not-yet-past occurrence of its recurring series when {@code scope} is "series".
      */
     public void delete(String id, String scope) {

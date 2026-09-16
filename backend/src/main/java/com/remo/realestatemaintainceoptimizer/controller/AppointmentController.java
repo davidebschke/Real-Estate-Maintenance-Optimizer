@@ -70,6 +70,22 @@ public class AppointmentController {
     }
 
     /**
+     * Marks an appointment as completed with the current time as its actual end.
+     */
+    @PatchMapping("/{id}/complete")
+    public AppointmentResponse completeAppointment(@PathVariable String id) {
+        return appointmentService.complete(id);
+    }
+
+    /**
+     * Reverts a completed appointment back to its not-yet-completed state.
+     */
+    @PatchMapping("/{id}/reopen")
+    public AppointmentResponse reopenAppointment(@PathVariable String id) {
+        return appointmentService.reopen(id);
+    }
+
+    /**
      * Deletes an appointment; {@code scope=series} also deletes every not-yet-past occurrence of its recurring series.
      */
     @DeleteMapping("/{id}")
