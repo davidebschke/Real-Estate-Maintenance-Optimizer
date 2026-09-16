@@ -15,14 +15,14 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── ViewPlaceholder.vue # reusable placeholder content block used by the not-yet-implemented views
 │   │   │   ├── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
 │   │   │   ├── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard)
-│   │   │   └── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
+│   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
+│   │   │   └── properties/        # property-list building blocks (PropertyList, PropertyCard)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
-│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts)
-│   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation)
-│   │   ├── data/                  # hardcoded example/reference data standing in for a not-yet-built backend (e.g. exampleProperties.ts)
-│   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
+│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts)
+│   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries)
+│   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
@@ -32,6 +32,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
 │   │   │   ├── calendar/          # one CSS file per components/calendar building block (e.g. app-calendar.css, calendar-toolbar.css)
 │   │   │   ├── appointments/      # one CSS file per components/appointments building block (e.g. appointment-form-dialog.css, appointment-detail-drawer.css)
+│   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css)
 │   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   └── __tests__/             # Vitest unit tests
 │   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts)
@@ -40,18 +41,19 @@ Real-Estate-Maintenance-Optimizer/
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties)
-│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, GlobalExceptionHandler)
-│   │   ├── service/                # business logic (e.g. AppointmentService)
-│   │   ├── repository/             # persistence (e.g. AppointmentFileRepository — JSON-file-backed, see backend readme)
-│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties)
+│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GlobalExceptionHandler)
+│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService)
+│   │   ├── repository/             # persistence (e.g. AppointmentFileRepository, PropertyFileRepository — JSON-file-backed, see backend readme)
+│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
-│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest)
+│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
-│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.storage.directory)
+│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.storage.directory, remo.storage.properties.directory)
 │   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (fallback bundle, English), messages_de.properties, messages_en.properties
 │   ├── ExampleTerms/                # gitignored, created at runtime: appointments persisted as one JSON file each (see backend readme)
+│   ├── ExampleObjects/              # checked in (unlike ExampleTerms/), seeded with one JSON file per property since there is no create endpoint yet (see backend readme)
 │   ├── src/test/java/...          # JUnit tests
 │   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version
 ├── .claude/
@@ -70,8 +72,8 @@ Real-Estate-Maintenance-Optimizer/
 com.remo.realestatemaintainceoptimizer
 ├── controller/     # REST endpoints
 ├── service/        # business logic
-├── repository/     # persistence (Spring Data JPA once a database backs it; currently a JSON-file repository for appointments)
-├── entity/         # domain model (JPA entities once a database backs them; currently plain records for appointments)
+├── repository/     # persistence (Spring Data JPA once a database backs it; currently JSON-file repositories for appointments and properties)
+├── entity/         # domain model (JPA entities once a database backs them; currently plain records for appointments and properties)
 ├── dto/            # data transfer objects
 ├── exception/      # domain exceptions mapped to HTTP responses
 ├── security/       # JWT / Spring Security configuration
