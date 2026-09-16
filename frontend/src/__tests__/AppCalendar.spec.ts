@@ -65,6 +65,15 @@ describe('AppCalendar', () => {
     })
   })
 
+  it('hides Sundays from the calendar grid', () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+
+    expect(wrapper.findComponent(VueCal).props('hideWeekdays')).toEqual([7])
+  })
+
   it('opens the detail view for the clicked appointment', () => {
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
     const pinia = createPinia()

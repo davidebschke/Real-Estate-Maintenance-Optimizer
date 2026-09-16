@@ -17,6 +17,16 @@ describe('appointmentSchedulingOptions', () => {
     ])
   })
 
+  it('skips Sundays when generating upcoming days', () => {
+    const options = generateUpcomingDayOptions(new Date(2026, 7, 14), 'de-DE', 3)
+
+    expect(options.map((option) => option.value)).toEqual([
+      '2026-08-14',
+      '2026-08-15',
+      '2026-08-17',
+    ])
+  })
+
   it('generates half-hour time slots within business hours by default', () => {
     const options = generateTimeSlotOptions()
 

@@ -50,6 +50,7 @@ export interface VueCalProps {
   timeStep?: number
   hideTitleBar?: boolean
   hideViewSelector?: boolean
+  hideWeekdays?: number[]
   onEventClick?: (event: VueCalEventClickEvent, domEvent: Event) => void
 }
 
