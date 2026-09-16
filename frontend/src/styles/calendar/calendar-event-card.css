@@ -1,4 +1,6 @@
 .calendar-event-card {
+  container-name: calendar-event;
+  container-type: size;
   border-left: 3px solid var(--remo-calendar-event-border-color, #3b82f6);
   border-radius: 0.25rem;
   display: flex;
@@ -23,6 +25,27 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@container calendar-event (max-height: 2.5rem) {
+  .calendar-event-card {
+    gap: 0;
+    padding: 0.1rem 0.4rem;
+  }
+
+  .calendar-event-card__title {
+    font-size: 0.85rem;
+  }
+
+  .calendar-event-card__meta {
+    display: none;
+  }
+}
+
+@container calendar-event (max-height: 1.25rem) {
+  .calendar-event-card__title {
+    font-size: 0.7rem;
+  }
 }
 
 .calendar-event--maintenance .calendar-event-card {
