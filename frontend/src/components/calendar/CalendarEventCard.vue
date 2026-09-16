@@ -18,10 +18,12 @@ const timeRangeLabel = computed(() => {
   })
   return `${timeFormatter.format(props.start)}–${timeFormatter.format(props.end)}`
 })
+
+const fullLabel = computed(() => `${props.title} · ${props.propertyName} · ${timeRangeLabel.value}`)
 </script>
 
 <template>
-  <div class="calendar-event-card">
+  <div class="calendar-event-card" :title="fullLabel">
     <span class="calendar-event-card__title">{{ title }}</span>
     <span class="calendar-event-card__meta">{{ propertyName }} · {{ timeRangeLabel }}</span>
   </div>
