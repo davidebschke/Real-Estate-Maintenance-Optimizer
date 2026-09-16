@@ -60,6 +60,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 #### 1. 📅 Appointment Overview (`Term Overview`)
 - **Short View:** Clean calendar overview displaying all scheduled tasks.
 - **Detailed View:** Full job context and addresses available upon selection.
+- **Completion Tracking:** Mark a job as done directly from the detail view; it is recolored and its calendar block is drawn to the actual end time.
 
 #### 2. ➕ Appointment Creation (`Term creation`)
 - **Standard Input Form:** Fast manual entry interface.
@@ -128,6 +129,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 #### 1. 📅 Terminübersicht
 - **Kurzansicht:** Übersichtliche Kalenderdarstellung aller anstehenden Termine.
 - **Detailansicht:** Ein Klick öffnet sämtliche Kunden- und Auftragsdetails.
+- **Erledigt-Status:** Ein Auftrag kann direkt in der Detailansicht als erledigt markiert werden; er wird daraufhin farblich hervorgehoben und im Kalender bis zur tatsächlichen Endzeit dargestellt.
 
 #### 2. ➕ Terminerstellung
 - **Eingabemaske:** Schnelle manuelle Erstellung von Aufträgen.
