@@ -59,6 +59,33 @@ describe('useCalendarAppointments', () => {
     ])
   })
 
+  it('shortens a completed event to its actual end and adds the completed class', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [
+      createAppointment({ completed: true, actualEnd: new Date(2026, 7, 10, 9, 15) }),
+    ]
+
+    const { events } = useCalendarAppointments()
+
+    expect(events.value).toEqual([
+      expect.objectContaining({
+        end: '2026-08-10 09:15',
+        class: 'calendar-event--maintenance calendar-event--completed',
+      }),
+    ])
+  })
+
+  it('extends a completed event when the actual end is later than the planned end', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [
+      createAppointment({ completed: true, actualEnd: new Date(2026, 7, 10, 11, 0) }),
+    ]
+
+    const { events } = useCalendarAppointments()
+
+    expect(events.value[0]!.end).toBe('2026-08-10 11:00')
+  })
+
   it('returns null for a day without scheduled appointments', () => {
     const { getDaySummary } = useCalendarAppointments()
 

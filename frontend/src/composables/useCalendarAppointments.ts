@@ -46,13 +46,17 @@ export function useCalendarAppointments() {
 
 /** Converts an `Appointment` into the event object vue-cal renders on its grid. */
 function toVueCalEvent(appointment: Appointment): VueCalEvent {
+  const displayEnd = appointment.completed ? (appointment.actualEnd ?? appointment.end) : appointment.end
+  const classes = [`calendar-event--${appointment.category}`]
+  if (appointment.completed) classes.push('calendar-event--completed')
+
   return {
     appointmentId: appointment.id,
     start: toVueCalDateTime(appointment.start),
-    end: toVueCalDateTime(appointment.end),
+    end: toVueCalDateTime(displayEnd),
     title: appointment.title,
     content: appointment.propertyName,
-    class: `calendar-event--${appointment.category}`,
+    class: classes.join(' '),
   }
 }
 
