@@ -4,6 +4,7 @@ import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
+import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidRecurrence(InvalidRecurrenceException exception, Locale locale) {
         String message = messageSource.getMessage("appointment.error." + exception.reasonCode(), null, locale);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(PropertyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(PropertyNotFoundException exception, Locale locale) {
+        String message = messageSource.getMessage("property.error.notFound", new Object[] {exception.propertyId()}, locale);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

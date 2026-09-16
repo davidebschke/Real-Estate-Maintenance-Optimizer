@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import VueCal from 'vue-cal'
+import { useI18n } from 'vue-i18n'
 import 'vue-cal/dist/vuecal.css'
 import deLocale from 'vue-cal/dist/i18n/de.es.js'
 import enLocale from 'vue-cal/dist/i18n/en.es.js'
@@ -13,14 +14,18 @@ import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
 import { useAppointmentsStore } from '@/stores/appointments'
 import type { VueCalEventClickEvent, VueCalSlotEvent, VueCalWeekdayHeading } from '@/types/vue-cal'
 
+const { t } = useI18n()
 const { currentLocale } = useLocale()
 const { vueCalRef, activeView, rangeLabel, handleViewChange, goToPrevious, goToNext, goToToday } =
   useCalendarNavigation()
 const { events, getDaySummary } = useCalendarAppointments()
 const appointmentsStore = useAppointmentsStore()
 
-/** Locale bundle for vue-cal's own built-in labels (weekday/month names), matching the active app locale. */
-const vueCalLocale = computed(() => (currentLocale.value === 'de' ? deLocale : enLocale))
+/** Locale bundle for vue-cal's own built-in labels (weekday/month names), matching the active app locale, with its default "no event" label overridden to this app's "Termin" terminology. */
+const vueCalLocale = computed(() => ({
+  ...(currentLocale.value === 'de' ? deLocale : enLocale),
+  noEvent: t('calendar.noAppointments'),
+}))
 
 /** Opens the detail view for the clicked appointment. */
 function handleEventClick(event: VueCalEventClickEvent) {

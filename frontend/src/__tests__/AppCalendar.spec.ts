@@ -54,6 +54,17 @@ describe('AppCalendar', () => {
     expect(appointmentService.fetchAppointments).toHaveBeenCalled()
   })
 
+  it("overrides vue-cal's default empty-state label with the app's own appointment terminology", () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+
+    expect(wrapper.findComponent(VueCal).props('locale')).toMatchObject({
+      noEvent: 'Keine Termine',
+    })
+  })
+
   it('opens the detail view for the clicked appointment', () => {
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
     const pinia = createPinia()

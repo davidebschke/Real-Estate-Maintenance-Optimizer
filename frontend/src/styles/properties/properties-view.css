@@ -1,0 +1,5 @@
+.properties-view__heading {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 1.4rem;
+  margin: 0 0 1rem;
+}

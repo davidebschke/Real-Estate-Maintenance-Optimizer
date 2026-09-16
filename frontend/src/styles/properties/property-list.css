@@ -1,0 +1,15 @@
+.property-list {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+}
+
+.property-list__empty,
+.property-list__error {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  grid-column: 1 / -1;
+}
+
+.property-list__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+}

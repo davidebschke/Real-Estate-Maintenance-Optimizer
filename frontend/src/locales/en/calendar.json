@@ -17,6 +17,7 @@
       "appointmentCountSingular": "{count} appointment",
       "appointmentCountPlural": "{count} appointments",
       "travelDistance": "{km} km"
-    }
+    },
+    "noAppointments": "No appointments"
   }
 }

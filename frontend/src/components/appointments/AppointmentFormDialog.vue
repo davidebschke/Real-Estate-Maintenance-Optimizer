@@ -11,8 +11,8 @@ import AppointmentPropertySelect from '@/components/appointments/AppointmentProp
 import AppointmentMaterialInput from '@/components/appointments/AppointmentMaterialInput.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { usePropertiesStore } from '@/stores/properties'
 import { useLocale } from '@/composables/useLocale'
-import { exampleProperties } from '@/data/exampleProperties'
 import {
   DURATION_OPTIONS,
   RECURRENCE_INTERVAL_OPTIONS,
@@ -29,6 +29,7 @@ const visible = defineModel<boolean>('visible', { required: true })
 const { t } = useI18n()
 const { currentLocale } = useLocale()
 const store = useAppointmentsStore()
+const propertiesStore = usePropertiesStore()
 
 const timeOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value))
@@ -91,7 +92,7 @@ function resetForm() {
 async function submit() {
   if (!isValid.value || form.propertyId === null) return
 
-  const property = exampleProperties.find((candidate) => candidate.id === form.propertyId)
+  const property = propertiesStore.properties.find((candidate) => candidate.id === form.propertyId)
   if (!property) return
 
   await store.createAppointment({

@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import Select from 'primevue/select'
 import { useI18n } from 'vue-i18n'
-import { exampleProperties } from '@/data/exampleProperties'
+import { usePropertiesStore } from '@/stores/properties'
 
 const modelValue = defineModel<string | null>({ required: true })
 
 const { t } = useI18n()
+const propertiesStore = usePropertiesStore()
 
 const selectedProperty = computed(
-  () => exampleProperties.find((property) => property.id === modelValue.value) ?? null,
+  () => propertiesStore.properties.find((property) => property.id === modelValue.value) ?? null,
 )
+
+onMounted(() => {
+  propertiesStore.fetchProperties()
+})
 </script>
 
 <template>
@@ -22,7 +27,7 @@ const selectedProperty = computed(
       input-id="appointment-property"
       v-model="modelValue"
       class="appointment-property-select__input"
-      :options="exampleProperties"
+      :options="propertiesStore.properties"
       option-label="name"
       option-value="id"
       :placeholder="t('appointments.form.property.placeholder')"

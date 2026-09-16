@@ -13,3 +13,6 @@ remo:
   storage:
     # Folder (relative to the working directory) holding appointments as JSON files until a database replaces it
     directory: ExampleTerms
+    properties:
+      # Folder (relative to the working directory) holding properties as JSON files until a database replaces it
+      directory: ExampleObjects
