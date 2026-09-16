@@ -21,6 +21,9 @@ const { vueCalRef, activeView, rangeLabel, handleViewChange, goToPrevious, goToN
 const { events, getDaySummary } = useCalendarAppointments()
 const appointmentsStore = useAppointmentsStore()
 
+/** vue-cal's ISO weekday number for Sunday, hidden from every calendar view since the company does not schedule appointments then. */
+const SUNDAY_ISO_WEEKDAY = 7
+
 /** Locale bundle for vue-cal's own built-in labels (weekday/month names), matching the active app locale, with its default "no event" label overridden to this app's "Termin" terminology. */
 const vueCalLocale = computed(() => ({
   ...(currentLocale.value === 'de' ? deLocale : enLocale),
@@ -52,6 +55,7 @@ onMounted(() => {
       v-model:active-view="activeView"
       class="app-calendar__grid"
       :disable-views="['years']"
+      :hide-weekdays="[SUNDAY_ISO_WEEKDAY]"
       :locale="vueCalLocale"
       :events="events"
       :time-from="420"
