@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
+import { usePropertiesStore } from '@/stores/properties'
 import AppointmentMap from '@/components/map/AppointmentMap.vue'
 
 const { t } = useI18n()
+const propertiesStore = usePropertiesStore()
 const { markers, hasGeocodingError } = useAppointmentMapMarkers()
+
+onMounted(() => {
+  propertiesStore.fetchProperties()
+})
 </script>
 
 <template>

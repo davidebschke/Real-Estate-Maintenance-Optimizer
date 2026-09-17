@@ -12,17 +12,21 @@ afterEach(() => {
 })
 
 describe('geocodingService', () => {
-  it('resolves an address to its coordinates', async () => {
-    vi.mocked(axios.get).mockResolvedValue({ data: [{ lat: '50.9333', lon: '6.9333' }] })
+  it('resolves an address to its coordinates via the backend', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: { latitude: 50.9333, longitude: 6.9333 } })
     const { geocodeAddress } = await import('@/services/geocodingService')
 
     const position = await geocodeAddress('Aachener Str. 512, 50933 Köln')
 
     expect(position).toEqual({ lat: 50.9333, lng: 6.9333 })
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/api/geocode'),
+      expect.objectContaining({ params: { address: 'Aachener Str. 512, 50933 Köln' } }),
+    )
   })
 
-  it('returns null when the address cannot be resolved', async () => {
-    vi.mocked(axios.get).mockResolvedValue({ data: [] })
+  it('returns null when the backend could not resolve the address', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: { latitude: null, longitude: null } })
     const { geocodeAddress } = await import('@/services/geocodingService')
 
     const position = await geocodeAddress('Unbekannte Adresse')
@@ -40,7 +44,7 @@ describe('geocodingService', () => {
   })
 
   it('caches the result per address instead of requesting it again', async () => {
-    vi.mocked(axios.get).mockResolvedValue({ data: [{ lat: '50.9333', lon: '6.9333' }] })
+    vi.mocked(axios.get).mockResolvedValue({ data: { latitude: 50.9333, longitude: 6.9333 } })
     const { geocodeAddress } = await import('@/services/geocodingService')
 
     await geocodeAddress('Aachener Str. 512, 50933 Köln')

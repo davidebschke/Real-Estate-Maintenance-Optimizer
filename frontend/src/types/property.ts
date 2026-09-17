@@ -4,4 +4,6 @@ export interface Property {
   name: string
   address: string
   icon: string
+  latitude: number | null
+  longitude: number | null
 }

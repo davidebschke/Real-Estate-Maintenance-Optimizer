@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { i18n } from '@/i18n'
 import AppointmentMapCard from '@/components/map/AppointmentMapCard.vue'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
+import * as propertyService from '@/services/propertyService'
 
 vi.mock('@/composables/useAppointmentMapMarkers')
+vi.mock('@/services/propertyService')
 vi.mock('@/components/map/AppointmentMap.vue', () => ({
   default: {
     name: 'AppointmentMap',
@@ -14,17 +17,19 @@ vi.mock('@/components/map/AppointmentMap.vue', () => ({
   },
 }))
 
-afterEach(() => {
-  i18n.global.locale.value = 'de'
-  vi.mocked(useAppointmentMapMarkers).mockReset()
-})
-
 beforeEach(() => {
+  setActivePinia(createPinia())
+  vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
   vi.mocked(useAppointmentMapMarkers).mockReturnValue({
     markers: ref([]),
     isLoading: ref(false),
     hasGeocodingError: ref(false),
   })
+})
+
+afterEach(() => {
+  i18n.global.locale.value = 'de'
+  vi.mocked(useAppointmentMapMarkers).mockReset()
 })
 
 describe('AppointmentMapCard', () => {
@@ -69,5 +74,11 @@ describe('AppointmentMapCard', () => {
     expect(wrapper.find('.appointment-map-card__hint').text()).toBe(
       'Für einzelne Adressen konnte kein Standort ermittelt werden.',
     )
+  })
+
+  it('loads the properties store on mount', () => {
+    mount(AppointmentMapCard, { global: { plugins: [i18n] } })
+
+    expect(propertyService.fetchProperties).toHaveBeenCalled()
   })
 })

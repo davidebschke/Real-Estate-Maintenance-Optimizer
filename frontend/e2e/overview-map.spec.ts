@@ -27,6 +27,23 @@ async function deleteAppointment(page: Page, id: string) {
   })
 }
 
+/** Waits until the map's marker count stops changing (geocoding may still be resolving), then returns it. */
+async function waitForStableMarkerCount(page: Page): Promise<number> {
+  let lastCount = -1
+  await expect
+    .poll(
+      async () => {
+        const count = await page.locator('.leaflet-marker-icon').count()
+        const isStable = count === lastCount
+        lastCount = count
+        return isStable
+      },
+      { timeout: 10000, intervals: [300] },
+    )
+    .toBe(true)
+  return lastCount
+}
+
 test.describe('overview map', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
   test.skip(new Date().getDay() === 0, 'An Sonntagen werden keine Termine vergeben')
@@ -34,12 +51,14 @@ test.describe('overview map', () => {
   test('shows a marker for a newly created appointment next to the daily appointment list', async ({
     page,
   }) => {
-    await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
-      await route.fulfill({ json: [{ lat: '50.9333', lon: '6.9333' }] })
-    })
+    await page.goto('/')
+    await expect(page.locator('.appointment-map-card')).toBeVisible()
+    const markersBefore = await waitForStableMarkerCount(page)
 
     await page.goto('/calendar')
     const title = `E2E Kartentermin ${Date.now()}`
+    // "Wohnanlage Sonnenhof" has stored coordinates (see backend/ExampleObjects/1.json), so its marker
+    // resolves without depending on a live geocoding call.
     const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
 
     try {
@@ -47,10 +66,8 @@ test.describe('overview map', () => {
 
       await expect(page.locator('.appointment-map-card')).toBeVisible()
       await expect(page.locator('.appointment-map')).toBeVisible()
-      const todaysAppointmentCount = await page.locator('.daily-appointment-card').count()
-      await expect(page.locator('.leaflet-marker-icon')).toHaveCount(todaysAppointmentCount, {
-        timeout: 10000,
-      })
+      const markersAfter = await waitForStableMarkerCount(page)
+      expect(markersAfter).toBe(markersBefore + 1)
     } finally {
       await deleteAppointment(page, id)
     }

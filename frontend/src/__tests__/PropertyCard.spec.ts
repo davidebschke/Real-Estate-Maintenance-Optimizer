@@ -12,6 +12,8 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     name: 'Wohnanlage Sonnenhof',
     address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
     icon: 'pi-building',
+    latitude: 50.94,
+    longitude: 6.88,
     ...overrides,
   }
 }

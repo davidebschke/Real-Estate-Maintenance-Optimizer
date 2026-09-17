@@ -11,13 +11,29 @@ afterEach(() => {
 describe('propertyService', () => {
   it('fetches every property', async () => {
     vi.mocked(axios.get).mockResolvedValue({
-      data: [{ id: '1', name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512', icon: 'pi-building' }],
+      data: [
+        {
+          id: '1',
+          name: 'Wohnanlage Sonnenhof',
+          address: 'Aachener Str. 512',
+          icon: 'pi-building',
+          latitude: 50.94,
+          longitude: 6.88,
+        },
+      ],
     })
 
     const properties = await fetchProperties()
 
     expect(properties).toEqual([
-      { id: '1', name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512', icon: 'pi-building' },
+      {
+        id: '1',
+        name: 'Wohnanlage Sonnenhof',
+        address: 'Aachener Str. 512',
+        icon: 'pi-building',
+        latitude: 50.94,
+        longitude: 6.88,
+      },
     ])
     expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/api/properties'))
   })
