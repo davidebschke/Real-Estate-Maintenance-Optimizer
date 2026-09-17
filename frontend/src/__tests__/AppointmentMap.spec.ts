@@ -9,6 +9,7 @@ interface MapMock {
   setView: ReturnType<typeof vi.fn<(center: unknown, zoom: number) => MapMock>>
   remove: ReturnType<typeof vi.fn<() => void>>
   fitBounds: ReturnType<typeof vi.fn<(bounds: unknown, options?: unknown) => void>>
+  invalidateSize: ReturnType<typeof vi.fn<() => void>>
 }
 interface LayerGroupMock {
   addTo: ReturnType<typeof vi.fn<(map: unknown) => LayerGroupMock>>
@@ -23,6 +24,7 @@ const mapInstance: MapMock = {
   setView: vi.fn<(center: unknown, zoom: number) => MapMock>(),
   remove: vi.fn<() => void>(),
   fitBounds: vi.fn<(bounds: unknown, options?: unknown) => void>(),
+  invalidateSize: vi.fn<() => void>(),
 }
 const tileLayerInstance = { addTo: vi.fn<(map: unknown) => void>() }
 const layerGroupInstance: LayerGroupMock = {
@@ -75,15 +77,32 @@ function createMarker(overrides: Partial<AppointmentMapMarker> = {}): Appointmen
   return { appointment: createAppointment(), position: 1, lat: 50.9, lng: 6.9, ...overrides }
 }
 
+let resizeObserverCallback: (() => void) | null = null
+const resizeObserverDisconnect = vi.fn<() => void>()
+
+class ResizeObserverMock {
+  constructor(callback: () => void) {
+    resizeObserverCallback = callback
+  }
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {
+    resizeObserverDisconnect()
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mapInstance.setView.mockReturnValue(mapInstance)
   layerGroupInstance.addTo.mockReturnValue(layerGroupInstance)
   markerInstance.bindPopup.mockReturnValue(markerInstance)
+  resizeObserverCallback = null
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock)
 })
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('AppointmentMap', () => {
@@ -136,5 +155,17 @@ describe('AppointmentMap', () => {
     wrapper.unmount()
 
     expect(mapInstance.remove).toHaveBeenCalled()
+  })
+
+  it('invalidates the map size whenever its container is resized, and stops observing on unmount', () => {
+    const wrapper = mount(AppointmentMap, { props: { markers: [createMarker()] } })
+
+    resizeObserverCallback?.()
+
+    expect(mapInstance.invalidateSize).toHaveBeenCalled()
+
+    wrapper.unmount()
+
+    expect(resizeObserverDisconnect).toHaveBeenCalled()
   })
 })

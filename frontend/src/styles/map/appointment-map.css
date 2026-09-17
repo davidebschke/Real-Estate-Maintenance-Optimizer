@@ -1,12 +1,13 @@
 .appointment-map {
   border-radius: 0.5rem;
-  height: 26rem;
+  flex: 1 1 auto;
+  min-height: 26rem;
   overflow: hidden;
   width: 100%;
 }
 
 @media (max-width: 40rem) {
   .appointment-map {
-    height: 18rem;
+    min-height: 18rem;
   }
 }

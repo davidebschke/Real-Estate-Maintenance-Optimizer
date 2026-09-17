@@ -11,6 +11,7 @@ const mapContainer = ref<HTMLDivElement | null>(null)
 let map: L.Map | null = null
 let markerLayer: L.LayerGroup | null = null
 let routeLine: L.Polyline | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const defaultCenter: L.LatLngTuple = [51.1657, 10.4515]
 const defaultZoom = 6
@@ -59,6 +60,9 @@ onMounted(() => {
   markerLayer = L.layerGroup().addTo(map)
 
   renderMarkers(props.markers)
+
+  resizeObserver = new ResizeObserver(() => map?.invalidateSize())
+  resizeObserver.observe(mapContainer.value)
 })
 
 watch(
@@ -67,6 +71,8 @@ watch(
 )
 
 onUnmounted(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
   map?.remove()
   map = null
   markerLayer = null
