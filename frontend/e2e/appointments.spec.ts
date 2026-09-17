@@ -114,6 +114,26 @@ test.describe('appointments', () => {
     await expect(page.getByText(title)).toHaveCount(0)
   })
 
+  test('an appointment created for today opens its detail view when clicked on the overview page', async ({
+    page,
+  }) => {
+    test.skip(new Date().getDay() === 0, 'no appointments are scheduled on Sundays')
+
+    await page.goto('/calendar')
+    const title = `E2E Übersicht ${Date.now()}`
+
+    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+
+    try {
+      await page.goto('/')
+      await page.getByText(title).click()
+
+      await expect(page.getByRole('heading', { name: title })).toBeVisible()
+    } finally {
+      await deleteAppointment(page, id)
+    }
+  })
+
   test('deleting a recurring appointment asks whether to delete all following occurrences too', async ({
     page,
   }) => {

@@ -6,7 +6,7 @@ test.describe('main navigation', () => {
   test('shows the overview page by default', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByText('Hier ist die Übersichtsseite')).toBeVisible()
+    await expect(page.locator('.daily-appointment-list')).toBeVisible()
   })
 
   test('navigates to the page matching each clicked navigation entry', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('main navigation', () => {
 
     await page.getByRole('link', { name: 'Remo' }).click()
 
-    await expect(page.getByText('Hier ist die Übersichtsseite')).toBeVisible()
+    await expect(page.locator('.daily-appointment-list')).toBeVisible()
     await expect(page).toHaveURL('/')
   })
 })
