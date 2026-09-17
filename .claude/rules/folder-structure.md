@@ -16,12 +16,13 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
 │   │   │   ├── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard)
 │   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
-│   │   │   └── properties/        # property-list building blocks (PropertyList, PropertyCard)
+│   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard)
+│   │   │   └── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
@@ -33,6 +34,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── calendar/          # one CSS file per components/calendar building block (e.g. app-calendar.css, calendar-toolbar.css)
 │   │   │   ├── appointments/      # one CSS file per components/appointments building block (e.g. appointment-form-dialog.css, appointment-detail-drawer.css)
 │   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css)
+│   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   └── __tests__/             # Vitest unit tests
 │   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts)
