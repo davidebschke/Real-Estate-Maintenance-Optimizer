@@ -6,6 +6,11 @@
       "clickHint": "Click to open details",
       "empty": "No appointments are scheduled for today.",
       "travelSummary": "{km} km · {duration}"
+    },
+    "map": {
+      "title": "Today's locations",
+      "empty": "No appointments are scheduled for today.",
+      "geocodingError": "The location for some addresses could not be determined."
     }
   }
 }
