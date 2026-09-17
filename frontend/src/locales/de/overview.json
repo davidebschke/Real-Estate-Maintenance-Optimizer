@@ -1,5 +1,11 @@
 {
   "overview": {
-    "content": "Hier ist die Übersichtsseite"
+    "dailyList": {
+      "appointmentCountSingular": "{count} Termin",
+      "appointmentCountPlural": "{count} Termine",
+      "clickHint": "Klick öffnet Details",
+      "empty": "Heute stehen keine Termine an.",
+      "travelSummary": "{km} km · {duration}"
+    }
   }
 }

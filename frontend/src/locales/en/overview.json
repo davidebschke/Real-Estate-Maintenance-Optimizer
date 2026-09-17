@@ -1,5 +1,11 @@
 {
   "overview": {
-    "content": "Here is the overview page"
+    "dailyList": {
+      "appointmentCountSingular": "{count} appointment",
+      "appointmentCountPlural": "{count} appointments",
+      "clickHint": "Click to open details",
+      "empty": "No appointments are scheduled for today.",
+      "travelSummary": "{km} km · {duration}"
+    }
   }
 }
