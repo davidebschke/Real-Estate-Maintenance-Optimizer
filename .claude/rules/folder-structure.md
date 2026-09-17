@@ -60,10 +60,11 @@ Real-Estate-Maintenance-Optimizer/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)
 │   └── skills/                     # project-specific Claude skills, plus the GitHub spec-kit skills (speckit-constitution, speckit-specify, speckit-plan, speckit-tasks, speckit-clarify, speckit-checklist, speckit-analyze, speckit-implement, speckit-converge, speckit-taskstoissues)
 ├── .specify/                       # GitHub spec-kit (Spec-Driven Development) project infrastructure, installed via `specify init --here --integration claude`
-│   ├── memory/constitution.md      # project constitution, filled in via /speckit-constitution
+│   ├── memory/constitution.md      # project constitution, derived from .claude/rules/*.md, filled/updated via /speckit-constitution
 │   ├── templates/                  # spec/plan/tasks/checklist templates used by the speckit-* skills
-│   ├── scripts/bash/               # shell scripts the speckit-* skills call (feature branch creation, prerequisite checks, ...)
-│   └── workflows/speckit/          # bundled spec-kit workflow definition
+│   ├── scripts/bash/               # shell scripts the speckit-* skills call (feature directory creation, prerequisite checks, ...)
+│   └── workflows/speckit/          # bundled spec-kit workflow definition (not currently invoked by any speckit-* skill)
+├── specs/                          # not yet created — appears on the first `/speckit-specify` run, one `NNN-short-name/` directory per feature (spec.md, plan.md, tasks.md, ...); `NNN` is spec-kit's own sequential counter (`.specify/init-options.json` → `feature_numbering`), independent of the git branch issue-number counter in `.claude/rules/git-workflow.md` — the two numbers are not expected to match
 ├── .github/
 │   └── ISSUE_TEMPLATE/
 ├── README.md
