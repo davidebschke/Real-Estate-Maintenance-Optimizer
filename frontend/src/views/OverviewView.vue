@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import ViewPlaceholder from '@/components/ViewPlaceholder.vue'
-
-const { t } = useI18n()
+import DailyAppointmentList from '@/components/overview/DailyAppointmentList.vue'
 </script>
 
 <template>
-  <ViewPlaceholder :text="t('overview.content')" />
+  <DailyAppointmentList />
 </template>

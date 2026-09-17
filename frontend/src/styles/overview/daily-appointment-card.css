@@ -1,0 +1,91 @@
+.daily-appointment-card {
+  align-items: flex-start;
+  background-color: var(--remo-calendar-bg-color, #0d1013);
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.75rem;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 1.125rem;
+  padding: 1.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.daily-appointment-card:hover {
+  border-color: var(--remo-calendar-accent-color, #3b82f6);
+}
+
+.daily-appointment-card--completed {
+  opacity: 0.6;
+}
+
+.daily-appointment-card__position {
+  align-items: center;
+  background-color: var(--remo-calendar-accent-color, #3b82f6);
+  border-radius: 50%;
+  color: #0d1013;
+  display: flex;
+  flex-shrink: 0;
+  font-weight: 700;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.daily-appointment-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.daily-appointment-card__headline {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.daily-appointment-card__time {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-weight: 700;
+}
+
+.daily-appointment-card__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  overflow-wrap: break-word;
+}
+
+.daily-appointment-card__property {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.daily-appointment-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.daily-appointment-card__materials {
+  background-color: var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.5rem;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.9rem;
+  padding: 0.15rem 0.6rem;
+}
+
+.daily-appointment-card__travel {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 30rem) {
+  .daily-appointment-card {
+    flex-direction: column;
+  }
+}
