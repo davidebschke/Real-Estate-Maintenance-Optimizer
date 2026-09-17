@@ -1,6 +1,8 @@
 {
-  "id" : "2",
-  "name" : "Wohnpark Lindenthal",
-  "address" : "Dürener Str. 220, 50931 Köln",
-  "icon" : "pi-building"
+  "id": "2",
+  "name": "Wohnpark Lindenthal",
+  "address": "Dürener Str. 220, 50931 Köln",
+  "icon": "pi-building",
+  "latitude": 50.93232,
+  "longitude": 6.9181725
 }

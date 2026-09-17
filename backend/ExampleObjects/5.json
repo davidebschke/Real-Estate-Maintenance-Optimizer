@@ -2,5 +2,7 @@
   "id": "5",
   "name": "Stadthaus Weiden",
   "address": "Berliner Str. 9, 50825 Köln-Weiden",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9541936,
+  "longitude": 6.9104337
 }

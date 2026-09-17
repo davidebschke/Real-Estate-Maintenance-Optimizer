@@ -2,5 +2,7 @@
   "id": "4",
   "name": "Stadthaus Ossendorf",
   "address": "Riehler Str. 126, 50999 Köln-Ossendorf",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.874986,
+  "longitude": 7.0203906
 }

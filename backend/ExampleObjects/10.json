@@ -2,5 +2,7 @@
   "id": "10",
   "name": "Wohnhaus Nippes",
   "address": "Vorgebirgstr. 139, 50829 Köln-Nippes",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9743395,
+  "longitude": 6.8707446
 }

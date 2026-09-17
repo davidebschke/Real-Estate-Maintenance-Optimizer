@@ -2,5 +2,7 @@
   "id": "23",
   "name": "Wohnanlage Ossendorf",
   "address": "Neusser Str. 150, 50968 Köln-Ossendorf",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.902076,
+  "longitude": 6.9659848
 }

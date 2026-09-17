@@ -1,6 +1,8 @@
 {
-  "id" : "3",
-  "name" : "Wohnanlage Rheinblick",
-  "address" : "Rheinuferstr. 8, 50996 Köln-Rodenkirchen",
-  "icon" : "pi-building"
+  "id": "3",
+  "name": "Wohnanlage Rheinblick",
+  "address": "Rheinuferstr. 8, 50996 Köln-Rodenkirchen",
+  "icon": "pi-building",
+  "latitude": 50.882644,
+  "longitude": 6.9919876
 }

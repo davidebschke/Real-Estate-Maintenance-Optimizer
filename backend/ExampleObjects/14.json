@@ -2,5 +2,7 @@
   "id": "14",
   "name": "Wohnanlage Bickendorf",
   "address": "Berliner Str. 169, 50827 Köln-Bickendorf",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9677618,
+  "longitude": 6.8995319
 }

@@ -2,5 +2,7 @@
   "id": "9",
   "name": "Gewerbehof Nord",
   "address": "Frankfurter Str. 61, 50939 Köln-Nord",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9080605,
+  "longitude": 6.9247881
 }

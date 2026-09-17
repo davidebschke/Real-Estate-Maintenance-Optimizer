@@ -2,5 +2,7 @@
   "id": "13",
   "name": "Wohnpark Süd",
   "address": "Kalker Hauptstr. 53, 50667 Köln-Süd",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9386399,
+  "longitude": 6.9550296
 }

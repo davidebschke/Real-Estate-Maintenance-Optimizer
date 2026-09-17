@@ -38,6 +38,8 @@ public class PropertyService {
     }
 
     private PropertyResponse toResponse(Property property) {
-        return new PropertyResponse(property.id(), property.name(), property.address(), property.icon());
+        return new PropertyResponse(
+                property.id(), property.name(), property.address(), property.icon(),
+                property.latitude(), property.longitude());
     }
 }
