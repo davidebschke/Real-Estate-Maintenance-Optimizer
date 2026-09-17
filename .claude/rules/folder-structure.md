@@ -58,7 +58,12 @@ Real-Estate-Maintenance-Optimizer/
 │   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)
-│   └── skills/                     # project-specific Claude skills
+│   └── skills/                     # project-specific Claude skills, plus the GitHub spec-kit skills (speckit-constitution, speckit-specify, speckit-plan, speckit-tasks, speckit-clarify, speckit-checklist, speckit-analyze, speckit-implement, speckit-converge, speckit-taskstoissues)
+├── .specify/                       # GitHub spec-kit (Spec-Driven Development) project infrastructure, installed via `specify init --here --integration claude`
+│   ├── memory/constitution.md      # project constitution, filled in via /speckit-constitution
+│   ├── templates/                  # spec/plan/tasks/checklist templates used by the speckit-* skills
+│   ├── scripts/bash/               # shell scripts the speckit-* skills call (feature branch creation, prerequisite checks, ...)
+│   └── workflows/speckit/          # bundled spec-kit workflow definition
 ├── .github/
 │   └── ISSUE_TEMPLATE/
 ├── README.md
@@ -84,6 +89,6 @@ com.remo.realestatemaintainceoptimizer
 ## `.claude` Directory
 
 - `.claude/rules/` — binding project rules extracted from `CLAUDE.md`, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`, `testing.md`, `documentation.md`, `folder-structure.md`). Each corresponding section in `CLAUDE.md` references its rule file.
-- `.claude/skills/` — project-specific Claude skills: `wiki-sync/SKILL.md` (Wiki update workflow per [`wiki.md`](wiki.md)), `docs-consistency-check/SKILL.md` (post-change documentation review per [`documentation.md`](documentation.md)), `naming-conventions-check/SKILL.md` and `branch-naming-check/SKILL.md` and `commit-message-lint/SKILL.md` (naming/branch/commit conventions per [`coding-conventions.md`](coding-conventions.md)), `folder-structure-sync/SKILL.md` (keeps this file in sync with the actual tree), `test-coverage-check/SKILL.md` (coverage review per [`testing.md`](testing.md)), and `i18n-parity-check/SKILL.md` (frontend/backend translation parity).
+- `.claude/skills/` — project-specific Claude skills: `wiki-sync/SKILL.md` (Wiki update workflow per [`wiki.md`](wiki.md)), `docs-consistency-check/SKILL.md` (post-change documentation review per [`documentation.md`](documentation.md)), `naming-conventions-check/SKILL.md` and `branch-naming-check/SKILL.md` and `commit-message-lint/SKILL.md` (naming/branch/commit conventions per [`coding-conventions.md`](coding-conventions.md)), `folder-structure-sync/SKILL.md` (keeps this file in sync with the actual tree), `test-coverage-check/SKILL.md` (coverage review per [`testing.md`](testing.md)), and `i18n-parity-check/SKILL.md` (frontend/backend translation parity) — plus the GitHub spec-kit skills (`speckit-constitution`, `speckit-specify`, `speckit-plan`, `speckit-tasks`, `speckit-clarify`, `speckit-checklist`, `speckit-analyze`, `speckit-implement`, `speckit-converge`, `speckit-taskstoissues`) that drive the Spec-Driven Development workflow described in `.specify/`.
 
 For the current, detailed implementation status of the backend and frontend (which controllers/services/components exist, what they do), see `backend/readme_backend_en.md` / `readme_backend_de.md` and `frontend/readme_frontend_en.md` / `readme_frontend_de.md` instead of this file — this file only tracks the physical folder layout.
