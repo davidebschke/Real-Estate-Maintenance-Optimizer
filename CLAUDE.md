@@ -28,6 +28,7 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 | Calendar View      | Vue.cal           |
 | Routing            | Vue Router        |
 | HTTP Client        | Axios             |
+| Map View           | Leaflet           |
 
 ### 2.2 Backend
 | Area                     | Technology                  |
@@ -36,6 +37,7 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 | Authentication           | Spring Security, JJWT (JSON Web Token) |
 | Data Access              | Spring Data JPA             |
 | Mail Sending             | Spring Mail                 |
+| External HTTP Client     | Spring `RestClient` (address geocoding) |
 
 ### 2.3 Databases
 
@@ -67,12 +69,14 @@ The detailed, current implementation status (which controllers/services/componen
 - German/English translation for dynamic (server-generated) text via Spring's `MessageSource` (`backend/src/main/resources/locales/`, `LocalizationConfig`).
 - **Appointments (create/read/move/delete/complete):** fully implemented via `AppointmentController`/`AppointmentService`, including recurrence materialization, locking, and a completed status (`PATCH .../complete` sets `actualEnd` to now, `PATCH .../reopen` reverts it).
   - **Storage (temporary, deviates from §2.3):** `AppointmentFileRepository` persists each appointment as its own JSON file under `remo.storage.directory` (gitignored) instead of MongoDB — a temporary prototype mechanism; a real database is expected to replace it later without changing the REST contract.
-- **Properties (read-only):** `PropertyController`/`PropertyService` expose `GET /api/properties` and `GET /api/properties/{id}` for the same objects selectable when creating an appointment; create/update/delete are not yet implemented. Storage mirrors the appointment mechanism: `PropertyFileRepository` persists each property as its own JSON file under `remo.storage.properties.directory` (`ExampleObjects/`) — checked into the repository, unlike the gitignored `ExampleTerms/`, since there is no create endpoint yet to repopulate it after a fresh checkout.
+- **Properties (read-only):** `PropertyController`/`PropertyService` expose `GET /api/properties` and `GET /api/properties/{id}` for the same objects selectable when creating an appointment, including optional `latitude`/`longitude`; create/update/delete are not yet implemented. Storage mirrors the appointment mechanism: `PropertyFileRepository` persists each property as its own JSON file under `remo.storage.properties.directory` (`ExampleObjects/`) — checked into the repository, unlike the gitignored `ExampleTerms/`, since there is no create endpoint yet to repopulate it after a fresh checkout.
+- **Address geocoding:** `GET /api/geocode` (`GeocodingController`/`GeocodingService`) proxies address lookups to the OpenStreetMap Nominatim API with a server-side identifying `User-Agent` (a browser cannot set this header itself, and Nominatim blocks requests without one) — see `backend/readme_backend_en.md`, section "Address Geocoding".
 
 ### 3.2 Frontend
 
 - **Layout & navigation:** header/footer and the four main routed views implemented; `OverviewView` renders the daily appointment overview, `StatisticsView` currently renders only a placeholder, `CalendarView` renders the calendar, `PropertiesView` renders the property list.
 - **Daily appointment overview (read-only, today only):** `OverviewView` lists only today's appointments (via `stores/appointments.ts` and the `useTodaysAppointments` composable), sorted from the next upcoming to the last one of the day, each as a numbered `DailyAppointmentCard` (time, title, property, materials, distance/duration); clicking one opens the shared `AppointmentDetailDrawer`. Ends with the existing `AppointmentAiSuggestionBanner`, shown purely for decoration.
+- **Daily appointment map (read-only, today only):** `AppointmentMapCard` renders a Leaflet map to the left of the daily appointment list, showing today's appointments as numbered, connected markers; each marker prefers its property's stored coordinates, falling back to the backend's `GET /api/geocode` proxy (`services/geocodingService.ts`) only when those are missing. Auto-fits its zoom to all markers while still allowing manual zoom.
 - **Properties overview (read-only):** `PropertiesView` lists every property as a responsive card (icon, name, address, open/completed appointment counts, next appointment as a link into `AppointmentDetailDrawer`), backed by `stores/properties.ts` and derived from `stores/appointments.ts`; the same store now backs the appointment form's "Objekt" dropdown (previously hardcoded example data).
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events.
 - **Appointments (create/read/move/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time.

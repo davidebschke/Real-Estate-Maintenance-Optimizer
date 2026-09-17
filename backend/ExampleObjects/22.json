@@ -2,5 +2,7 @@
   "id": "22",
   "name": "Stadthaus Nord",
   "address": "Neusser Str. 172, 50931 Köln-Nord",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.93232,
+  "longitude": 6.9181725
 }

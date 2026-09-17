@@ -2,5 +2,7 @@
   "id": "12",
   "name": "Gewerbehof Dellbrück",
   "address": "Olpener Str. 151, 50874 Köln-Dellbrück",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": null,
+  "longitude": null
 }

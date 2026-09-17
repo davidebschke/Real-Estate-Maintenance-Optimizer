@@ -17,12 +17,13 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard)
 │   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
 │   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard)
-│   │   │   └── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
+│   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
+│   │   │   └── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
-│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts)
+│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts) and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments, useAppointmentMapMarkers)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
@@ -35,21 +36,22 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── appointments/      # one CSS file per components/appointments building block (e.g. appointment-form-dialog.css, appointment-detail-drawer.css)
 │   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css)
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
+│   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
 │   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts)
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts)
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties)
-│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GlobalExceptionHandler)
-│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties, RestClientConfig)
+│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
+│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme)
 │   │   ├── repository/             # persistence (e.g. AppointmentFileRepository, PropertyFileRepository — JSON-file-backed, see backend readme)
-│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property)
+│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property with latitude/longitude)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
-│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse)
+│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, GeocodingResponse)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
 │   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.storage.directory, remo.storage.properties.directory)

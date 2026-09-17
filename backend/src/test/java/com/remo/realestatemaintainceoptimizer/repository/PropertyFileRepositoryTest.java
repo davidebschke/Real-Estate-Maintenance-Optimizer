@@ -37,6 +37,15 @@ class PropertyFileRepositoryTest {
     }
 
     @Test
+    void savesAndReadsBackAPropertyWithCoordinates() {
+        Property property = new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building", 50.94, 6.88);
+
+        repository.save(property);
+
+        assertThat(repository.findById("1")).contains(property);
+    }
+
+    @Test
     void returnsEmptyForUnknownId() {
         assertThat(repository.findById("unknown")).isEmpty();
     }

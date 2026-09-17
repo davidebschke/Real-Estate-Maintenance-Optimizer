@@ -2,5 +2,7 @@
   "id": "15",
   "name": "Stadthaus Kalk",
   "address": "Subbelrather Str. 106, 51065 Köln-Kalk",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9548598,
+  "longitude": 7.0115683
 }

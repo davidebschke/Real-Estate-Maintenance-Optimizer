@@ -6,6 +6,11 @@
       "clickHint": "Klick öffnet Details",
       "empty": "Heute stehen keine Termine an.",
       "travelSummary": "{km} km · {duration}"
+    },
+    "map": {
+      "title": "Standorte heute",
+      "empty": "Heute stehen keine Termine an.",
+      "geocodingError": "Für einzelne Adressen konnte kein Standort ermittelt werden."
     }
   }
 }

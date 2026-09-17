@@ -6,6 +6,13 @@ import OverviewView from '@/views/OverviewView.vue'
 import * as appointmentService from '@/services/appointmentService'
 
 vi.mock('@/services/appointmentService')
+vi.mock('@/components/map/AppointmentMap.vue', () => ({
+  default: {
+    name: 'AppointmentMap',
+    props: ['markers'],
+    template: '<div class="appointment-map-stub" />',
+  },
+}))
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -25,6 +32,15 @@ describe('OverviewView', () => {
     await flushPromises()
 
     expect(wrapper.find('.daily-appointment-list').exists()).toBe(true)
+  })
+
+  it('renders the appointment map card next to the daily appointment list', async () => {
+    const wrapper = mount(OverviewView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.appointment-map-card').exists()).toBe(true)
   })
 
   it('renders the English empty-state text when the locale is switched', async () => {

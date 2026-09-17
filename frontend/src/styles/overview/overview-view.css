@@ -1,4 +1,6 @@
 .overview-view {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  height: 100%;
 }

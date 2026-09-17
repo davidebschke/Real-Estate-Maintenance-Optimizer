@@ -2,5 +2,7 @@
   "id": "11",
   "name": "Wohnanlage Zollstock",
   "address": "Luxemburger Str. 100, 50996 Köln-Zollstock",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.882644,
+  "longitude": 6.9919876
 }

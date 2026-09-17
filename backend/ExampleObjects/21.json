@@ -2,5 +2,7 @@
   "id": "21",
   "name": "Wohnanlage Chorweiler",
   "address": "Widdersdorfer Str. 98, 50858 Köln-Chorweiler",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9242507,
+  "longitude": 6.8567088
 }

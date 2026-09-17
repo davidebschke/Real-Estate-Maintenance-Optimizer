@@ -11,7 +11,14 @@ vi.mock('@/services/propertyService')
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.fetchProperties).mockResolvedValue([
-    { id: '1', name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld', icon: 'pi-building' },
+    {
+      id: '1',
+      name: 'Wohnanlage Sonnenhof',
+      address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+      icon: 'pi-building',
+      latitude: 50.94,
+      longitude: 6.88,
+    },
   ])
 })
 

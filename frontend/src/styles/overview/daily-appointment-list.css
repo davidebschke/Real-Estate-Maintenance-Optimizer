@@ -7,13 +7,12 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.5rem;
-  width: 100%;
-  max-width: 26rem;
+  flex: 0 0 26rem;
 }
 
 @media (max-width: 40rem) {
   .daily-appointment-list {
-    max-width: 100%;
+    flex-basis: 100%;
   }
 }
 

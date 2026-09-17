@@ -11,3 +11,12 @@ if (typeof window.matchMedia !== 'function') {
     dispatchEvent: () => false,
   })
 }
+
+/** Polyfills `ResizeObserver`, which jsdom does not implement but `AppointmentMap` uses to keep Leaflet sized correctly. */
+if (typeof globalThis.ResizeObserver !== 'function') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}

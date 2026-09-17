@@ -47,6 +47,16 @@ class PropertyServiceTest {
     }
 
     @Test
+    void includesStoredCoordinatesInTheResponse() {
+        repository.save(new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building", 50.94, 6.88));
+
+        var response = service.getById("1");
+
+        assertThat(response.latitude()).isEqualTo(50.94);
+        assertThat(response.longitude()).isEqualTo(6.88);
+    }
+
+    @Test
     void throwsWhenNoPropertyExistsForTheGivenId() {
         assertThatThrownBy(() -> service.getById("unknown")).isInstanceOf(PropertyNotFoundException.class);
     }

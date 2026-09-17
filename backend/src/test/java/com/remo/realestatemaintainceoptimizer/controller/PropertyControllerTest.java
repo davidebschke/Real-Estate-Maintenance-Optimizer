@@ -43,7 +43,8 @@ class PropertyControllerTest {
     void seedProperty() {
         PropertyFileRepository repository =
                 new PropertyFileRepository(new PropertyStorageProperties(storageDirectory.toString()), new ObjectMapper());
-        repository.save(new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+        repository.save(new Property(
+                "1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building", 50.94, 6.88));
     }
 
     @Test
@@ -58,7 +59,9 @@ class PropertyControllerTest {
     void getsAPropertyById() throws Exception {
         mockMvc.perform(get("/api/properties/{id}", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.address", equalTo("Aachener Str. 512, 50933 Köln-Braunsenfeld")));
+                .andExpect(jsonPath("$.address", equalTo("Aachener Str. 512, 50933 Köln-Braunsenfeld")))
+                .andExpect(jsonPath("$.latitude", equalTo(50.94)))
+                .andExpect(jsonPath("$.longitude", equalTo(6.88)));
     }
 
     @Test

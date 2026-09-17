@@ -2,5 +2,7 @@
   "id": "7",
   "name": "Wohnanlage Porz",
   "address": "Poller Kirchweg 153, 51067 Köln-Porz",
-  "icon": "pi-building"
+  "icon": "pi-building",
+  "latitude": 50.9654912,
+  "longitude": 7.041824
 }
