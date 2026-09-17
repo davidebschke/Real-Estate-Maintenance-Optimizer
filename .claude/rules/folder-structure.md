@@ -45,13 +45,13 @@ Real-Estate-Maintenance-Optimizer/
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties)
-│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GlobalExceptionHandler)
-│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties, RestClientConfig)
+│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
+│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme)
 │   │   ├── repository/             # persistence (e.g. AppointmentFileRepository, PropertyFileRepository — JSON-file-backed, see backend readme)
-│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property)
+│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property with latitude/longitude)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
-│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse)
+│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, GeocodingResponse)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
 │   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.storage.directory, remo.storage.properties.directory)
