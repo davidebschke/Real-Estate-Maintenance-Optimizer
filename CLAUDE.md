@@ -71,7 +71,8 @@ The detailed, current implementation status (which controllers/services/componen
 
 ### 3.2 Frontend
 
-- **Layout & navigation:** header/footer and the four main routed views implemented; `OverviewView` and `StatisticsView` currently render only a placeholder, `CalendarView` renders the calendar, `PropertiesView` renders the property list.
+- **Layout & navigation:** header/footer and the four main routed views implemented; `OverviewView` renders the daily appointment overview, `StatisticsView` currently renders only a placeholder, `CalendarView` renders the calendar, `PropertiesView` renders the property list.
+- **Daily appointment overview (read-only, today only):** `OverviewView` lists only today's appointments (via `stores/appointments.ts` and the `useTodaysAppointments` composable), sorted from the next upcoming to the last one of the day, each as a numbered `DailyAppointmentCard` (time, title, property, materials, distance/duration); clicking one opens the shared `AppointmentDetailDrawer`. Ends with the existing `AppointmentAiSuggestionBanner`, shown purely for decoration.
 - **Properties overview (read-only):** `PropertiesView` lists every property as a responsive card (icon, name, address, open/completed appointment counts, next appointment as a link into `AppointmentDetailDrawer`), backed by `stores/properties.ts` and derived from `stores/appointments.ts`; the same store now backs the appointment form's "Objekt" dropdown (previously hardcoded example data).
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events.
 - **Appointments (create/read/move/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time.

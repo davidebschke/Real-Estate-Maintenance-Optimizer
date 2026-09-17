@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { isSameDay } from '@/utils/dateFormat'
 import type { Appointment } from '@/types/appointment'
 
 /** Single event object in the shape vue-cal expects, derived from an `Appointment`. */
@@ -64,13 +65,4 @@ function toVueCalEvent(appointment: Appointment): VueCalEvent {
 function toVueCalDateTime(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
-
-/** Returns whether two dates fall on the same calendar day. */
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
 }
