@@ -22,6 +22,8 @@ public class GeocodingService {
     private static final Duration MIN_DELAY_BETWEEN_REQUESTS = Duration.ofSeconds(1);
     private static final GeocodingResponse NOT_FOUND = new GeocodingResponse(null, null);
     private static final Pattern GERMAN_POSTAL_CODE = Pattern.compile("\\b\\d{5}\\b");
+    private static final Pattern CITY_DISTRICT_SUFFIX =
+            Pattern.compile("(\\d{5}\\s+\\p{Lu}\\p{L}*)-\\p{Lu}\\p{L}*");
 
     private final RestClient restClient;
     private final Map<String, GeocodingResponse> cache = new ConcurrentHashMap<>();
@@ -39,8 +41,9 @@ public class GeocodingService {
     }
 
     /**
-     * Resolves the given address to its coordinates, falling back to a lookup by its German postal code alone
-     * if the full street address has no exact match, returning null fields if even that could not be found.
+     * Resolves the given address to its coordinates, retrying without a trailing city-district suffix (e.g.
+     * "Köln-Porz") and then falling back to a lookup by its German postal code alone if the full street address
+     * has no exact match, returning null fields if none of these could find anything.
      */
     public GeocodingResponse geocode(String address) {
         GeocodingResponse cached = cache.get(address);
@@ -50,6 +53,12 @@ public class GeocodingService {
 
         GeocodingResponse result = fetchByFreeTextQuery(address);
         if (result.latitude() == null) {
+            String addressWithoutCityDistrict = withoutCityDistrictSuffix(address);
+            if (!addressWithoutCityDistrict.equals(address)) {
+                result = fetchByFreeTextQuery(addressWithoutCityDistrict);
+            }
+        }
+        if (result.latitude() == null) {
             Matcher postalCodeMatcher = GERMAN_POSTAL_CODE.matcher(address);
             if (postalCodeMatcher.find()) {
                 result = fetchByPostalCode(postalCodeMatcher.group());
@@ -58,6 +67,10 @@ public class GeocodingService {
 
         cache.put(address, result);
         return result;
+    }
+
+    private String withoutCityDistrictSuffix(String address) {
+        return CITY_DISTRICT_SUFFIX.matcher(address).replaceFirst("$1");
     }
 
     private GeocodingResponse fetchByFreeTextQuery(String address) {
