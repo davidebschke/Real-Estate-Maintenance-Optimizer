@@ -15,8 +15,8 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 /**
- * Verifies address geocoding against a mocked Nominatim HTTP response, including the postal-code fallback,
- * error handling, and per-address caching.
+ * Verifies address geocoding against a mocked Nominatim HTTP response, including the city-district-suffix and
+ * postal-code fallbacks, error handling, and per-address caching.
  */
 class GeocodingServiceTest {
 
@@ -45,9 +45,28 @@ class GeocodingServiceTest {
     }
 
     @Test
-    void fallsBackToThePostalCodeWhenTheFullAddressHasNoMatch() {
+    void fallsBackToTheAddressWithoutTheCityDistrictSuffixWhenTheFullAddressHasNoMatch() {
         mockServer
-                .expect(requestTo(containsString("q=Aachener")))
+                .expect(requestTo(containsString("q=Subbelrather%20Str.%20121,%2050868%20K%C3%B6ln-Porz")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("q=Subbelrather%20Str.%20121,%2050868%20K%C3%B6ln&")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9504085\",\"lon\":\"6.9276608\"}]", MediaType.APPLICATION_JSON));
+
+        GeocodingResponse response = service.geocode("Subbelrather Str. 121, 50868 Köln-Porz");
+
+        assertThat(response.latitude()).isEqualTo(50.9504085);
+        assertThat(response.longitude()).isEqualTo(6.9276608);
+    }
+
+    @Test
+    void fallsBackToThePostalCodeWhenNeitherTheFullAddressNorItsCityMatch() {
+        mockServer
+                .expect(requestTo(containsString("q=Aachener%20Str.%20512,%2050933%20K%C3%B6ln-Braunsenfeld")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("q=Aachener%20Str.%20512,%2050933%20K%C3%B6ln&")))
                 .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
         mockServer
                 .expect(requestTo(containsString("postalcode=50933")))
@@ -61,7 +80,7 @@ class GeocodingServiceTest {
     }
 
     @Test
-    void returnsNullFieldsWhenNeitherLookupFindsAMatch() {
+    void returnsNullFieldsWhenNoLookupFindsAMatch() {
         mockServer.expect(requestTo(containsString("q=Unbekannt"))).andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
         mockServer
                 .expect(requestTo(containsString("postalcode=99999")))
