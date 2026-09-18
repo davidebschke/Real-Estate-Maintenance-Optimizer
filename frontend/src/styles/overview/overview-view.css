@@ -1,6 +1,6 @@
 .overview-view {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   gap: 1.5rem;
-  height: 100%;
 }

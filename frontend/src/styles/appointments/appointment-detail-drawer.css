@@ -1,13 +1,27 @@
-.appointment-detail-drawer {
-  background-color: var(--remo-calendar-bg-color, #0d1013);
+/* PrimeVue injects its own `.p-drawer` background/border rule into the document on first mount, after
+   this stylesheet, so a plain single-class selector loses that tie; `.p-drawer` here isn't decoration,
+   it's what makes this override win regardless of injection order */
+.appointment-detail-drawer.p-drawer {
+  /* this panel is teleported by PrimeVue, so its style stays global instead of scoped like card-3d.css;
+     the surface/glow values below intentionally mirror that shared treatment for a consistent look, using
+     an inset ring along the inside edge rather than corner orbs */
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
   border-color: var(--remo-calendar-border-color, #24282e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  overflow: hidden;
   width: min(28rem, 100vw);
 }
 
 .appointment-detail-drawer .p-drawer-header,
 .appointment-detail-drawer .p-drawer-content {
-  background-color: var(--remo-calendar-bg-color, #0d1013);
+  background: transparent;
   color: var(--remo-calendar-text-color, #f5f5f5);
+  position: relative;
+  z-index: 1;
 }
 
 .appointment-detail-drawer .p-drawer-content {

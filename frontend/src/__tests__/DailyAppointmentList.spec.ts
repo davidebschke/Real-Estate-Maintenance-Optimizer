@@ -52,8 +52,36 @@ describe('DailyAppointmentList', () => {
     await flushPromises()
 
     expect(wrapper.find('.daily-appointment-list__empty').text()).toBe(
-      'Heute stehen keine Termine an.',
+      'Heute stehen keine weiteren Termine an.',
     )
+  })
+
+  it('hides completed appointments and shows the empty state once none are left', async () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      createAppointment({ id: '1', title: 'Erledigt', completed: true }),
+    ])
+
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.daily-appointment-card')).toHaveLength(0)
+    expect(wrapper.find('.daily-appointment-list__empty').text()).toBe(
+      'Heute stehen keine weiteren Termine an.',
+    )
+  })
+
+  it('excludes completed appointments from the list and the count while keeping open ones', async () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      createAppointment({ id: '1', title: 'Erledigt', completed: true, start: new Date(2026, 7, 10, 8, 0), end: new Date(2026, 7, 10, 9, 0) }),
+      createAppointment({ id: '2', title: 'Offen', completed: false, start: new Date(2026, 7, 10, 10, 0), end: new Date(2026, 7, 10, 11, 0) }),
+    ])
+
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const titles = wrapper.findAll('.daily-appointment-card__title').map((node) => node.text())
+    expect(titles).toEqual(['Offen'])
+    expect(wrapper.find('.daily-appointment-list__count').text()).toContain('1 Termin')
   })
 
   it('renders today\'s appointments as numbered cards, ordered from first to last', async () => {

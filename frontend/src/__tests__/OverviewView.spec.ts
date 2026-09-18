@@ -51,7 +51,7 @@ describe('OverviewView', () => {
     await flushPromises()
 
     expect(wrapper.find('.daily-appointment-list__empty').text()).toBe(
-      'No appointments are scheduled for today.',
+      'No further appointments are scheduled for today.',
     )
   })
 })

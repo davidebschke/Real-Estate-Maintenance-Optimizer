@@ -1,0 +1,67 @@
+/* Shared elevation, inward ring-glow and pointer-tilt treatment for card-like components; apply the
+   `card-3d` class alongside a component's own root class, add `card-3d--interactive` for clickable/hoverable
+   cards, and drive `--tilt-rotate-x`/`--tilt-rotate-y` via the `useCardTilt` composable for the pointer-
+   following tilt. The glow is an inset ring hugging the inside edge rather than corner orbs, narrower and
+   easier to keep legible over text than a blurred blob. */
+.card-3d {
+  --tilt-rotate-x: 0deg;
+  --tilt-rotate-y: 0deg;
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+  /* cards sit on a panel of the identical dark background color, so elevation must come from a light
+     halo/highlight rather than a drop shadow, which would be invisible (black-on-black); the inset pair
+     draws the glowing ring along the inside edge */
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  transform: perspective(900px) rotateX(var(--tilt-rotate-x)) rotateY(var(--tilt-rotate-y));
+  transform-style: preserve-3d;
+  transition:
+    transform 0.15s ease-out,
+    box-shadow 0.15s ease-out,
+    border-color 0.15s ease-out,
+    background-color 0.15s ease-out;
+}
+
+.card-3d > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card-3d--interactive {
+  cursor: pointer;
+}
+
+.card-3d--interactive:hover,
+.card-3d--interactive:focus-visible {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 92%, white 8%);
+  border-color: var(--remo-calendar-accent-color, #3b82f6);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.09),
+    0 20px 36px -18px rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 60%, transparent),
+    inset 0 0 1.5rem -0.5rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 90%, transparent);
+  transform: perspective(900px) rotateX(var(--tilt-rotate-x)) rotateY(var(--tilt-rotate-y))
+    translateY(-4px) translateZ(10px);
+}
+
+.card-3d--interactive:active {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05),
+    0 8px 16px -12px rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 50%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  transform: perspective(900px) translateY(-1px) scale(0.997);
+  transition-duration: 0.05s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-3d {
+    transition: border-color 0.15s ease-out;
+    transform: none !important;
+  }
+}

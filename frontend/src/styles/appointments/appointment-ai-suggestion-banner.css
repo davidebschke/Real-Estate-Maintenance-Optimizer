@@ -3,6 +3,11 @@
   background-color: var(--remo-appointment-ai-banner-bg-color, #3a2c1a);
   border: 1px solid var(--remo-appointment-ai-banner-border-color, #b98a45);
   border-radius: 0.5rem;
+  /* the same inward ring-glow surface treatment used everywhere else, tinted with this banner's own amber
+     accent instead of the shared blue, since it already carries its own "AI suggestion" semantic color */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-appointment-ai-banner-border-color, #b98a45) 40%, transparent),
+    inset 0 0 1rem -0.6rem color-mix(in srgb, var(--remo-appointment-ai-banner-border-color, #b98a45) 80%, transparent);
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;

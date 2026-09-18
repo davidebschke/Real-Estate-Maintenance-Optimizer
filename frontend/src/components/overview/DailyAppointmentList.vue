@@ -12,6 +12,11 @@ const { currentLocale } = useLocale()
 const appointmentsStore = useAppointmentsStore()
 const { todaysAppointments } = useTodaysAppointments()
 
+/** Today's appointments still to do, hiding ones already marked as completed. */
+const openAppointments = computed(() =>
+  todaysAppointments.value.filter((appointment) => !appointment.completed),
+)
+
 const todayLabel = computed(() =>
   new Intl.DateTimeFormat(currentLocale.value, {
     weekday: 'long',
@@ -21,7 +26,7 @@ const todayLabel = computed(() =>
 )
 
 const appointmentCountKey = computed(() =>
-  todaysAppointments.value.length === 1
+  openAppointments.value.length === 1
     ? 'overview.dailyList.appointmentCountSingular'
     : 'overview.dailyList.appointmentCountPlural',
 )
@@ -32,21 +37,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="daily-appointment-list">
+  <div class="daily-appointment-list card-3d">
     <div class="daily-appointment-list__header">
       <h2 class="daily-appointment-list__date">{{ todayLabel }}</h2>
       <span class="daily-appointment-list__count">
-        {{ t(appointmentCountKey, { count: todaysAppointments.length }) }} ·
+        {{ t(appointmentCountKey, { count: openAppointments.length }) }} ·
         {{ t('overview.dailyList.clickHint') }}
       </span>
     </div>
 
-    <p v-if="todaysAppointments.length === 0" class="daily-appointment-list__empty">
+    <p v-if="openAppointments.length === 0" class="daily-appointment-list__empty">
       {{ t('overview.dailyList.empty') }}
     </p>
     <div v-else class="daily-appointment-list__items">
       <DailyAppointmentCard
-        v-for="(appointment, index) in todaysAppointments"
+        v-for="(appointment, index) in openAppointments"
         :key="appointment.id"
         :appointment="appointment"
         :position="index + 1"
@@ -59,3 +64,4 @@ onMounted(() => {
 </template>
 
 <style scoped src="@/styles/overview/daily-appointment-list.css"></style>
+<style scoped src="@/styles/card-3d.css"></style>

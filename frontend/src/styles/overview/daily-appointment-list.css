@@ -1,5 +1,4 @@
 .daily-appointment-list {
-  background-color: var(--remo-calendar-bg-color, #0d1013);
   border: 1px solid var(--remo-calendar-border-color, #24282e);
   border-radius: 0.75rem;
   box-sizing: border-box;

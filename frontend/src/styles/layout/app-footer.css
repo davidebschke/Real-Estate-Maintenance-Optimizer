@@ -1,7 +1,7 @@
 .app-footer {
   align-items: center;
   background-color: var(--remo-footer-bg-color, #000000);
-  border-top: 1px solid var(--remo-footer-border-color, #1f2937);
+  border-top: 1px solid var(--remo-calendar-accent-color, #3b82f6);
   bottom: 0;
   box-sizing: border-box;
   display: flex;
