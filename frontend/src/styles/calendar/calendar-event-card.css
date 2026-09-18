@@ -20,9 +20,10 @@
     filter 0.15s ease-out;
 }
 
-/* a small corner glow, scaled down for a compact grid cell (the full card-3d treatment's orbs and tilt
+/* two small corner glows, scaled down for a compact grid cell (the full card-3d treatment's orbs and tilt
    would overwhelm an element this small) */
-.calendar-event-card::before {
+.calendar-event-card::before,
+.calendar-event-card::after {
   background: radial-gradient(
     circle,
     color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 55%, transparent),
@@ -34,11 +35,19 @@
   opacity: 0.4;
   pointer-events: none;
   position: absolute;
-  right: -1rem;
-  top: -1.25rem;
   transition: opacity 0.15s ease-out;
   width: 3.5rem;
   z-index: 0;
+}
+
+.calendar-event-card::before {
+  right: -1rem;
+  top: -1.25rem;
+}
+
+.calendar-event-card::after {
+  bottom: -1.25rem;
+  left: -1rem;
 }
 
 .calendar-event-card__title,
@@ -52,7 +61,8 @@
   filter: brightness(1.15);
 }
 
-.calendar-event-card:hover::before {
+.calendar-event-card:hover::before,
+.calendar-event-card:hover::after {
   opacity: 0.7;
 }
 
@@ -99,19 +109,8 @@
   }
 }
 
-/* completed appointments stay flat and dark instead of the lightened active surface, with the glow orb
-   switched off entirely rather than just dimmed */
-.calendar-event--completed .calendar-event-card {
-  background: var(--remo-calendar-bg-color, #0f1216);
-  border-left-color: var(--remo-calendar-muted-text-color, #8b8f96);
-  color: var(--remo-calendar-muted-text-color, #8b8f96);
-}
-
-.calendar-event--completed .calendar-event-card:hover {
-  background: var(--remo-calendar-bg-color, #0d1013);
-  filter: none;
-}
-
-.calendar-event--completed .calendar-event-card::before {
-  content: none;
+/* completed appointments look exactly like active ones, except both corner glows turn a light green */
+.calendar-event--completed .calendar-event-card::before,
+.calendar-event--completed .calendar-event-card::after {
+  background: radial-gradient(circle, color-mix(in srgb, #4ade80 55%, transparent), transparent 70%);
 }
