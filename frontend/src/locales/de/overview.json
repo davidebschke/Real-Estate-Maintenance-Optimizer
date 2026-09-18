@@ -4,7 +4,7 @@
       "appointmentCountSingular": "{count} Termin",
       "appointmentCountPlural": "{count} Termine",
       "clickHint": "Klick öffnet Details",
-      "empty": "Heute stehen keine Termine an.",
+      "empty": "Heute stehen keine weiteren Termine an.",
       "travelSummary": "{km} km · {duration}"
     },
     "map": {

@@ -4,7 +4,7 @@
       "appointmentCountSingular": "{count} appointment",
       "appointmentCountPlural": "{count} appointments",
       "clickHint": "Click to open details",
-      "empty": "No appointments are scheduled for today.",
+      "empty": "No further appointments are scheduled for today.",
       "travelSummary": "{km} km · {duration}"
     },
     "map": {
