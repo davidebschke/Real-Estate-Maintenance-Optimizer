@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
+import { useCardTilt } from '@/composables/useCardTilt'
 import { formatDurationMinutes } from '@/utils/dateFormat'
 import type { Appointment } from '@/types/appointment'
 
@@ -14,6 +15,7 @@ defineEmits<{ 'open-appointment': [appointmentId: string] }>()
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
 
 const startTimeLabel = computed(() =>
   new Intl.DateTimeFormat(currentLocale.value, { hour: '2-digit', minute: '2-digit' }).format(
@@ -34,8 +36,11 @@ const materialsLabel = computed(() => props.appointment.materials.join(', '))
 <template>
   <button
     type="button"
-    class="daily-appointment-card"
+    class="daily-appointment-card card-3d card-3d--interactive"
     :class="{ 'daily-appointment-card--completed': appointment.completed }"
+    :style="tiltStyle"
+    @pointermove="onPointerMove"
+    @pointerleave="onPointerLeave"
     @click="$emit('open-appointment', appointment.id)"
   >
     <span class="daily-appointment-card__position">{{ position }}</span>
@@ -60,3 +65,4 @@ const materialsLabel = computed(() => props.appointment.materials.join(', '))
 </template>
 
 <style scoped src="@/styles/overview/daily-appointment-card.css"></style>
+<style scoped src="@/styles/card-3d.css"></style>

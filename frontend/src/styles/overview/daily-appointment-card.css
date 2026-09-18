@@ -1,10 +1,8 @@
 .daily-appointment-card {
   align-items: flex-start;
-  background-color: var(--remo-calendar-bg-color, #0d1013);
   border: 1px solid var(--remo-calendar-border-color, #24282e);
   border-radius: 0.75rem;
   color: var(--remo-calendar-text-color, #f5f5f5);
-  cursor: pointer;
   display: flex;
   font: inherit;
   gap: 1.125rem;
@@ -13,24 +11,27 @@
   width: 100%;
 }
 
-.daily-appointment-card:hover {
-  border-color: var(--remo-calendar-accent-color, #3b82f6);
-}
-
 .daily-appointment-card--completed {
   opacity: 0.6;
 }
 
 .daily-appointment-card__position {
   align-items: center;
-  background-color: var(--remo-calendar-accent-color, #3b82f6);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%),
+    var(--remo-calendar-accent-color, #3b82f6);
   border-radius: 50%;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.3);
   color: #0d1013;
   display: flex;
   flex-shrink: 0;
   font-weight: 700;
   height: 1.75rem;
   justify-content: center;
+  transform: translateZ(20px);
   width: 1.75rem;
 }
 

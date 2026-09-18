@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
+import { useCardTilt } from '@/composables/useCardTilt'
 import type { Property } from '@/types/property'
 import type { Appointment } from '@/types/appointment'
 
@@ -16,6 +17,7 @@ defineEmits<{ 'open-appointment': [appointmentId: string] }>()
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
 
 const nextAppointmentLabel = computed(() => {
   if (!props.nextAppointment) return ''
@@ -31,7 +33,12 @@ const nextAppointmentLabel = computed(() => {
 </script>
 
 <template>
-  <div class="property-card">
+  <div
+    class="property-card card-3d card-3d--interactive"
+    :style="tiltStyle"
+    @pointermove="onPointerMove"
+    @pointerleave="onPointerLeave"
+  >
     <div class="property-card__header">
       <i class="pi property-card__icon" :class="property.icon" aria-hidden="true"></i>
       <div class="property-card__heading">
@@ -70,4 +77,5 @@ const nextAppointmentLabel = computed(() => {
   </div>
 </template>
 
+<style scoped src="@/styles/card-3d.css"></style>
 <style scoped src="@/styles/properties/property-card.css"></style>

@@ -15,7 +15,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="appointment-map-card">
+  <div class="appointment-map-card card-3d">
     <div class="appointment-map-card__header">
       <h2 class="appointment-map-card__title">{{ t('overview.map.title') }}</h2>
       <span v-if="hasGeocodingError" class="appointment-map-card__hint">
@@ -30,4 +30,5 @@ onMounted(() => {
   </div>
 </template>
 
+<style scoped src="@/styles/card-3d.css"></style>
 <style scoped src="@/styles/map/appointment-map-card.css"></style>
