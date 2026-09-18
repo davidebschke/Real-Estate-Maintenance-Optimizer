@@ -2,12 +2,12 @@
   background-color: #1f2937;
   border: 1px solid #374151;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
-}
-
-.user-account-dropdown__popover.p-popover::before,
-.user-account-dropdown__popover.p-popover::after {
-  display: none;
+  /* the same inward ring-glow surface treatment used across the rest of the app, rather than corner orbs */
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 0.4),
+    inset 0 0 0 1px color-mix(in srgb, #3b82f6 35%, transparent),
+    inset 0 0 1rem -0.6rem color-mix(in srgb, #3b82f6 80%, transparent);
+  overflow: hidden;
 }
 
 .user-account-dropdown__popover .p-popover-content {

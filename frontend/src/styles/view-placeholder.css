@@ -1,5 +1,12 @@
 .view-placeholder {
-  color: var(--remo-text-color, #1f2937);
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.75rem;
+  box-sizing: border-box;
+  padding: 2rem;
+}
+
+.view-placeholder__text {
+  color: var(--remo-calendar-text-color, #f5f5f5);
   font-size: 1.25rem;
   margin: 0;
 }
