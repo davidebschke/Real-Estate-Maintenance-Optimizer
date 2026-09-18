@@ -5,7 +5,13 @@
 }
 
 .app-content {
+  /* a flex column so a routed view can grow to fill the remaining height with `flex: 1`; a plain
+     `height: 100%` on the view wouldn't work here, since Chromium treats a flex-grow-derived height as
+     indefinite for percentage-height children even though its rendered size is perfectly definite */
+  display: flex;
   flex: 1;
+  flex-direction: column;
   padding: 1.5rem;
-  padding-bottom: 4.5rem;
+  /* leaves the same 1.5rem gap above the fixed footer (2.5rem tall) as above the view's own content */
+  padding-bottom: 4rem;
 }
