@@ -4,7 +4,7 @@ import type { Property } from '@/types/property'
 /** Shape of a property as returned by the backend. */
 export type PropertyResponseDto = Property
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 /** Fetches every property, sorted by name. */
 export async function fetchProperties(): Promise<Property[]> {

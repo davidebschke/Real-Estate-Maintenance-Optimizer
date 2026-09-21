@@ -51,7 +51,7 @@ export interface MoveAppointmentPayload {
 /** Scope of a delete operation: only the given appointment, or it and every following occurrence of its recurring series. */
 export type AppointmentDeleteScope = 'single' | 'series'
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 /** Fetches every appointment, sorted by start time. */
 export async function fetchAppointments(): Promise<Appointment[]> {
