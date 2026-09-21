@@ -5,7 +5,7 @@ export interface VersionResponse {
   version: string
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 /** Fetches the currently deployed backend application version. */
 export async function fetchAppVersion(): Promise<string> {
