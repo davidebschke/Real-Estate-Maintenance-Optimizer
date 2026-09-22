@@ -89,10 +89,11 @@ export async function moveAppointment(
   return toAppointment(data)
 }
 
-/** Marks an appointment as completed with the current time as its actual end. */
-export async function completeAppointment(id: string): Promise<Appointment> {
+/** Marks an appointment as completed with the given actual end time. */
+export async function completeAppointment(id: string, actualEnd: Date): Promise<Appointment> {
   const { data } = await axios.patch<AppointmentResponseDto>(
     `${apiBaseUrl}/api/appointments/${id}/complete`,
+    { actualEnd: toLocalDateTimeString(actualEnd) },
   )
   return toAppointment(data)
 }

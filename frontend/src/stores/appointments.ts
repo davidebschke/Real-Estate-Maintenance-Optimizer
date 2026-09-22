@@ -33,9 +33,9 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     return moved
   }
 
-  /** Marks an appointment as completed with the current time as its actual end, and refreshes the local list. */
-  async function completeAppointment(id: string) {
-    const completed = await appointmentService.completeAppointment(id)
+  /** Marks an appointment as completed with the given actual end time, and refreshes the local list. */
+  async function completeAppointment(id: string, actualEnd: Date) {
+    const completed = await appointmentService.completeAppointment(id, actualEnd)
     await fetchAppointments()
     return completed
   }

@@ -1,6 +1,7 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
+import com.remo.realestatemaintainceoptimizer.dto.CompleteAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.service.AppointmentService;
@@ -70,11 +71,12 @@ public class AppointmentController {
     }
 
     /**
-     * Marks an appointment as completed with the current time as its actual end.
+     * Marks an appointment as completed, using the request's actual end time or the current time when omitted.
      */
     @PatchMapping("/{id}/complete")
-    public AppointmentResponse completeAppointment(@PathVariable String id) {
-        return appointmentService.complete(id);
+    public AppointmentResponse completeAppointment(
+            @PathVariable String id, @RequestBody(required = false) CompleteAppointmentRequest request) {
+        return appointmentService.complete(id, request != null ? request.actualEnd() : null);
     }
 
     /**

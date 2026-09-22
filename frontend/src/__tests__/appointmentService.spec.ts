@@ -105,12 +105,15 @@ describe('appointmentService', () => {
     )
   })
 
-  it('completes an appointment', async () => {
+  it('completes an appointment with the given actual end time', async () => {
     vi.mocked(axios.patch).mockResolvedValue({ data: createDto({ completed: true, actualEnd: '2026-08-11T14:30:00' }) })
 
-    const appointment = await completeAppointment('1')
+    const appointment = await completeAppointment('1', new Date(2026, 7, 11, 14, 30))
 
-    expect(axios.patch).toHaveBeenCalledWith(expect.stringContaining('/api/appointments/1/complete'))
+    expect(axios.patch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/appointments/1/complete'),
+      { actualEnd: '2026-08-11T14:30:00' },
+    )
     expect(appointment.completed).toBe(true)
     expect(appointment.actualEnd).toEqual(new Date('2026-08-11T14:30:00'))
   })

@@ -168,6 +168,38 @@ class AppointmentControllerTest {
     }
 
     @Test
+    void completingWithAnExplicitActualEndUsesTheGivenTimestamp() throws Exception {
+        String requestBody = """
+                {
+                  "title": "Kellerreinigung Q3",
+                  "propertyId": "property-1",
+                  "propertyName": "Wohnanlage Sonnenhof",
+                  "propertyAddress": "Aachener Str. 512",
+                  "description": "",
+                  "start": "2026-08-11T13:00:00",
+                  "durationMinutes": 120,
+                  "locked": false,
+                  "recurring": false,
+                  "materials": []
+                }
+                """;
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        mockMvc.perform(patch("/api/appointments/{id}/complete", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"actualEnd\": \"2026-08-10T16:30:00\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completed", equalTo(true)))
+                .andExpect(jsonPath("$.actualEnd", equalTo("2026-08-10T16:30:00")));
+    }
+
+    @Test
     void deletingAnAppointmentRemovesIt() throws Exception {
         String requestBody = """
                 {
