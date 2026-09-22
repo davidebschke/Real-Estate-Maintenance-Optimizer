@@ -9,22 +9,29 @@ export const usePropertiesStore = defineStore('properties', () => {
   const hasLoadError = ref(false)
   const hasCreateError = ref(false)
   const isCreateDialogOpen = ref(false)
+  /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
+  let latestChangeToken = 0
 
-  /** Loads every property from the backend, recording whether the request failed. */
+  /** Loads every property from the backend, recording whether the request failed; ignores the result if a newer change (fetch or create) already happened. */
   async function fetchProperties() {
+    const requestToken = ++latestChangeToken
     try {
-      properties.value = await propertyService.fetchProperties()
+      const fetched = await propertyService.fetchProperties()
+      if (requestToken !== latestChangeToken) return
+      properties.value = fetched
       hasLoadError.value = false
     } catch {
+      if (requestToken !== latestChangeToken) return
       hasLoadError.value = true
     }
   }
 
-  /** Creates a new property and appends it to the store, recording whether the request failed. */
+  /** Creates a new property and inserts it into the store in name order, recording whether the request failed. */
   async function createProperty(payload: CreatePropertyPayload): Promise<boolean> {
     try {
       const created = await propertyService.createProperty(payload)
-      properties.value = [...properties.value, created]
+      latestChangeToken++
+      properties.value = [...properties.value, created].sort((a, b) => a.name.localeCompare(b.name))
       hasCreateError.value = false
       return true
     } catch {

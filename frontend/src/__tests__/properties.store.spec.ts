@@ -109,4 +109,45 @@ describe('usePropertiesStore', () => {
     expect(store.properties).toEqual([])
     expect(store.hasCreateError).toBe(true)
   })
+
+  it('inserts a created property alphabetically rather than always at the end', async () => {
+    vi.mocked(propertyService.createProperty).mockResolvedValue(
+      createProperty({ id: '2', name: 'Aachener Hof' }),
+    )
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1', name: 'Wohnanlage Sonnenhof' })]
+
+    await store.createProperty({
+      name: 'Aachener Hof',
+      address: 'Beispielstr. 1',
+      latitude: null,
+      longitude: null,
+    })
+
+    expect(store.properties.map((property) => property.id)).toEqual(['2', '1'])
+  })
+
+  it('ignores a fetchProperties response that resolves after a newer create already happened', async () => {
+    const store = usePropertiesStore()
+    let resolveStaleFetch!: (properties: Property[]) => void
+    vi.mocked(propertyService.fetchProperties).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStaleFetch = resolve
+      }),
+    )
+    const staleFetch = store.fetchProperties()
+
+    vi.mocked(propertyService.createProperty).mockResolvedValue(createProperty({ id: '2' }))
+    await store.createProperty({
+      name: 'Wohnanlage Sonnenhof',
+      address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+      latitude: 50.94,
+      longitude: 6.88,
+    })
+
+    resolveStaleFetch([createProperty({ id: '1' })])
+    await staleFetch
+
+    expect(store.properties.map((property) => property.id)).toEqual(['2'])
+  })
 })
