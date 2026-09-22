@@ -105,12 +105,12 @@ PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas) and are *
 
 #### Deployment
 
-| Service  | Platform                    | Notes                                                             |
-|----------|------------------------------|---------------------------------------------------------------------|
-| Frontend | **Netlify**                  | Build command `npm run build`, publish directory `frontend/dist`   |
-| Backend  | **Render.com** or **Fly.io** | Deployed from the backend's Dockerfile; both platforms can build and run the container directly |
+| Service  | Platform          | Notes                                                                                           |
+|----------|-------------------|---------------------------------------------------------------------------------------------------|
+| Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly, without a Dockerfile |
+| Backend  | **Oracle Cloud**  | Built with Maven into an executable jar, run directly on Oracle Cloud Infrastructure (OCI) (`java -jar ...`), without a Dockerfile |
 
-Both platforms are intended to build directly from the repository's Dockerfiles once added — no separate CI image registry is planned for the MVP.
+Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment.
 
 ## German
 Das Projekt soll im Kern einer Immobilienverwaltung helfen Wartungen zu optimieren. Dies soll geschehen indem Anfahrtswege reduziert werden, Termine anhand des Ortes und der dauer besser abgestimmt werden und die potenzielle Dauer von Terminen eingeschätzt werden aufgrund von vorran gegangenen Terminen ähnlichen Kontextes. Das Unternehmen spart damit nicht nur Zeit sondern auch bares Geld. Zusätzlich könnten Betriebskosten dadurch gesenkt werden . Dies würde auch den Mieter freuen. Mehr wird später kommen.
@@ -173,12 +173,12 @@ PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas) und 
 
 #### Deployment
 
-| Service   | Plattform                     | Hinweise                                                                |
-|-----------|--------------------------------|--------------------------------------------------------------------------|
-| Frontend  | **Netlify**                    | Build-Befehl `npm run build`, Publish-Verzeichnis `frontend/dist`       |
-| Backend   | **Render.com** oder **Fly.io** | Deployment aus dem Dockerfile des Backends; beide Plattformen können den Container direkt bauen und starten |
+| Service   | Plattform          | Hinweise                                                                                          |
+|-----------|--------------------|------------------------------------------------------------------------------------------------------|
+| Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed, ohne Dockerfile |
+| Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar, direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar ...`), ohne Dockerfile |
 
-Beide Plattformen sollen künftig direkt aus den Dockerfiles im Repository bauen, sobald diese vorhanden sind — für das MVP ist keine separate CI-Image-Registry geplant.
+Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt.
 
 ------------
 
