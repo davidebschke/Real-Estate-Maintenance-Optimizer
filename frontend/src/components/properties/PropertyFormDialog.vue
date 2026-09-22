@@ -13,6 +13,7 @@ const STREET_MAX_LENGTH = 100
 const HOUSE_NUMBER_MAX_LENGTH = 10
 const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const GEOCODE_DEBOUNCE_MS = 500
+const HOUSE_NUMBER_PATTERN = /^\d+$/
 const POSTAL_CODE_PATTERN = /^\d{5}$/
 
 const visible = defineModel<boolean>('visible', { required: true })
@@ -38,12 +39,24 @@ const isValid = computed(
     form.name.trim().length > 0 &&
     form.name.length <= NAME_MAX_LENGTH &&
     form.street.trim().length > 0 &&
-    form.houseNumber.trim().length > 0 &&
+    HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
     form.city.trim().length > 0 &&
     !isDuplicateName.value &&
     !isDuplicateAddress.value,
 )
+
+/** Whether the house number has been touched but is not purely digits. */
+const isHouseNumberFormatInvalid = computed(() => {
+  const houseNumber = form.houseNumber.trim()
+  return houseNumber.length > 0 && !HOUSE_NUMBER_PATTERN.test(houseNumber)
+})
+
+/** Whether the postal code has been touched but is not exactly 5 digits. */
+const isPostalCodeFormatInvalid = computed(() => {
+  const postalCode = form.postalCode.trim()
+  return postalCode.length > 0 && !POSTAL_CODE_PATTERN.test(postalCode)
+})
 
 /** Combines street, house number and the optional supplement into a single "Straße Hausnummer[Zusatz]" line. */
 const streetAndHouseNumber = computed(
@@ -65,7 +78,7 @@ const isDuplicateName = computed(() => {
 const isDuplicateAddress = computed(() => {
   if (
     form.street.trim().length === 0 ||
-    form.houseNumber.trim().length === 0 ||
+    !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
     !POSTAL_CODE_PATTERN.test(form.postalCode) ||
     form.city.trim().length === 0
   ) {
@@ -103,7 +116,7 @@ function scheduleGeocode() {
 
   if (
     form.street.trim().length === 0 ||
-    form.houseNumber.trim().length === 0 ||
+    !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
     !POSTAL_CODE_PATTERN.test(form.postalCode) ||
     form.city.trim().length === 0
   ) {
@@ -178,9 +191,13 @@ function cancel() {
           id="property-house-number"
           v-model="form.houseNumber"
           :maxlength="HOUSE_NUMBER_MAX_LENGTH"
-          :invalid="isDuplicateAddress"
+          inputmode="numeric"
+          :invalid="isDuplicateAddress || isHouseNumberFormatInvalid"
           :placeholder="t('properties.create.houseNumberPlaceholder')"
         />
+        <p v-if="isHouseNumberFormatInvalid" class="property-form-dialog__field-error">
+          {{ t('properties.create.houseNumberFormatError') }}
+        </p>
       </div>
 
       <div class="property-form-dialog__field">
@@ -203,9 +220,12 @@ function cancel() {
           v-model="form.postalCode"
           maxlength="5"
           inputmode="numeric"
-          :invalid="isDuplicateAddress"
+          :invalid="isDuplicateAddress || isPostalCodeFormatInvalid"
           :placeholder="t('properties.create.postalCodePlaceholder')"
         />
+        <p v-if="isPostalCodeFormatInvalid" class="property-form-dialog__field-error">
+          {{ t('properties.create.postalCodeFormatError') }}
+        </p>
       </div>
 
       <div class="property-form-dialog__field">

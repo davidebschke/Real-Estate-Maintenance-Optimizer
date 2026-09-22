@@ -103,7 +103,7 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
   })
 
-  it('keeps submit disabled for a postal code that is not exactly 5 digits', async () => {
+  it('flags a postal code that is not exactly 5 digits with a hint and a red border, and disables submit', async () => {
     const wrapper = await mountDialog()
 
     await bodyField('#property-name').setValue('Wohnanlage Nordpark')
@@ -112,6 +112,26 @@ describe('PropertyFormDialog', () => {
     await bodyField('#property-postal-code').setValue('123')
     await bodyField('#property-city').setValue('Köln')
 
+    expect(bodyField('#property-postal-code').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Die Postleitzahl muss aus genau 5 Ziffern bestehen.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('flags a house number that is not purely digits with a hint and a red border, and disables submit', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3b')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Die Hausnummer darf nur aus Zahlen bestehen.',
+    )
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
   })
 

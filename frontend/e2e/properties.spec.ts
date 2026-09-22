@@ -132,21 +132,49 @@ test.describe('properties', () => {
     await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
   })
 
-  test('keeps the submit button disabled until every field is valid', async ({ page }) => {
+  test('flags a house number that is not purely digits with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
     await page.goto('/properties')
 
     await page.locator('.property-create-card').click()
-    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
-    await expect(submitButton).toBeDisabled()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512b')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln')
 
+    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toBeVisible()
+    await expect(page.getByLabel('Hausnummer')).toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+
+    await page.getByLabel('Hausnummer').fill('512')
+    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toHaveCount(0)
+    await expect(page.getByLabel('Hausnummer')).not.toHaveClass(/p-invalid/)
+  })
+
+  test('flags a postal code that is not exactly 5 digits with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
     await page.getByLabel('Name').fill('E2E Testobjekt')
     await page.getByLabel('Straße').fill('Aachener Str.')
     await page.getByLabel('Hausnummer').fill('512')
     await page.getByLabel('Postleitzahl').fill('123')
     await page.getByLabel('Ort').fill('Köln')
+    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
+
+    await expect(page.getByText('Die Postleitzahl muss aus genau 5 Ziffern bestehen.')).toBeVisible()
+    await expect(page.getByLabel('Postleitzahl')).toHaveClass(/p-invalid/)
     await expect(submitButton).toBeDisabled()
 
     await page.getByLabel('Postleitzahl').fill('50933')
+    await expect(
+      page.getByText('Die Postleitzahl muss aus genau 5 Ziffern bestehen.'),
+    ).toHaveCount(0)
+    await expect(page.getByLabel('Postleitzahl')).not.toHaveClass(/p-invalid/)
     await expect(submitButton).toBeEnabled()
   })
 })
