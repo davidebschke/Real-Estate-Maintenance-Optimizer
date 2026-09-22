@@ -96,6 +96,42 @@ test.describe('properties', () => {
     }
   })
 
+  test('flags a duplicate name against an existing property with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('Wohnanlage Sonnenhof')
+    await page.getByLabel('Straße').fill('Ganz andere Str.')
+    await page.getByLabel('Hausnummer').fill('99')
+    await page.getByLabel('Postleitzahl').fill('12345')
+    await page.getByLabel('Ort').fill('Musterstadt')
+
+    await expect(page.getByText('Ein Objekt mit diesem Namen existiert bereits.')).toBeVisible()
+    await expect(page.getByLabel('Name')).toHaveClass(/p-invalid/)
+    await expect(page.getByLabel('Straße')).not.toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+  })
+
+  test('flags a duplicate address against an existing property with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('Ganz anderer Name')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln-Braunsenfeld')
+
+    await expect(page.getByText('Ein Objekt mit dieser Adresse existiert bereits.')).toBeVisible()
+    await expect(page.getByLabel('Straße')).toHaveClass(/p-invalid/)
+    await expect(page.getByLabel('Name')).not.toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+  })
+
   test('keeps the submit button disabled until every field is valid', async ({ page }) => {
     await page.goto('/properties')
 

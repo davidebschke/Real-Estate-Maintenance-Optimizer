@@ -6,8 +6,23 @@ import Button from 'primevue/button'
 import { i18n } from '@/i18n'
 import PropertyFormDialog from '@/components/properties/PropertyFormDialog.vue'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
+import { usePropertiesStore } from '@/stores/properties'
 import * as propertyService from '@/services/propertyService'
 import * as geocodingService from '@/services/geocodingService'
+import type { Property } from '@/types/property'
+
+/** Builds a sample existing property for duplicate-check tests, with overridable fields. */
+function createExistingProperty(overrides: Partial<Property> = {}): Property {
+  return {
+    id: '1',
+    name: 'Wohnanlage Sonnenhof',
+    address: 'Aachener Str. 512, 50933 Köln',
+    icon: 'pi-building',
+    latitude: null,
+    longitude: null,
+    ...overrides,
+  }
+}
 
 vi.mock('@/services/propertyService')
 vi.mock('@/services/geocodingService')
@@ -193,6 +208,47 @@ describe('PropertyFormDialog', () => {
     expect(propertyService.createProperty).toHaveBeenCalledWith(
       expect.objectContaining({ address: 'Nordparkstr. 3a, 50733 Köln' }),
     )
+  })
+
+  it('flags a duplicate name (case- and whitespace-insensitive) with a hint and disables submit, independently of the address', async () => {
+    const store = usePropertiesStore()
+    store.properties = [createExistingProperty({ name: '  wohnanlage nordpark  ' })]
+    const wrapper = await mountDialog()
+
+    await fillRequiredFields()
+
+    expect(bodyField('#property-name').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Ein Objekt mit diesem Namen existiert bereits.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    // the address does not match the existing property, so only the name fields are flagged
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+  })
+
+  it('flags a duplicate address (case- and whitespace-insensitive) with a hint and disables submit, independently of the name', async () => {
+    const store = usePropertiesStore()
+    store.properties = [
+      createExistingProperty({
+        name: 'Ganz anderes Objekt',
+        address: '  nordparkstr. 3, 50733 köln  ',
+      }),
+    ]
+    const wrapper = await mountDialog()
+
+    await fillRequiredFields()
+
+    expect(bodyField('#property-street').classes()).toContain('p-invalid')
+    expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
+    expect(bodyField('#property-postal-code').classes()).toContain('p-invalid')
+    expect(bodyField('#property-city').classes()).toContain('p-invalid')
+    const addressErrors = document.body.querySelectorAll('.property-form-dialog__field-error')
+    expect(addressErrors[addressErrors.length - 1]?.textContent).toBe(
+      'Ein Objekt mit dieser Adresse existiert bereits.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    // the name does not match the existing property, so the name field is not flagged
+    expect(bodyField('#property-name').classes()).not.toContain('p-invalid')
   })
 
   it('shows an error and keeps the dialog open when creation fails', async () => {

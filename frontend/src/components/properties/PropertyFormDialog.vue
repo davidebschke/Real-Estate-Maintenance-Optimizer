@@ -40,7 +40,9 @@ const isValid = computed(
     form.street.trim().length > 0 &&
     form.houseNumber.trim().length > 0 &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
-    form.city.trim().length > 0,
+    form.city.trim().length > 0 &&
+    !isDuplicateName.value &&
+    !isDuplicateAddress.value,
 )
 
 /** Combines street, house number and the optional supplement into a single "Straße Hausnummer[Zusatz]" line. */
@@ -51,6 +53,27 @@ const streetAndHouseNumber = computed(
 const combinedAddress = computed(() =>
   `${streetAndHouseNumber.value}, ${form.postalCode.trim()} ${form.city.trim()}`.trim(),
 )
+
+/** Whether the entered name matches an already-existing property's name, ignoring case and surrounding whitespace. */
+const isDuplicateName = computed(() => {
+  const name = form.name.trim().toLowerCase()
+  if (name.length === 0) return false
+  return store.properties.some((property) => property.name.trim().toLowerCase() === name)
+})
+
+/** Whether the fully entered address matches an already-existing property's address, ignoring case and surrounding whitespace. */
+const isDuplicateAddress = computed(() => {
+  if (
+    form.street.trim().length === 0 ||
+    form.houseNumber.trim().length === 0 ||
+    !POSTAL_CODE_PATTERN.test(form.postalCode) ||
+    form.city.trim().length === 0
+  ) {
+    return false
+  }
+  const address = combinedAddress.value.toLowerCase()
+  return store.properties.some((property) => property.address.trim().toLowerCase() === address)
+})
 
 watch(visible, (isVisible) => {
   if (isVisible) resetForm()
@@ -129,8 +152,12 @@ function cancel() {
         id="property-name"
         v-model="form.name"
         :maxlength="NAME_MAX_LENGTH"
+        :invalid="isDuplicateName"
         :placeholder="t('properties.create.namePlaceholder')"
       />
+      <p v-if="isDuplicateName" class="property-form-dialog__field-error">
+        {{ t('properties.create.duplicateNameError') }}
+      </p>
     </div>
 
     <div class="property-form-dialog__grid property-form-dialog__grid--address">
@@ -140,6 +167,7 @@ function cancel() {
           id="property-street"
           v-model="form.street"
           :maxlength="STREET_MAX_LENGTH"
+          :invalid="isDuplicateAddress"
           :placeholder="t('properties.create.streetPlaceholder')"
         />
       </div>
@@ -150,6 +178,7 @@ function cancel() {
           id="property-house-number"
           v-model="form.houseNumber"
           :maxlength="HOUSE_NUMBER_MAX_LENGTH"
+          :invalid="isDuplicateAddress"
           :placeholder="t('properties.create.houseNumberPlaceholder')"
         />
       </div>
@@ -160,6 +189,7 @@ function cancel() {
           id="property-address-supplement"
           v-model="form.addressSupplement"
           :maxlength="ADDRESS_SUPPLEMENT_MAX_LENGTH"
+          :invalid="isDuplicateAddress"
           :placeholder="t('properties.create.addressSupplementPlaceholder')"
         />
       </div>
@@ -173,6 +203,7 @@ function cancel() {
           v-model="form.postalCode"
           maxlength="5"
           inputmode="numeric"
+          :invalid="isDuplicateAddress"
           :placeholder="t('properties.create.postalCodePlaceholder')"
         />
       </div>
@@ -182,10 +213,15 @@ function cancel() {
         <InputText
           id="property-city"
           v-model="form.city"
+          :invalid="isDuplicateAddress"
           :placeholder="t('properties.create.cityPlaceholder')"
         />
       </div>
     </div>
+
+    <p v-if="isDuplicateAddress" class="property-form-dialog__field-error">
+      {{ t('properties.create.duplicateAddressError') }}
+    </p>
 
     <div class="property-form-dialog__map-section">
       <span class="property-form-dialog__map-hint">{{ t('properties.create.mapHint') }}</span>

@@ -28,6 +28,8 @@
       "cityPlaceholder": "e.g. Cologne",
       "mapHint": "Location preview",
       "mapEmpty": "Enter street, house number, postal code and city to see the location",
+      "duplicateNameError": "A property with this name already exists.",
+      "duplicateAddressError": "A property with this address already exists.",
       "error": "The property could not be created.",
       "submit": "Add property",
       "cancel": "Cancel"

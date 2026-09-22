@@ -28,6 +28,8 @@
       "cityPlaceholder": "z. B. Köln",
       "mapHint": "Vorschau der Position",
       "mapEmpty": "Straße, Hausnummer, Postleitzahl und Ort eingeben, um die Position zu sehen",
+      "duplicateNameError": "Ein Objekt mit diesem Namen existiert bereits.",
+      "duplicateAddressError": "Ein Objekt mit dieser Adresse existiert bereits.",
       "error": "Das Objekt konnte nicht angelegt werden.",
       "submit": "Objekt anlegen",
       "cancel": "Abbrechen"
