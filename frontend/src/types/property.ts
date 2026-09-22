@@ -7,3 +7,11 @@ export interface Property {
   latitude: number | null
   longitude: number | null
 }
+
+/** Payload for creating a new property. */
+export interface CreatePropertyPayload {
+  name: string
+  address: string
+  latitude: number | null
+  longitude: number | null
+}

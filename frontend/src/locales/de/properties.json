@@ -10,6 +10,31 @@
       "completedAppointments": "Erledigte Aufträge",
       "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin"
+    },
+    "create": {
+      "cardLabel": "Neues Objekt anlegen",
+      "title": "Neues Objekt anlegen",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Wohnanlage Sonnenhof",
+      "streetLabel": "Straße",
+      "streetPlaceholder": "z. B. Aachener Str.",
+      "houseNumberLabel": "Hausnummer",
+      "houseNumberPlaceholder": "z. B. 512",
+      "houseNumberFormatError": "Die Hausnummer darf nur aus Zahlen bestehen.",
+      "addressSupplementLabel": "Zusatz",
+      "addressSupplementPlaceholder": "z. B. a",
+      "postalCodeLabel": "Postleitzahl",
+      "postalCodePlaceholder": "z. B. 50933",
+      "postalCodeFormatError": "Die Postleitzahl muss aus genau 5 Ziffern bestehen.",
+      "cityLabel": "Ort",
+      "cityPlaceholder": "z. B. Köln",
+      "mapHint": "Vorschau der Position",
+      "mapEmpty": "Straße, Hausnummer, Postleitzahl und Ort eingeben, um die Position zu sehen",
+      "duplicateNameError": "Ein Objekt mit diesem Namen existiert bereits.",
+      "duplicateAddressError": "Ein Objekt mit dieser Adresse existiert bereits.",
+      "error": "Das Objekt konnte nicht angelegt werden.",
+      "submit": "Objekt anlegen",
+      "cancel": "Abbrechen"
     }
   }
 }

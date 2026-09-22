@@ -10,6 +10,31 @@
       "completedAppointments": "Completed appointments",
       "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment"
+    },
+    "create": {
+      "cardLabel": "Add new property",
+      "title": "Add new property",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Sonnenhof residential complex",
+      "streetLabel": "Street",
+      "streetPlaceholder": "e.g. Aachener Str.",
+      "houseNumberLabel": "House number",
+      "houseNumberPlaceholder": "e.g. 512",
+      "houseNumberFormatError": "The house number may only contain digits.",
+      "addressSupplementLabel": "Supplement",
+      "addressSupplementPlaceholder": "e.g. a",
+      "postalCodeLabel": "Postal code",
+      "postalCodePlaceholder": "e.g. 50933",
+      "postalCodeFormatError": "The postal code must consist of exactly 5 digits.",
+      "cityLabel": "City",
+      "cityPlaceholder": "e.g. Cologne",
+      "mapHint": "Location preview",
+      "mapEmpty": "Enter street, house number, postal code and city to see the location",
+      "duplicateNameError": "A property with this name already exists.",
+      "duplicateAddressError": "A property with this address already exists.",
+      "error": "The property could not be created.",
+      "submit": "Add property",
+      "cancel": "Cancel"
     }
   }
 }
