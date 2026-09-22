@@ -70,7 +70,8 @@ Real-Estate-Maintenance-Optimizer/
 │   └── workflows/speckit/          # bundled spec-kit workflow definition (not currently invoked by any speckit-* skill)
 ├── specs/                          # not yet created — appears on the first `/speckit-specify` run, one `NNN-short-name/` directory per feature (spec.md, plan.md, tasks.md, ...); `NNN` is spec-kit's own sequential counter (`.specify/init-options.json` → `feature_numbering`), independent of the git branch issue-number counter in `.claude/rules/git-workflow.md` — the two numbers are not expected to match
 ├── .github/
-│   └── ISSUE_TEMPLATE/
+│   ├── ISSUE_TEMPLATE/
+│   └── workflows/                  # GitHub Actions CI (backend-tests.yml, frontend-tests.yml)
 ├── README.md
 ├── SECURITY.md
 └── CLAUDE.md
