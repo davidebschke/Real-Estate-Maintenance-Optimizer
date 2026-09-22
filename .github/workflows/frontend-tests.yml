@@ -15,8 +15,28 @@ on:
       - ".github/workflows/frontend-tests.yml"
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check which paths changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - "frontend/**"
+              - ".github/workflows/frontend-tests.yml"
+
   test:
     name: Run frontend tests
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,13 +81,22 @@ jobs:
         env:
           REMO_FRONTEND_BASE_URL: http://localhost:4173
         run: |
-          java -jar target/remo-backend.jar &
-          for i in $(seq 1 30); do
+          java -jar target/remo-backend.jar > backend.log 2>&1 &
+          for i in $(seq 1 40); do
             curl --silent --fail http://localhost:8080/api/version && exit 0
-            sleep 2
+            sleep 3
           done
-          echo "Backend did not become ready in time" >&2
+          echo "Backend did not become ready in time, last log lines:" >&2
+          tail -n 100 backend.log >&2
           exit 1
+
+      - name: Upload backend log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend/backend.log
+          retention-days: 7
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
