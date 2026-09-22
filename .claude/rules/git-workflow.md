@@ -6,6 +6,7 @@ Binding Git workflow for the Real-Estate-Maintenance-Optimizer repository. Refer
 - Main branch: `main`
 - CODEOWNER: `@davidebschke` (see `.github/CODEOWNERS.md`)
 - New features/fixes via feature branches and pull requests against `main`.
+- Pull requests must be integrated via an ordinary merge commit (`git merge` / GitHub's "Merge pull request" button). Squash merges are forbidden, since they collapse the feature branch's individual commits and lose that history on `main`.
 - Branch numbers (the `<issue-number>` prefix in `.claude/rules/coding-conventions.md`) are assigned sequentially by the user across the whole repository, independent of actual GitHub issue numbers. Before creating a new branch, check `git branch -a` (local and remote) for the highest existing prefix and use the next integer — merged branches are deleted, so also check merged PR numbers in the commit history, not just `git branch -a`. Last number used: **42** (`42-ci-add-backend-and-frontend-test-workflows`); 41 (`41-chore-fixed-backend-jar-name`), 40 (`40-fix-leaflet-marker-icon-paths`) and 39 (`39-chore-set-html-title-to-remo`) preceded it.
 - This counter is unrelated to GitHub spec-kit's own `specs/NNN-short-name/` numbering (see `.claude/rules/folder-structure.md`); a spec-kit feature directory number and a branch's `<issue-number>` are not expected to match.
 

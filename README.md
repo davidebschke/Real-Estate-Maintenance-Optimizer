@@ -1,5 +1,8 @@
 # [Real-Estate-Maintenance-Optimizer](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer)
 
+[![Backend Tests](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/backend-tests.yml)
+[![Frontend Tests](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml)
+
 - [Real-Estate-Maintenance-Optimizer](#real-estate-maintenance-optimizer)
   - [English](#english)
     - [📌 Project Overview](#-project-overview)
