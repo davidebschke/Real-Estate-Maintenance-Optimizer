@@ -17,7 +17,7 @@ export interface AppointmentMapMarker {
  * property's stored coordinates and falling back to geocoding its address only when those are missing.
  */
 export function useAppointmentMapMarkers() {
-  const { todaysAppointments } = useTodaysAppointments()
+  const { todaysAppointments, allTodaysAppointmentsCompleted } = useTodaysAppointments()
   const propertiesStore = usePropertiesStore()
   const markers = ref<AppointmentMapMarker[]>([])
   const isLoading = ref(false)
@@ -58,5 +58,5 @@ export function useAppointmentMapMarkers() {
     isLoading.value = false
   })
 
-  return { markers, isLoading, hasGeocodingError }
+  return { markers, isLoading, hasGeocodingError, allTodaysAppointmentsCompleted }
 }

@@ -7,7 +7,7 @@ import AppointmentMap from '@/components/map/AppointmentMap.vue'
 
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
-const { markers, hasGeocodingError } = useAppointmentMapMarkers()
+const { markers, hasGeocodingError, allTodaysAppointmentsCompleted } = useAppointmentMapMarkers()
 
 onMounted(() => {
   propertiesStore.fetchProperties()
@@ -16,16 +16,22 @@ onMounted(() => {
 
 <template>
   <div class="appointment-map-card card-3d">
-    <div v-if="hasGeocodingError" class="appointment-map-card__header">
-      <span class="appointment-map-card__hint">
-        {{ t('overview.map.geocodingError') }}
-      </span>
+    <div v-if="allTodaysAppointmentsCompleted" class="appointment-map-card__completed">
+      <i class="pi pi-check appointment-map-card__completed-icon" aria-hidden="true"></i>
+      <p class="appointment-map-card__completed-text">{{ t('overview.map.allCompleted') }}</p>
     </div>
+    <template v-else>
+      <div v-if="hasGeocodingError" class="appointment-map-card__header">
+        <span class="appointment-map-card__hint">
+          {{ t('overview.map.geocodingError') }}
+        </span>
+      </div>
 
-    <p v-if="markers.length === 0" class="appointment-map-card__empty">
-      {{ t('overview.map.empty') }}
-    </p>
-    <AppointmentMap v-else :markers="markers" />
+      <p v-if="markers.length === 0" class="appointment-map-card__empty">
+        {{ t('overview.map.empty') }}
+      </p>
+      <AppointmentMap v-else :markers="markers" />
+    </template>
   </div>
 </template>
 

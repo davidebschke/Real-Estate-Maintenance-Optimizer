@@ -5,11 +5,14 @@
       "appointmentCountPlural": "{count} appointments",
       "clickHint": "Click to open details",
       "empty": "No further appointments are scheduled for today.",
+      "allCompletedHint": "All of today's appointments are completed · Preview of tomorrow",
+      "emptyTomorrow": "No appointments are scheduled for tomorrow yet.",
       "travelSummary": "{km} km · {duration}"
     },
     "map": {
       "empty": "No appointments are scheduled for today.",
-      "geocodingError": "The location for some addresses could not be determined."
+      "geocodingError": "The location for some addresses could not be determined.",
+      "allCompleted": "All of today's appointments are completed"
     }
   }
 }

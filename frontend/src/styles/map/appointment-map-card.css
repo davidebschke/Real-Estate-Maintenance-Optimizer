@@ -25,3 +25,25 @@
 .appointment-map-card__empty {
   color: var(--remo-calendar-muted-text-color, #8b8f96);
 }
+
+.appointment-map-card__completed {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+  min-height: 20rem;
+}
+
+.appointment-map-card__completed-icon {
+  color: var(--remo-appointment-completed-color, #4ade80);
+  font-size: 3.5rem;
+}
+
+.appointment-map-card__completed-text {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 1.1rem;
+  margin: 0;
+  text-align: center;
+}
