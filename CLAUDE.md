@@ -121,7 +121,7 @@ Binding testing conventions are defined in [`.claude/rules/testing.md`](.claude/
 
 ## 9. Git Workflow
 
-Binding Git workflow (remote, main branch, code owner, branch/PR process) is defined in [`.claude/rules/git-workflow.md`](.claude/rules/git-workflow.md).
+Binding Git workflow (remote, main branch, code owner, branch/PR process, issue effort labeling and matching model selection) is defined in [`.claude/rules/git-workflow.md`](.claude/rules/git-workflow.md).
 
 ## 10. Notes for Claude Code
 
