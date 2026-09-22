@@ -50,10 +50,11 @@ function submitButton(wrapper: DialogWrapper) {
   return wrapper.findAllComponents(Button).find((button) => button.text() === 'Objekt anlegen')!
 }
 
-/** Fills in every required field: name, address, postal code and city. */
+/** Fills in every required field: name, street, house number, postal code and city. */
 async function fillRequiredFields() {
   await bodyField('#property-name').setValue('Wohnanlage Nordpark')
-  await bodyField('#property-address').setValue('Nordparkstr. 3')
+  await bodyField('#property-street').setValue('Nordparkstr.')
+  await bodyField('#property-house-number').setValue('3')
   await bodyField('#property-postal-code').setValue('50733')
   await bodyField('#property-city').setValue('Köln')
 }
@@ -65,7 +66,7 @@ describe('PropertyFormDialog', () => {
     expect(bodyField('#property-name').attributes('maxlength')).toBe('50')
   })
 
-  it('disables submit until name, address, postal code and city are filled in', async () => {
+  it('disables submit until name, street, house number, postal code and city are filled in', async () => {
     const wrapper = await mountDialog()
 
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
@@ -75,11 +76,24 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
+  it('keeps submit disabled while the house number is empty, even with an address supplement filled in', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-address-supplement').setValue('a')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
   it('keeps submit disabled for a postal code that is not exactly 5 digits', async () => {
     const wrapper = await mountDialog()
 
     await bodyField('#property-name').setValue('Wohnanlage Nordpark')
-    await bodyField('#property-address').setValue('Nordparkstr. 3')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
     await bodyField('#property-postal-code').setValue('123')
     await bodyField('#property-city').setValue('Köln')
 
@@ -158,6 +172,27 @@ describe('PropertyFormDialog', () => {
     })
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
+  it('appends the address supplement directly to the house number, with no separator', async () => {
+    vi.mocked(propertyService.createProperty).mockResolvedValue({
+      id: '4',
+      name: 'Wohnanlage Nordpark',
+      address: 'Nordparkstr. 3a, 50733 Köln',
+      icon: 'pi-building',
+      latitude: null,
+      longitude: null,
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+    await bodyField('#property-address-supplement').setValue('a')
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(propertyService.createProperty).toHaveBeenCalledWith(
+      expect.objectContaining({ address: 'Nordparkstr. 3a, 50733 Köln' }),
+    )
   })
 
   it('shows an error and keeps the dialog open when creation fails', async () => {

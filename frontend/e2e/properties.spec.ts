@@ -8,7 +8,14 @@ const propertyStorageDirectory = join(fileURLToPath(import.meta.url), '..', '..'
 /** Opens the pinned create dialog, fills in the given fields and submits it. */
 async function createProperty(
   page: Page,
-  options: { name: string; address: string; postalCode: string; city: string },
+  options: {
+    name: string
+    street: string
+    houseNumber: string
+    addressSupplement?: string
+    postalCode: string
+    city: string
+  },
 ) {
   const responsePromise = page.waitForResponse(
     (response) =>
@@ -17,14 +24,17 @@ async function createProperty(
 
   await page.locator('.property-create-card').click()
   await page.getByLabel('Name').fill(options.name)
-  await page.getByLabel('Adresse').fill(options.address)
+  await page.getByLabel('Straße').fill(options.street)
+  await page.getByLabel('Hausnummer').fill(options.houseNumber)
+  if (options.addressSupplement) {
+    await page.getByLabel('Zusatz').fill(options.addressSupplement)
+  }
   await page.getByLabel('Postleitzahl').fill(options.postalCode)
   await page.getByLabel('Ort').fill(options.city)
   await page.getByRole('button', { name: 'Objekt anlegen', exact: true }).click()
 
   const response = await responsePromise
-  const body = (await response.json()) as { id: string }
-  return body.id
+  return (await response.json()) as { id: string; address: string }
 }
 
 /** Removes the JSON file the file-backed repository persisted for the given property, so tests don't leave data behind. */
@@ -49,15 +59,38 @@ test.describe('properties', () => {
     await page.goto('/properties')
     const name = `E2E Testobjekt ${Date.now()}`
 
-    const id = await createProperty(page, {
+    const { id } = await createProperty(page, {
       name,
-      address: 'Aachener Str. 512',
+      street: 'Aachener Str.',
+      houseNumber: '512',
       postalCode: '50933',
       city: 'Köln',
     })
 
     try {
       await expect(page.getByRole('heading', { name })).toBeVisible()
+    } finally {
+      await deletePropertyFile(id)
+    }
+  })
+
+  test('combines street, house number and address supplement into a single address', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+    const name = `E2E Testobjekt ${Date.now()}`
+
+    const { id, address } = await createProperty(page, {
+      name,
+      street: 'Aachener Str.',
+      houseNumber: '512',
+      addressSupplement: 'a',
+      postalCode: '50933',
+      city: 'Köln',
+    })
+
+    try {
+      expect(address).toBe('Aachener Str. 512a, 50933 Köln')
     } finally {
       await deletePropertyFile(id)
     }
@@ -71,7 +104,8 @@ test.describe('properties', () => {
     await expect(submitButton).toBeDisabled()
 
     await page.getByLabel('Name').fill('E2E Testobjekt')
-    await page.getByLabel('Adresse').fill('Aachener Str. 512')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
     await page.getByLabel('Postleitzahl').fill('123')
     await page.getByLabel('Ort').fill('Köln')
     await expect(submitButton).toBeDisabled()

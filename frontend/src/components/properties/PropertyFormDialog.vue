@@ -9,7 +9,9 @@ import { usePropertiesStore } from '@/stores/properties'
 import { geocodeAddress, type GeocodedPosition } from '@/services/geocodingService'
 
 const NAME_MAX_LENGTH = 50
-const ADDRESS_MAX_LENGTH = 200
+const STREET_MAX_LENGTH = 100
+const HOUSE_NUMBER_MAX_LENGTH = 10
+const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const GEOCODE_DEBOUNCE_MS = 500
 const POSTAL_CODE_PATTERN = /^\d{5}$/
 
@@ -20,7 +22,9 @@ const store = usePropertiesStore()
 
 const form = reactive({
   name: '',
-  address: '',
+  street: '',
+  houseNumber: '',
+  addressSupplement: '',
   postalCode: '',
   city: '',
 })
@@ -33,13 +37,19 @@ const isValid = computed(
   () =>
     form.name.trim().length > 0 &&
     form.name.length <= NAME_MAX_LENGTH &&
-    form.address.trim().length > 0 &&
+    form.street.trim().length > 0 &&
+    form.houseNumber.trim().length > 0 &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
     form.city.trim().length > 0,
 )
 
+/** Combines street, house number and the optional supplement into a single "Straße Hausnummer[Zusatz]" line. */
+const streetAndHouseNumber = computed(
+  () => `${form.street.trim()} ${form.houseNumber.trim()}${form.addressSupplement.trim()}`.trim(),
+)
+
 const combinedAddress = computed(() =>
-  `${form.address.trim()}, ${form.postalCode.trim()} ${form.city.trim()}`.trim(),
+  `${streetAndHouseNumber.value}, ${form.postalCode.trim()} ${form.city.trim()}`.trim(),
 )
 
 watch(visible, (isVisible) => {
@@ -47,14 +57,16 @@ watch(visible, (isVisible) => {
 })
 
 watch(
-  () => [form.address, form.postalCode, form.city],
+  () => [form.street, form.houseNumber, form.addressSupplement, form.postalCode, form.city],
   () => scheduleGeocode(),
 )
 
 /** Resets every field and the location preview to its default, called each time the dialog is opened. */
 function resetForm() {
   form.name = ''
-  form.address = ''
+  form.street = ''
+  form.houseNumber = ''
+  form.addressSupplement = ''
   form.postalCode = ''
   form.city = ''
   geocodedPosition.value = null
@@ -66,7 +78,12 @@ function resetForm() {
 function scheduleGeocode() {
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
 
-  if (form.address.trim().length === 0 || !POSTAL_CODE_PATTERN.test(form.postalCode) || form.city.trim().length === 0) {
+  if (
+    form.street.trim().length === 0 ||
+    form.houseNumber.trim().length === 0 ||
+    !POSTAL_CODE_PATTERN.test(form.postalCode) ||
+    form.city.trim().length === 0
+  ) {
     geocodedPosition.value = null
     isGeocoding.value = false
     return
@@ -106,27 +123,49 @@ function cancel() {
     :header="t('properties.create.title')"
     class="property-form-dialog"
   >
+    <div class="property-form-dialog__field">
+      <label for="property-name">{{ t('properties.create.nameLabel') }}</label>
+      <InputText
+        id="property-name"
+        v-model="form.name"
+        :maxlength="NAME_MAX_LENGTH"
+        :placeholder="t('properties.create.namePlaceholder')"
+      />
+    </div>
+
+    <div class="property-form-dialog__grid property-form-dialog__grid--address">
+      <div class="property-form-dialog__field">
+        <label for="property-street">{{ t('properties.create.streetLabel') }}</label>
+        <InputText
+          id="property-street"
+          v-model="form.street"
+          :maxlength="STREET_MAX_LENGTH"
+          :placeholder="t('properties.create.streetPlaceholder')"
+        />
+      </div>
+
+      <div class="property-form-dialog__field">
+        <label for="property-house-number">{{ t('properties.create.houseNumberLabel') }}</label>
+        <InputText
+          id="property-house-number"
+          v-model="form.houseNumber"
+          :maxlength="HOUSE_NUMBER_MAX_LENGTH"
+          :placeholder="t('properties.create.houseNumberPlaceholder')"
+        />
+      </div>
+
+      <div class="property-form-dialog__field">
+        <label for="property-address-supplement">{{ t('properties.create.addressSupplementLabel') }}</label>
+        <InputText
+          id="property-address-supplement"
+          v-model="form.addressSupplement"
+          :maxlength="ADDRESS_SUPPLEMENT_MAX_LENGTH"
+          :placeholder="t('properties.create.addressSupplementPlaceholder')"
+        />
+      </div>
+    </div>
+
     <div class="property-form-dialog__grid">
-      <div class="property-form-dialog__field">
-        <label for="property-name">{{ t('properties.create.nameLabel') }}</label>
-        <InputText
-          id="property-name"
-          v-model="form.name"
-          :maxlength="NAME_MAX_LENGTH"
-          :placeholder="t('properties.create.namePlaceholder')"
-        />
-      </div>
-
-      <div class="property-form-dialog__field">
-        <label for="property-address">{{ t('properties.create.addressLabel') }}</label>
-        <InputText
-          id="property-address"
-          v-model="form.address"
-          :maxlength="ADDRESS_MAX_LENGTH"
-          :placeholder="t('properties.create.addressPlaceholder')"
-        />
-      </div>
-
       <div class="property-form-dialog__field">
         <label for="property-postal-code">{{ t('properties.create.postalCodeLabel') }}</label>
         <InputText
