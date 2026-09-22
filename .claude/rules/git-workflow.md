@@ -19,3 +19,10 @@ Binding Git workflow for the Real-Estate-Maintenance-Optimizer repository. Refer
   - **High-Effort**: cross-cutting or architecture-level change, anything touching Spring Security/JWT, or work spanning both frontend and backend plus their readmes/Wiki pages.
 - Whoever implements the issue must match the model's reasoning effort to its label: `Low-Effort` → Sonnet 5 at low reasoning effort, `Medium-Effort` → Sonnet 5 at medium reasoning effort, `High-Effort` → Sonnet 5 at high reasoning effort.
 - When Claude Code creates the issue itself, it must perform this effort assessment before calling the issue-creation tool, so the label is set in the same call that creates the issue.
+
+## Post-Implementation Code Review
+
+- After finishing any non-trivial implementation task, Claude Code must first commit the result as-is, following the commit-message conventions in `.claude/rules/coding-conventions.md`.
+- Only after that commit exists, Claude Code must run the `code-review` skill against it at effort level `high` (Sonnet 5, high reasoning effort) — this review effort level is fixed and independent of the issue's own effort label from the section above, and the review must be extremely critical, surfacing every plausible correctness, security, and robustness issue rather than only the obvious ones.
+- Confirmed findings must be fixed and committed separately, as a follow-up commit on top of the original implementation commit, not folded into it or squashed together — so the implementation and the review-driven fixes stay distinguishable in history.
+- This applies regardless of whether the change will later be squash-free-merged via PR (squash merges are already forbidden above); the separate fix commit is required even for direct pushes.
