@@ -108,7 +108,7 @@ PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas) and are *
 | Service  | Platform          | Notes                                                                                           |
 |----------|-------------------|---------------------------------------------------------------------------------------------------|
 | Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly, without a Dockerfile |
-| Backend  | **Oracle Cloud**  | Built with Maven into an executable jar, run directly on Oracle Cloud Infrastructure (OCI) (`java -jar ...`), without a Dockerfile |
+| Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`), without a Dockerfile |
 
 Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment.
 
@@ -176,7 +176,7 @@ PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas) und 
 | Service   | Plattform          | Hinweise                                                                                          |
 |-----------|--------------------|------------------------------------------------------------------------------------------------------|
 | Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed, ohne Dockerfile |
-| Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar, direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar ...`), ohne Dockerfile |
+| Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`), ohne Dockerfile |
 
 Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt.
 

@@ -60,6 +60,8 @@
     </dependencies>
 
     <build>
+        <!-- Fixed name so the OCI deploy script/systemd unit does not need updating on every version bump -->
+        <finalName>remo-backend</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
