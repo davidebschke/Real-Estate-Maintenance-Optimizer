@@ -104,9 +104,10 @@ describe('useAppointmentsStore', () => {
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([completed])
     const store = useAppointmentsStore()
 
-    await store.completeAppointment('1')
+    const actualEnd = new Date(2026, 7, 11, 14, 30)
+    await store.completeAppointment('1', actualEnd)
 
-    expect(appointmentService.completeAppointment).toHaveBeenCalledWith('1')
+    expect(appointmentService.completeAppointment).toHaveBeenCalledWith('1', actualEnd)
     expect(store.appointments).toEqual([completed])
   })
 

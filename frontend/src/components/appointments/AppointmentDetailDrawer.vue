@@ -61,9 +61,12 @@ const durationOptions = computed(() =>
 
 const isEditingSchedule = ref(false)
 const scheduleForm = reactive({ day: '', time: '', durationMinutes: 60 })
+const isCompleting = ref(false)
+const completeForm = reactive({ day: '', time: '' })
 
 watch(appointment, (current) => {
   isEditingSchedule.value = false
+  isCompleting.value = false
   if (!current) return
   scheduleForm.day = toIsoDate(current.start)
   scheduleForm.time = toTimeString(current.start)
@@ -98,10 +101,27 @@ function close() {
   visible.value = false
 }
 
-/** Marks the appointment as completed with the current time as its actual end. */
-async function markCompleted() {
+/** Switches the completion action into edit mode, pre-filled with the current date and time. */
+function startCompleting() {
+  const now = new Date()
+  completeForm.day = toIsoDate(now)
+  completeForm.time = toTimeString(now)
+  isCompleting.value = true
+}
+
+/** Cancels marking the appointment as completed without saving. */
+function cancelCompleting() {
+  isCompleting.value = false
+}
+
+/** Marks the appointment as completed with the entered date and time as its actual end. */
+async function confirmCompleting() {
   if (!appointment.value) return
-  await store.completeAppointment(appointment.value.id)
+  await store.completeAppointment(
+    appointment.value.id,
+    combineDayAndTime(completeForm.day, completeForm.time),
+  )
+  isCompleting.value = false
 }
 
 /** Reverts the appointment back to its not-yet-completed state. */
@@ -234,14 +254,37 @@ function requestDelete() {
       </section>
 
       <div class="appointment-detail-drawer__actions">
-        <Button
-          v-if="!appointment.completed"
-          class="appointment-detail-drawer__complete"
-          :label="t('appointments.detail.completeButton')"
-          severity="success"
-          size="small"
-          @click="markCompleted"
-        />
+        <template v-if="!appointment.completed">
+          <Button
+            v-if="!isCompleting"
+            class="appointment-detail-drawer__complete"
+            :label="t('appointments.detail.completeButton')"
+            severity="success"
+            size="small"
+            @click="startCompleting"
+          />
+          <div v-else class="appointment-detail-drawer__complete-form">
+            <label for="appointment-complete-date">{{
+              t('appointments.detail.completeDateLabel')
+            }}</label>
+            <input id="appointment-complete-date" v-model="completeForm.day" type="date" />
+            <label for="appointment-complete-time">{{
+              t('appointments.detail.completeTimeLabel')
+            }}</label>
+            <input id="appointment-complete-time" v-model="completeForm.time" type="time" />
+            <div class="appointment-detail-drawer__complete-actions">
+              <Button
+                :label="t('appointments.detail.confirmCompleteButton')"
+                severity="success"
+                size="small"
+                @click="confirmCompleting"
+              />
+              <button type="button" @click="cancelCompleting">
+                {{ t('appointments.form.cancel') }}
+              </button>
+            </div>
+          </div>
+        </template>
         <Button
           v-else
           class="appointment-detail-drawer__reopen"

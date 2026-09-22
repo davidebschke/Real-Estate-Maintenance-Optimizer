@@ -110,7 +110,9 @@ describe('AppointmentDetailDrawer', () => {
     )
   })
 
-  it('marks an appointment as completed', async () => {
+  it('opens a date/time form pre-filled with the current time and marks the appointment as completed on confirm', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 11, 16, 45))
     vi.mocked(appointmentService.completeAppointment).mockResolvedValue(
       createAppointment({ completed: true, actualEnd: new Date(2026, 7, 11, 14, 30) }),
     )
@@ -120,9 +122,29 @@ describe('AppointmentDetailDrawer', () => {
       .findAllComponents(Button)
       .find((button) => button.text() === 'Als erledigt markieren')
     await completeButton!.trigger('click')
+
+    const dateInput = document.body.querySelector<HTMLInputElement>('#appointment-complete-date')
+    const timeInput = document.body.querySelector<HTMLInputElement>('#appointment-complete-time')
+    expect(dateInput?.value).toBe('2026-08-11')
+    expect(timeInput?.value).toBe('16:45')
+
+    dateInput!.value = '2026-08-10'
+    dateInput!.dispatchEvent(new Event('input'))
+    timeInput!.value = '09:15'
+    timeInput!.dispatchEvent(new Event('input'))
     await flushPromises()
 
-    expect(appointmentService.completeAppointment).toHaveBeenCalledWith('1')
+    const confirmButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Bestätigen')
+    await confirmButton!.trigger('click')
+    await flushPromises()
+
+    expect(appointmentService.completeAppointment).toHaveBeenCalledWith(
+      '1',
+      new Date(2026, 7, 10, 9, 15),
+    )
+    vi.useRealTimers()
   })
 
   it('shows a completed badge and a revert button for a completed appointment', async () => {

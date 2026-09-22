@@ -127,15 +127,15 @@ public class AppointmentService {
     }
 
     /**
-     * Marks an appointment as completed with the current time as its actual end.
+     * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null.
      */
-    public AppointmentResponse complete(String id) {
+    public AppointmentResponse complete(String id, LocalDateTime actualEnd) {
         Appointment appointment = loadOrThrow(id);
-        LocalDateTime actualEnd = LocalDateTime.now();
+        LocalDateTime resolvedActualEnd = actualEnd != null ? actualEnd : LocalDateTime.now();
         HistoryEntry completedEntry = new HistoryEntry(
-                Instant.now(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(actualEnd)));
+                Instant.now(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(resolvedActualEnd)));
 
-        Appointment completed = appointment.withActualEnd(actualEnd, completedEntry);
+        Appointment completed = appointment.withActualEnd(resolvedActualEnd, completedEntry);
         repository.save(completed);
         return toResponse(completed);
     }

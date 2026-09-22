@@ -92,10 +92,10 @@ class AppointmentServiceTest {
     }
 
     @Test
-    void completingAnAppointmentSetsActualEndAndAppendsHistory() {
+    void completingAnAppointmentWithoutAnExplicitActualEndFallsBackToNow() {
         AppointmentResponse created = service.create(createRequest(false, null));
 
-        AppointmentResponse completed = service.complete(created.id());
+        AppointmentResponse completed = service.complete(created.id(), null);
 
         assertThat(completed.completed()).isTrue();
         assertThat(completed.actualEnd()).isNotNull();
@@ -103,9 +103,19 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void completingAnAppointmentWithAnExplicitActualEndUsesIt() {
+        AppointmentResponse created = service.create(createRequest(false, null));
+        LocalDateTime explicitActualEnd = LocalDateTime.of(2026, 8, 10, 16, 30);
+
+        AppointmentResponse completed = service.complete(created.id(), explicitActualEnd);
+
+        assertThat(completed.actualEnd()).isEqualTo(explicitActualEnd);
+    }
+
+    @Test
     void reopeningACompletedAppointmentClearsActualEnd() {
         AppointmentResponse created = service.create(createRequest(false, null));
-        service.complete(created.id());
+        service.complete(created.id(), null);
 
         AppointmentResponse reopened = service.reopen(created.id());
 
