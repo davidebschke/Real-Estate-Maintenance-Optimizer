@@ -65,6 +65,9 @@ describe('DailyAppointmentList', () => {
     await flushPromises()
 
     expect(wrapper.findAll('.daily-appointment-card')).toHaveLength(0)
+    expect(wrapper.find('.daily-appointment-list__date').text()).toBe(
+      'Termine für morgen, den 11. August',
+    )
     expect(wrapper.find('.daily-appointment-list__count').text()).toBe(
       'Alle Termine heute erledigt · Vorschau auf morgen',
     )

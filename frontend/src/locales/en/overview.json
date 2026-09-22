@@ -6,6 +6,7 @@
       "clickHint": "Click to open details",
       "empty": "No further appointments are scheduled for today.",
       "allCompletedHint": "All of today's appointments are completed · Preview of tomorrow",
+      "tomorrowHeading": "Appointments for tomorrow, {date}",
       "emptyTomorrow": "No appointments are scheduled for tomorrow yet.",
       "travelSummary": "{km} km · {duration}"
     },

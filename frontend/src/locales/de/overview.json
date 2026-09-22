@@ -6,6 +6,7 @@
       "clickHint": "Klick öffnet Details",
       "empty": "Heute stehen keine weiteren Termine an.",
       "allCompletedHint": "Alle Termine heute erledigt · Vorschau auf morgen",
+      "tomorrowHeading": "Termine für morgen, den {date}",
       "emptyTomorrow": "Für morgen stehen noch keine Termine an.",
       "travelSummary": "{km} km · {duration}"
     },

@@ -33,7 +33,11 @@ function formatHeadingDate(date: Date): string {
 }
 
 const todayLabel = computed(() => formatHeadingDate(today.value))
-const tomorrowLabel = computed(() => formatHeadingDate(tomorrow.value))
+const tomorrowDateLabel = computed(() =>
+  new Intl.DateTimeFormat(currentLocale.value, { day: 'numeric', month: 'long' }).format(
+    tomorrow.value,
+  ),
+)
 
 const appointmentCountKey = computed(() =>
   openAppointments.value.length === 1
@@ -50,7 +54,9 @@ onMounted(() => {
   <div class="daily-appointment-list card-3d">
     <template v-if="allTodaysAppointmentsCompleted">
       <div class="daily-appointment-list__header">
-        <h2 class="daily-appointment-list__date">{{ tomorrowLabel }}</h2>
+        <h2 class="daily-appointment-list__date">
+          {{ t('overview.dailyList.tomorrowHeading', { date: tomorrowDateLabel }) }}
+        </h2>
         <span class="daily-appointment-list__count">
           {{ t('overview.dailyList.allCompletedHint') }}
         </span>
