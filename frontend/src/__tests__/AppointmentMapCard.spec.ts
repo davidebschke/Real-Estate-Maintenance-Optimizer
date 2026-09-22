@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { i18n } from '@/i18n'
 import AppointmentMapCard from '@/components/map/AppointmentMapCard.vue'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
@@ -24,7 +24,7 @@ beforeEach(() => {
     markers: ref([]),
     isLoading: ref(false),
     hasGeocodingError: ref(false),
-    allTodaysAppointmentsCompleted: ref(false),
+    allTodaysAppointmentsCompleted: computed(() => false),
   })
 })
 
@@ -55,7 +55,7 @@ describe('AppointmentMapCard', () => {
       ]),
       isLoading: ref(false),
       hasGeocodingError: ref(false),
-      allTodaysAppointmentsCompleted: ref(false),
+      allTodaysAppointmentsCompleted: computed(() => false),
     })
 
     const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
@@ -69,7 +69,7 @@ describe('AppointmentMapCard', () => {
       markers: ref([{ appointment: { id: '1' } as never, position: 1, lat: 50.9, lng: 6.9 }]),
       isLoading: ref(false),
       hasGeocodingError: ref(true),
-      allTodaysAppointmentsCompleted: ref(false),
+      allTodaysAppointmentsCompleted: computed(() => false),
     })
 
     const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
@@ -84,7 +84,7 @@ describe('AppointmentMapCard', () => {
       markers: ref([{ appointment: { id: '1' } as never, position: 1, lat: 50.9, lng: 6.9 }]),
       isLoading: ref(false),
       hasGeocodingError: ref(false),
-      allTodaysAppointmentsCompleted: ref(true),
+      allTodaysAppointmentsCompleted: computed(() => true),
     })
 
     const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
