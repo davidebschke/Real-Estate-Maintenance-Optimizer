@@ -18,7 +18,7 @@ When changing existing code or documentation, edit only the specific lines/sente
 A test is required for every new or changed component: frontend components (Vitest + Vue Test Utils, Playwright for e2e) and backend units — services, controllers, repositories (JUnit 5, Mockito, AssertJ). If edge cases exist for a component, they are raised with the user before tests are written, not silently assumed.
 
 ### VI. Structured Git Workflow
-All features and fixes go through feature branches named `<issue-number>-<short-description>`, with issue numbers assigned sequentially across the repository (tracked in `.claude/rules/git-workflow.md`), and pull requests against `main` reviewed by the CODEOWNER (`@davidebschke`). Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`).
+All features and fixes go through feature branches named `<issue-number>-<short-description>`, with issue numbers assigned sequentially across the repository (tracked in `.claude/rules/git-workflow.md`), and pull requests against `main` reviewed by the CODEOWNER (`@davidebschke`). Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`). Every issue gets an effort estimate attached as one of `Low-Effort` / `Medium-Effort` / `High-Effort` at creation time, and whoever implements it matches that label to Sonnet 5's reasoning effort (low/medium/high, see `.claude/rules/git-workflow.md`).
 
 ## Documentation Sync Obligations
 

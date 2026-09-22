@@ -73,6 +73,7 @@ git config --get remote.origin.url
 1. For each task in the list, use the GitHub MCP server to create a new issue in the repository that is representative of the Git remote. Task lines in `tasks.md` start with a markdown checkbox, so first strip the leading `- [ ]` (and any `[P]` / `[US#]` markers) to recover the task ID and its description. Create the issue with a single canonical title of the form `T001: <description>`, with the ID written once followed by the task description (for example, the line `- [ ] T001 Create project structure` becomes the title `T001: Create project structure`).
    - **Skip** any task whose ID is already present in the set of existing issues from the previous step, and report it (for example, `T001 already has an issue, skipping`).
    - Only create issues for tasks that do not yet have a matching issue.
+   - Before creating each issue, estimate its implementation effort as Low, Medium, or High (see `.claude/rules/git-workflow.md`, "Issue Effort Labels and Model Selection") and attach the matching `Low-Effort`, `Medium-Effort`, or `High-Effort` label in the same creation call, so an implementer can pick the matching Sonnet 5 reasoning effort (low/medium/high) up front.
 
 > [!CAUTION]
 > UNDER NO CIRCUMSTANCES EVER CREATE ISSUES IN REPOSITORIES THAT DO NOT MATCH THE REMOTE URL
