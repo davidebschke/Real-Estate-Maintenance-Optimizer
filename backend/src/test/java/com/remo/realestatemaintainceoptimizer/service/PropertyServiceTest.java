@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.remo.realestatemaintainceoptimizer.config.PropertyStorageProperties;
+import com.remo.realestatemaintainceoptimizer.dto.CreatePropertyRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyFileRepository;
@@ -59,5 +60,27 @@ class PropertyServiceTest {
     @Test
     void throwsWhenNoPropertyExistsForTheGivenId() {
         assertThatThrownBy(() -> service.getById("unknown")).isInstanceOf(PropertyNotFoundException.class);
+    }
+
+    @Test
+    void createsAPropertyWithAGeneratedIdAndTheDefaultIcon() {
+        var response = service.create(new CreatePropertyRequest(
+                "Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", 50.97, 6.95));
+
+        assertThat(response.id()).isNotBlank();
+        assertThat(response.name()).isEqualTo("Wohnanlage Nordpark");
+        assertThat(response.address()).isEqualTo("Nordparkstr. 3, 50733 Köln");
+        assertThat(response.icon()).isEqualTo("pi-building");
+        assertThat(response.latitude()).isEqualTo(50.97);
+        assertThat(response.longitude()).isEqualTo(6.95);
+        assertThat(service.getById(response.id()).name()).isEqualTo("Wohnanlage Nordpark");
+    }
+
+    @Test
+    void createsAPropertyWithoutCoordinatesWhenNoneAreGiven() {
+        var response = service.create(new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3", null, null));
+
+        assertThat(response.latitude()).isNull();
+        assertThat(response.longitude()).isNull();
     }
 }
