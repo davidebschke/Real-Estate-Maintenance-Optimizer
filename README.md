@@ -17,9 +17,7 @@
       - [7. 🔒 Fixed Appointments (`Unrescheduled terms`)](#7--fixed-appointments-unrescheduled-terms)
       - [8. 🔄 Recurring Appointments (`Recurring appointments`)](#8--recurring-appointments-recurring-appointments)
     - [📋 Backlog \& Future Features (`Backlog/Issues`)](#-backlog--future-features-backlogissues)
-    - [🐳 Docker \& Deployment](#-docker--deployment)
-      - [Local Development with Docker](#local-development-with-docker)
-      - [Deployment](#deployment)
+    - [☁️ Deployment](#️-deployment)
   - [German](#german)
     - [📌 Projektübersicht](#-projektübersicht)
     - [Prototyp](#prototyp)
@@ -33,9 +31,7 @@
       - [7. 🔒 Unverschiebbare Termine](#7--unverschiebbare-termine)
       - [8. 🔄 Wiederkehrende Termine](#8--wiederkehrende-termine)
     - [📋 Backlog \& Zukünftige Features (`Backlog/Issues`)](#-backlog--zukünftige-features-backlogissues)
-    - [🐳 Docker \& Deployment](#-docker--deployment-1)
-      - [Lokale Entwicklung mit Docker](#lokale-entwicklung-mit-docker)
-      - [Deployment](#deployment-1)
+    - [☁️ Deployment](#️-deployment-1)
   - [🧰 Tech Stack](#-tech-stack)
     - [🖥️ Frontend](#️-frontend)
     - [☁️ Backend](#️-backend)
@@ -95,25 +91,14 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 - Native mobile porting to **Android** & **iOS**
 
-### 🐳 Docker & Deployment
-
-#### Local Development with Docker
-
-Both services are planned to run in containers, each with its own multi-stage `Dockerfile` and orchestrated locally via Docker Compose (not yet added to the repository):
-
-- **Frontend:** built with Vite, then served by nginx.
-- **Backend:** built with Maven, packaged as an executable jar, run on a slim JRE base image.
-
-PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas) and are **not** part of the Compose setup.
-
-#### Deployment
+### ☁️ Deployment
 
 | Service  | Platform          | Notes                                                                                           |
 |----------|-------------------|---------------------------------------------------------------------------------------------------|
-| Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly, without a Dockerfile |
-| Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`), without a Dockerfile |
+| Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly |
+| Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`) |
 
-Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment.
+Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas).
 
 ## German
 Das Projekt soll im Kern einer Immobilienverwaltung helfen Wartungen zu optimieren. Dies soll geschehen indem Anfahrtswege reduziert werden, Termine anhand des Ortes und der dauer besser abgestimmt werden und die potenzielle Dauer von Terminen eingeschätzt werden aufgrund von vorran gegangenen Terminen ähnlichen Kontextes. Das Unternehmen spart damit nicht nur Zeit sondern auch bares Geld. Zusätzlich könnten Betriebskosten dadurch gesenkt werden . Dies würde auch den Mieter freuen. Mehr wird später kommen.
@@ -163,25 +148,14 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 - Native App-Portierung für **Android** und **iOS**
 
-### 🐳 Docker & Deployment
-
-#### Lokale Entwicklung mit Docker
-
-Beide Services sollen künftig containerisiert laufen, jeweils mit eigenem mehrstufigen (`multi-stage`) `Dockerfile` und lokaler Orchestrierung über Docker Compose (noch nicht im Repository vorhanden):
-
-- **Frontend:** gebaut mit Vite, ausgeliefert über nginx.
-- **Backend:** gebaut mit Maven, als ausführbares Jar verpackt, betrieben auf einem schlanken JRE-Basis-Image.
-
-PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas) und sind **nicht** Teil des Compose-Setups.
-
-#### Deployment
+### ☁️ Deployment
 
 | Service   | Plattform          | Hinweise                                                                                          |
 |-----------|--------------------|------------------------------------------------------------------------------------------------------|
-| Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed, ohne Dockerfile |
-| Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`), ohne Dockerfile |
+| Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed |
+| Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`) |
 
-Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt.
+Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas).
 
 ------------
 
