@@ -5,6 +5,7 @@ import { usePropertiesStore } from '@/stores/properties'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertyAppointmentSummaries } from '@/composables/usePropertyAppointmentSummaries'
 import PropertyCard from '@/components/properties/PropertyCard.vue'
+import PropertyCreateCard from '@/components/properties/PropertyCreateCard.vue'
 
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
@@ -19,6 +20,8 @@ onMounted(() => {
 
 <template>
   <div class="property-list">
+    <PropertyCreateCard />
+
     <p v-if="propertiesStore.hasLoadError" class="property-list__error">
       {{ t('properties.list.loadError') }}
     </p>

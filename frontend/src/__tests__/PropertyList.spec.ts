@@ -112,4 +112,15 @@ describe('PropertyList', () => {
 
     expect(appointmentsStore.activeDetailAppointmentId).toBe('10')
   })
+
+  it('opens the property creation dialog when the pinned create card is clicked', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
+    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    await flushPromises()
+    const propertiesStore = usePropertiesStore()
+
+    await wrapper.find('.property-create-card').trigger('click')
+
+    expect(propertiesStore.isCreateDialogOpen).toBe(true)
+  })
 })

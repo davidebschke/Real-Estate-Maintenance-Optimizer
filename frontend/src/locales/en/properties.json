@@ -10,6 +10,23 @@
       "completedAppointments": "Completed appointments",
       "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment"
+    },
+    "create": {
+      "cardLabel": "Add new property",
+      "title": "Add new property",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. Sonnenhof residential complex",
+      "addressLabel": "Address",
+      "addressPlaceholder": "Street and house number",
+      "postalCodeLabel": "Postal code",
+      "postalCodePlaceholder": "e.g. 50933",
+      "cityLabel": "City",
+      "cityPlaceholder": "e.g. Cologne",
+      "mapHint": "Location preview",
+      "mapEmpty": "Enter address, postal code and city to see the location",
+      "error": "The property could not be created.",
+      "submit": "Add property",
+      "cancel": "Cancel"
     }
   }
 }

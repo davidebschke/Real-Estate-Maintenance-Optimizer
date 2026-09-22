@@ -10,6 +10,23 @@
       "completedAppointments": "Erledigte Aufträge",
       "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin"
+    },
+    "create": {
+      "cardLabel": "Neues Objekt anlegen",
+      "title": "Neues Objekt anlegen",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Wohnanlage Sonnenhof",
+      "addressLabel": "Adresse",
+      "addressPlaceholder": "Straße und Hausnummer",
+      "postalCodeLabel": "Postleitzahl",
+      "postalCodePlaceholder": "z. B. 50933",
+      "cityLabel": "Ort",
+      "cityPlaceholder": "z. B. Köln",
+      "mapHint": "Vorschau der Position",
+      "mapEmpty": "Adresse, Postleitzahl und Ort eingeben, um die Position zu sehen",
+      "error": "Das Objekt konnte nicht angelegt werden.",
+      "submit": "Objekt anlegen",
+      "cancel": "Abbrechen"
     }
   }
 }
