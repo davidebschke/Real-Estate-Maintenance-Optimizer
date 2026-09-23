@@ -20,6 +20,8 @@ const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const GEOCODE_DEBOUNCE_MS = 500
 const HOUSE_NUMBER_PATTERN = /^\d+$/
 const POSTAL_CODE_PATTERN = /^\d{5}$/
+/** Letters (incl. diacritics), digits, spaces and the punctuation that occurs in real German street names. */
+const STREET_PATTERN = /^[\p{L}\d .'\-/]+$/u
 
 const visible = defineModel<boolean>('visible', { required: true })
 
@@ -59,6 +61,7 @@ const isValid = computed(
     form.name.trim().length > 0 &&
     form.name.length <= NAME_MAX_LENGTH &&
     form.street.trim().length > 0 &&
+    STREET_PATTERN.test(form.street.trim()) &&
     HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
     form.city.trim().length > 0 &&
@@ -66,6 +69,12 @@ const isValid = computed(
     !isDuplicateAddress.value &&
     !hasBlockingAddressError.value,
 )
+
+/** Whether the street has been touched but contains a character that occurs in no real German street name. */
+const isStreetFormatInvalid = computed(() => {
+  const street = form.street.trim()
+  return street.length > 0 && !STREET_PATTERN.test(street)
+})
 
 /** Whether the house number has been touched but is not purely digits. */
 const isHouseNumberFormatInvalid = computed(() => {
@@ -99,6 +108,7 @@ const isDuplicateName = computed(() => {
 const isDuplicateAddress = computed(() => {
   if (
     form.street.trim().length === 0 ||
+    !STREET_PATTERN.test(form.street.trim()) ||
     !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
     !POSTAL_CODE_PATTERN.test(form.postalCode) ||
     form.city.trim().length === 0
@@ -145,6 +155,7 @@ function scheduleGeocode() {
 
   if (
     form.street.trim().length === 0 ||
+    !STREET_PATTERN.test(form.street.trim()) ||
     !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
     !POSTAL_CODE_PATTERN.test(form.postalCode) ||
     form.city.trim().length === 0
@@ -234,9 +245,12 @@ function cancel() {
           id="property-street"
           v-model="form.street"
           :maxlength="STREET_MAX_LENGTH"
-          :invalid="isDuplicateAddress"
+          :invalid="isDuplicateAddress || isStreetFormatInvalid"
           :placeholder="t('properties.create.streetPlaceholder')"
         />
+        <p v-if="isStreetFormatInvalid" class="property-form-dialog__field-error">
+          {{ t('properties.create.streetFormatError') }}
+        </p>
       </div>
 
       <div class="property-form-dialog__field">

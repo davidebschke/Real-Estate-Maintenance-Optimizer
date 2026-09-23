@@ -18,6 +18,7 @@
       "namePlaceholder": "z. B. Wohnanlage Sonnenhof",
       "streetLabel": "Straße",
       "streetPlaceholder": "z. B. Aachener Str.",
+      "streetFormatError": "Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten.",
       "houseNumberLabel": "Hausnummer",
       "houseNumberPlaceholder": "z. B. 512",
       "houseNumberFormatError": "Die Hausnummer darf nur aus Zahlen bestehen.",

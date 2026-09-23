@@ -132,6 +132,31 @@ test.describe('properties', () => {
     await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
   })
 
+  test('flags a street containing a symbol no real German street name contains with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Nordpark@str.')
+    await page.getByLabel('Hausnummer').fill('3')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln')
+
+    await expect(
+      page.getByText("Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toBeVisible()
+    await expect(page.getByLabel('Straße')).toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+
+    await page.getByLabel('Straße').fill('Nordparkstr.')
+    await expect(
+      page.getByText("Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toHaveCount(0)
+    await expect(page.getByLabel('Straße')).not.toHaveClass(/p-invalid/)
+  })
+
   test('flags a house number that is not purely digits with a red-bordered hint and disables submit', async ({
     page,
   }) => {

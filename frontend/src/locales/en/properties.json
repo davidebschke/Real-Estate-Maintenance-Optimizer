@@ -18,6 +18,7 @@
       "namePlaceholder": "e.g. Sonnenhof residential complex",
       "streetLabel": "Street",
       "streetPlaceholder": "e.g. Aachener Str.",
+      "streetFormatError": "The street may only contain letters, digits, spaces and . - ' /",
       "houseNumberLabel": "House number",
       "houseNumberPlaceholder": "e.g. 512",
       "houseNumberFormatError": "The house number may only contain digits.",
