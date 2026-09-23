@@ -6,6 +6,30 @@ export interface GeocodedPosition {
   lng: number
 }
 
+/** Outcome of validating whether an entered address combination really exists. */
+export type AddressValidationStatus = 'MATCH' | 'SUGGESTION' | 'NOT_FOUND'
+
+/** Result of validating an entered address, with coordinates for a "MATCH" and a correction suggestion for a "SUGGESTION" status. */
+export interface AddressValidationResult {
+  status: AddressValidationStatus
+  latitude: number | null
+  longitude: number | null
+  suggestedStreet: string | null
+  suggestedHouseNumber: string | null
+  suggestedPostalCode: string | null
+  suggestedCity: string | null
+}
+
+const NOT_FOUND_RESULT: AddressValidationResult = {
+  status: 'NOT_FOUND',
+  latitude: null,
+  longitude: null,
+  suggestedStreet: null,
+  suggestedHouseNumber: null,
+  suggestedPostalCode: null,
+  suggestedCity: null,
+}
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 const cache = new Map<string, GeocodedPosition | null>()
@@ -32,4 +56,21 @@ export async function geocodeAddress(address: string): Promise<GeocodedPosition 
 
   cache.set(address, position)
   return position
+}
+
+/** Checks via the backend whether the given address combination really exists, without any client-side caching. */
+export async function validateAddress(
+  street: string,
+  houseNumber: string,
+  postalCode: string,
+  city: string,
+): Promise<AddressValidationResult> {
+  try {
+    const { data } = await axios.get<AddressValidationResult>(`${apiBaseUrl}/api/geocode/validate`, {
+      params: { street, houseNumber, postalCode, city },
+    })
+    return data
+  } catch {
+    return NOT_FOUND_RESULT
+  }
 }

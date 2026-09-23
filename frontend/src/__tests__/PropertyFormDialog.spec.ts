@@ -31,6 +31,16 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.createProperty).mockReset()
   vi.mocked(geocodingService.geocodeAddress).mockReset()
+  vi.mocked(geocodingService.validateAddress).mockReset()
+  vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+    status: 'MATCH',
+    latitude: null,
+    longitude: null,
+    suggestedStreet: null,
+    suggestedHouseNumber: null,
+    suggestedPostalCode: null,
+    suggestedCity: null,
+  })
   vi.useFakeTimers()
   document.body.innerHTML = ''
 })
@@ -119,6 +129,48 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
   })
 
+  it('flags a street containing a symbol no real German street name contains, with a hint and a red border, and disables submit', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordpark@str.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-street').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      "Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten.",
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('accepts a street with umlauts, a period, a hyphen and a digit', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue("Straße des 17. Juni - Königstraße'")
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('accepts a street with the typographic apostrophe, non-breaking space and en dash that "smart punctuation" autocorrects to', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('O’Connor–Weg West')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
   it('flags a house number that is not purely digits with a hint and a red border, and disables submit', async () => {
     const wrapper = await mountDialog()
 
@@ -130,9 +182,56 @@ describe('PropertyFormDialog', () => {
 
     expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
     expect(bodyField('.property-form-dialog__field-error').text()).toBe(
-      'Die Hausnummer darf nur aus Zahlen bestehen.',
+      'Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.',
     )
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('limits the house number field to 5 digits and rejects a longer numeric value', async () => {
+    const wrapper = await mountDialog()
+
+    expect(bodyField('#property-house-number').attributes('maxlength')).toBe('5')
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('123456')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('flags a city containing a symbol no real German place name contains, with a hint and a red border, and disables submit', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln@Stadt')
+
+    expect(bodyField('#property-city').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      "Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten.",
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('accepts a city with an umlaut, a period and a hyphen', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('St. Wendel-Bliesen')
+
+    expect(bodyField('#property-city').classes()).not.toContain('p-invalid')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
   it('geocodes the combined address after a debounce and forwards the position to the preview map', async () => {
@@ -179,6 +278,38 @@ describe('PropertyFormDialog', () => {
     })
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
+  it('prefers the coordinates confirmed by address validation over a failed preview geocode', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'MATCH',
+      latitude: 50.9420135,
+      longitude: 6.8771884,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    vi.mocked(geocodingService.geocodeAddress).mockResolvedValue(null)
+    vi.mocked(propertyService.createProperty).mockResolvedValue({
+      id: '5',
+      name: 'Wohnanlage Nordpark',
+      address: 'Nordparkstr. 3, 50733 Köln',
+      icon: 'pi-building',
+      latitude: 50.9420135,
+      longitude: 6.8771884,
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+    await vi.advanceTimersByTimeAsync(500)
+    await flushPromises()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(propertyService.createProperty).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 50.9420135, longitude: 6.8771884 }),
+    )
   })
 
   it('creates the property with the combined address and geocoded coordinates, then closes the dialog', async () => {
@@ -282,6 +413,151 @@ describe('PropertyFormDialog', () => {
     expect(bodyField('.property-form-dialog__error').exists()).toBe(true)
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents).toBeUndefined()
+  })
+
+  it('blocks submission and shows a correction suggestion for an address with a unique fix', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'SUGGESTION',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: 'Nordparkstr.',
+      suggestedHouseNumber: '3',
+      suggestedPostalCode: '50733',
+      suggestedCity: 'Köln',
+    })
+    const wrapper = await mountDialog()
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('99999')
+    await bodyField('#property-city').setValue('Köln')
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(geocodingService.validateAddress).toHaveBeenCalledWith('Nordparkstr.', '3', '99999', 'Köln')
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    expect(bodyField('.property-form-dialog__address-suggestion').text()).toContain(
+      'Meinten Sie folgende Adresse: Nordparkstr. 3, 50733 Köln?',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+
+    await bodyField('.property-form-dialog__accept-suggestion').trigger('click')
+
+    expect(bodyField('#property-postal-code').element.getAttribute('value')).toBe('50733')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('keeps a shown suggestion when only the address supplement changes, since that field is not part of the validated address', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'SUGGESTION',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: 'Nordparkstr.',
+      suggestedHouseNumber: '3',
+      suggestedPostalCode: '50733',
+      suggestedCity: 'Köln',
+    })
+    const wrapper = await mountDialog()
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('99999')
+    await bodyField('#property-city').setValue('Köln')
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    expect(bodyField('.property-form-dialog__address-suggestion').exists()).toBe(true)
+
+    await bodyField('#property-address-supplement').setValue('a')
+
+    expect(bodyField('.property-form-dialog__address-suggestion').exists()).toBe(true)
+    expect(geocodingService.validateAddress).toHaveBeenCalledTimes(1)
+  })
+
+  it('blocks submission with a generic error when the address cannot be resolved at all', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'NOT_FOUND',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Diese Adresse konnte nicht gefunden werden. Bitte prüfen Sie Ihre Eingabe.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('discards a stale validation response for an address the user has since changed, instead of creating it unchecked', async () => {
+    let resolveFirstValidation!: (result: geocodingService.AddressValidationResult) => void
+    vi.mocked(geocodingService.validateAddress).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFirstValidation = resolve
+      }),
+    )
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    // the user keeps editing while the first validation is still in flight
+    await bodyField('#property-postal-code').setValue('99999')
+
+    resolveFirstValidation({
+      status: 'MATCH',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    // the edited (never-validated) address must not be silently approved by the stale response
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('does not create the property if the name became a duplicate while address validation was in flight', async () => {
+    const store = usePropertiesStore()
+    store.properties = [createExistingProperty({ name: 'Bereits Vergeben' })]
+    let resolveValidation!: (result: geocodingService.AddressValidationResult) => void
+    vi.mocked(geocodingService.validateAddress).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveValidation = resolve
+      }),
+    )
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    // the user renames the property to a duplicate while the validation request is still in flight
+    await bodyField('#property-name').setValue('Bereits Vergeben')
+
+    resolveValidation({
+      status: 'MATCH',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
   })
 
   it('resets every field when reopened', async () => {

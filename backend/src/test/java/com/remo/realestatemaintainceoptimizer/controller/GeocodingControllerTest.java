@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.dto.AddressValidationResponse;
 import com.remo.realestatemaintainceoptimizer.dto.GeocodingResponse;
 import com.remo.realestatemaintainceoptimizer.service.GeocodingService;
 import org.junit.jupiter.api.Test;
@@ -48,5 +49,21 @@ class GeocodingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.latitude", nullValue()))
                 .andExpect(jsonPath("$.longitude", nullValue()));
+    }
+
+    @Test
+    void returnsTheSuggestionResolvedByTheGeocodingServiceForAnAddressValidation() throws Exception {
+        when(geocodingService.validateAddress("Aachener Str.", "512", "99999", "Köln"))
+                .thenReturn(AddressValidationResponse.suggestion("Aachener Str.", "512", "50933", "Köln"));
+
+        mockMvc.perform(get("/api/geocode/validate")
+                        .param("street", "Aachener Str.")
+                        .param("houseNumber", "512")
+                        .param("postalCode", "99999")
+                        .param("city", "Köln"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", equalTo("SUGGESTION")))
+                .andExpect(jsonPath("$.suggestedPostalCode", equalTo("50933")))
+                .andExpect(jsonPath("$.suggestedCity", equalTo("Köln")));
     }
 }

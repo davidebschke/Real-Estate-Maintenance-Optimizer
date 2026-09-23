@@ -132,6 +132,31 @@ test.describe('properties', () => {
     await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
   })
 
+  test('flags a street containing a symbol no real German street name contains with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Nordpark@str.')
+    await page.getByLabel('Hausnummer').fill('3')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln')
+
+    await expect(
+      page.getByText("Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toBeVisible()
+    await expect(page.getByLabel('Straße')).toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+
+    await page.getByLabel('Straße').fill('Nordparkstr.')
+    await expect(
+      page.getByText("Die Straße darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toHaveCount(0)
+    await expect(page.getByLabel('Straße')).not.toHaveClass(/p-invalid/)
+  })
+
   test('flags a house number that is not purely digits with a red-bordered hint and disables submit', async ({
     page,
   }) => {
@@ -144,13 +169,45 @@ test.describe('properties', () => {
     await page.getByLabel('Postleitzahl').fill('50933')
     await page.getByLabel('Ort').fill('Köln')
 
-    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toBeVisible()
+    await expect(page.getByText('Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.')).toBeVisible()
     await expect(page.getByLabel('Hausnummer')).toHaveClass(/p-invalid/)
     await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
 
     await page.getByLabel('Hausnummer').fill('512')
-    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toHaveCount(0)
+    await expect(page.getByText('Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.')).toHaveCount(0)
     await expect(page.getByLabel('Hausnummer')).not.toHaveClass(/p-invalid/)
+  })
+
+  test('limits the house number field to 5 digits', async ({ page }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await expect(page.getByLabel('Hausnummer')).toHaveAttribute('maxlength', '5')
+  })
+
+  test('flags a city containing a symbol no real German place name contains with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln@Stadt')
+
+    await expect(
+      page.getByText("Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toBeVisible()
+    await expect(page.getByLabel('Ort')).toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+
+    await page.getByLabel('Ort').fill('Köln')
+    await expect(
+      page.getByText("Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toHaveCount(0)
+    await expect(page.getByLabel('Ort')).not.toHaveClass(/p-invalid/)
   })
 
   test('flags a postal code that is not exactly 5 digits with a red-bordered hint and disables submit', async ({
@@ -176,5 +233,74 @@ test.describe('properties', () => {
     ).toHaveCount(0)
     await expect(page.getByLabel('Postleitzahl')).not.toHaveClass(/p-invalid/)
     await expect(submitButton).toBeEnabled()
+  })
+
+  test('shows a correction suggestion for an address with a wrong postal code and applies it on click', async ({
+    page,
+  }) => {
+    await page.route('**/api/geocode/validate**', async (route) => {
+      await route.fulfill({
+        json: {
+          status: 'SUGGESTION',
+          suggestedStreet: 'Aachener Str.',
+          suggestedHouseNumber: '512',
+          suggestedPostalCode: '50933',
+          suggestedCity: 'Köln',
+        },
+      })
+    })
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
+    await page.getByLabel('Postleitzahl').fill('99999')
+    await page.getByLabel('Ort').fill('Köln')
+    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
+
+    await submitButton.click()
+
+    await expect(
+      page.getByText('Meinten Sie folgende Adresse: Aachener Str. 512, 50933 Köln?'),
+    ).toBeVisible()
+    await expect(submitButton).toBeDisabled()
+
+    await page.getByRole('button', { name: 'Vorschlag übernehmen' }).click()
+
+    await expect(page.getByLabel('Postleitzahl')).toHaveValue('50933')
+    await expect(submitButton).toBeEnabled()
+  })
+
+  test('blocks submission with a generic error when the address cannot be resolved at all', async ({
+    page,
+  }) => {
+    await page.route('**/api/geocode/validate**', async (route) => {
+      await route.fulfill({
+        json: {
+          status: 'NOT_FOUND',
+          suggestedStreet: null,
+          suggestedHouseNumber: null,
+          suggestedPostalCode: null,
+          suggestedCity: null,
+        },
+      })
+    })
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Nirgendwostr.')
+    await page.getByLabel('Hausnummer').fill('1')
+    await page.getByLabel('Postleitzahl').fill('99999')
+    await page.getByLabel('Ort').fill('Nirgendwo')
+    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
+
+    await submitButton.click()
+
+    await expect(
+      page.getByText('Diese Adresse konnte nicht gefunden werden. Bitte prüfen Sie Ihre Eingabe.'),
+    ).toBeVisible()
+    await expect(submitButton).toBeDisabled()
   })
 })
