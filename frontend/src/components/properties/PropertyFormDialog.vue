@@ -56,15 +56,21 @@ const suggestedAddressLine = computed(() => {
   return `${suggestedStreet} ${suggestedHouseNumber}, ${suggestedPostalCode} ${suggestedCity}`
 })
 
-const isValid = computed(
+/** Whether street, house number, postal code and city are all present and match their respective format. */
+const isAddressFormatValid = computed(
   () =>
-    form.name.trim().length > 0 &&
-    form.name.length <= NAME_MAX_LENGTH &&
     form.street.trim().length > 0 &&
     STREET_PATTERN.test(form.street.trim()) &&
     HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
-    form.city.trim().length > 0 &&
+    form.city.trim().length > 0,
+)
+
+const isValid = computed(
+  () =>
+    form.name.trim().length > 0 &&
+    form.name.length <= NAME_MAX_LENGTH &&
+    isAddressFormatValid.value &&
     !isDuplicateName.value &&
     !isDuplicateAddress.value &&
     !hasBlockingAddressError.value,
@@ -106,13 +112,7 @@ const isDuplicateName = computed(() => {
 
 /** Whether the fully entered address matches an already-existing property's address, ignoring case and surrounding whitespace. */
 const isDuplicateAddress = computed(() => {
-  if (
-    form.street.trim().length === 0 ||
-    !STREET_PATTERN.test(form.street.trim()) ||
-    !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
-    !POSTAL_CODE_PATTERN.test(form.postalCode) ||
-    form.city.trim().length === 0
-  ) {
+  if (!isAddressFormatValid.value) {
     return false
   }
   const address = combinedAddress.value.toLowerCase()
@@ -153,13 +153,7 @@ function resetForm() {
 function scheduleGeocode() {
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
 
-  if (
-    form.street.trim().length === 0 ||
-    !STREET_PATTERN.test(form.street.trim()) ||
-    !HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) ||
-    !POSTAL_CODE_PATTERN.test(form.postalCode) ||
-    form.city.trim().length === 0
-  ) {
+  if (!isAddressFormatValid.value) {
     geocodedPosition.value = null
     isGeocoding.value = false
     return
