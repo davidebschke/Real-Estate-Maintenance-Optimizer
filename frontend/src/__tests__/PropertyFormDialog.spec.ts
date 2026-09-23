@@ -156,6 +156,19 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
+  it('accepts a street with the typographic apostrophe, non-breaking space and en dash that "smart punctuation" autocorrects to', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('O’Connor–Weg West')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
   it('flags a house number that is not purely digits with a hint and a red border, and disables submit', async () => {
     const wrapper = await mountDialog()
 

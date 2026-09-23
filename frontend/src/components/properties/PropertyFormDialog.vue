@@ -20,8 +20,8 @@ const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const GEOCODE_DEBOUNCE_MS = 500
 const HOUSE_NUMBER_PATTERN = /^\d+$/
 const POSTAL_CODE_PATTERN = /^\d{5}$/
-/** Letters (incl. diacritics), digits, spaces and the punctuation that occurs in real German street names. */
-const STREET_PATTERN = /^[\p{L}\d .'\-/]+$/u
+/** Letters (incl. diacritics), digits, spaces, real-German-street punctuation, and the typographic apostrophe/dash/non-breaking-space "smart punctuation" autocorrect commonly substitutes. */
+const STREET_PATTERN = /^[\p{L}\d .'’ /–-]+$/u
 
 const visible = defineModel<boolean>('visible', { required: true })
 
