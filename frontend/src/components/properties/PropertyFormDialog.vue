@@ -6,7 +6,12 @@ import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
 import { usePropertiesStore } from '@/stores/properties'
-import { geocodeAddress, type GeocodedPosition } from '@/services/geocodingService'
+import {
+  geocodeAddress,
+  validateAddress,
+  type AddressValidationResult,
+  type GeocodedPosition,
+} from '@/services/geocodingService'
 
 const NAME_MAX_LENGTH = 50
 const STREET_MAX_LENGTH = 100
@@ -34,6 +39,19 @@ const geocodedPosition = ref<GeocodedPosition | null>(null)
 const isGeocoding = ref(false)
 let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
 
+const addressValidation = ref<AddressValidationResult | null>(null)
+const isValidatingAddress = ref(false)
+
+/** Whether the last address validation blocks submission, i.e. it found either a suggestion or no match at all. */
+const hasBlockingAddressError = computed(() => addressValidation.value !== null)
+
+/** The suggested address as a single readable line, for the "did you mean" hint. */
+const suggestedAddressLine = computed(() => {
+  if (!addressValidation.value || addressValidation.value.status !== 'SUGGESTION') return ''
+  const { suggestedStreet, suggestedHouseNumber, suggestedPostalCode, suggestedCity } = addressValidation.value
+  return `${suggestedStreet} ${suggestedHouseNumber}, ${suggestedPostalCode} ${suggestedCity}`
+})
+
 const isValid = computed(
   () =>
     form.name.trim().length > 0 &&
@@ -43,7 +61,8 @@ const isValid = computed(
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
     form.city.trim().length > 0 &&
     !isDuplicateName.value &&
-    !isDuplicateAddress.value,
+    !isDuplicateAddress.value &&
+    !hasBlockingAddressError.value,
 )
 
 /** Whether the house number has been touched but is not purely digits. */
@@ -94,7 +113,10 @@ watch(visible, (isVisible) => {
 
 watch(
   () => [form.street, form.houseNumber, form.addressSupplement, form.postalCode, form.city],
-  () => scheduleGeocode(),
+  () => {
+    addressValidation.value = null
+    scheduleGeocode()
+  },
 )
 
 /** Resets every field and the location preview to its default, called each time the dialog is opened. */
@@ -107,6 +129,8 @@ function resetForm() {
   form.city = ''
   geocodedPosition.value = null
   isGeocoding.value = false
+  addressValidation.value = null
+  isValidatingAddress.value = false
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
 }
 
@@ -134,7 +158,16 @@ function scheduleGeocode() {
 
 /** Creates the property from the current form state, then closes the dialog on success. */
 async function submit() {
-  if (!isValid.value) return
+  if (!isValid.value || isValidatingAddress.value) return
+
+  isValidatingAddress.value = true
+  const result = await validateAddress(form.street, form.houseNumber, form.postalCode, form.city)
+  isValidatingAddress.value = false
+
+  if (result.status !== 'MATCH') {
+    addressValidation.value = result
+    return
+  }
 
   const created = await store.createProperty({
     name: form.name,
@@ -144,6 +177,17 @@ async function submit() {
   })
 
   if (created) visible.value = false
+}
+
+/** Applies the last validation's suggested address to the form without any further manual input. */
+function acceptSuggestion() {
+  if (!addressValidation.value || addressValidation.value.status !== 'SUGGESTION') return
+
+  const { suggestedStreet, suggestedHouseNumber, suggestedPostalCode, suggestedCity } = addressValidation.value
+  form.street = suggestedStreet ?? form.street
+  form.houseNumber = suggestedHouseNumber ?? form.houseNumber
+  form.postalCode = suggestedPostalCode ?? form.postalCode
+  form.city = suggestedCity ?? form.city
 }
 
 /** Closes the dialog without creating a property. */
@@ -243,6 +287,23 @@ function cancel() {
       {{ t('properties.create.duplicateAddressError') }}
     </p>
 
+    <div v-if="addressValidation?.status === 'SUGGESTION'" class="property-form-dialog__address-suggestion">
+      <p class="property-form-dialog__field-error">
+        {{ t('properties.create.addressSuggestion', { address: suggestedAddressLine }) }}
+      </p>
+      <button
+        type="button"
+        class="property-form-dialog__accept-suggestion"
+        @click="acceptSuggestion"
+      >
+        {{ t('properties.create.acceptSuggestion') }}
+      </button>
+    </div>
+
+    <p v-if="addressValidation?.status === 'NOT_FOUND'" class="property-form-dialog__field-error">
+      {{ t('properties.create.addressNotFoundError') }}
+    </p>
+
     <div class="property-form-dialog__map-section">
       <span class="property-form-dialog__map-hint">{{ t('properties.create.mapHint') }}</span>
       <p v-if="!geocodedPosition && !isGeocoding" class="property-form-dialog__map-empty">
@@ -256,7 +317,11 @@ function cancel() {
     </p>
 
     <div class="property-form-dialog__actions">
-      <Button :label="t('properties.create.submit')" :disabled="!isValid" @click="submit" />
+      <Button
+        :label="t('properties.create.submit')"
+        :disabled="!isValid || isValidatingAddress"
+        @click="submit"
+      />
       <button type="button" class="property-form-dialog__cancel" @click="cancel">
         {{ t('properties.create.cancel') }}
       </button>

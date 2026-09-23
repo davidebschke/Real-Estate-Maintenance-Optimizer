@@ -1,8 +1,11 @@
 package com.remo.realestatemaintainceoptimizer.service;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.remo.realestatemaintainceoptimizer.dto.AddressValidationResponse;
 import com.remo.realestatemaintainceoptimizer.dto.GeocodingResponse;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
@@ -73,6 +76,75 @@ public class GeocodingService {
         return CITY_DISTRICT_SUFFIX.matcher(address).replaceFirst("$1");
     }
 
+    /**
+     * Checks whether the given street/house-number/postal-code/city combination really exists, returning a single
+     * unique correction suggestion (e.g. for a postal code that does not match an otherwise unique street) when one
+     * can be derived, and a generic not-found result for anything ambiguous or entirely unresolvable.
+     */
+    public AddressValidationResponse validateAddress(String street, String houseNumber, String postalCode, String city) {
+        String streetLine = (street.trim() + " " + houseNumber.trim()).trim();
+
+        List<NominatimResult> exactMatches = fetchStructured(streetLine, postalCode.trim(), city.trim(), 1);
+        if (!exactMatches.isEmpty()) {
+            AddressValidationResponse match = toMatch(exactMatches.get(0));
+            if (match != null) return match;
+        }
+
+        List<NominatimResult> withoutPostalCode = fetchStructured(streetLine, null, city.trim(), 2);
+        if (withoutPostalCode.size() == 1) {
+            NominatimResult result = withoutPostalCode.get(0);
+            Address address = result.address();
+            if (address != null && address.postcode() != null && !address.postcode().equals(postalCode.trim())) {
+                return AddressValidationResponse.suggestion(street.trim(), houseNumber.trim(), address.postcode(), cityOf(address, city));
+            }
+            AddressValidationResponse match = toMatch(result);
+            if (match != null) return match;
+        }
+
+        return AddressValidationResponse.notFound();
+    }
+
+    private AddressValidationResponse toMatch(NominatimResult result) {
+        try {
+            return AddressValidationResponse.match(Double.parseDouble(result.lat()), Double.parseDouble(result.lon()));
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private String cityOf(Address address, String fallback) {
+        if (address.city() != null) return address.city();
+        if (address.town() != null) return address.town();
+        if (address.village() != null) return address.village();
+        return fallback;
+    }
+
+    private synchronized List<NominatimResult> fetchStructured(String street, String postalCode, String city, int limit) {
+        waitForRateLimit();
+        try {
+            NominatimResult[] results = restClient
+                    .get()
+                    .uri(uriBuilder -> {
+                        uriBuilder = uriBuilder.path("/search").queryParam("street", street);
+                        if (postalCode != null && !postalCode.isBlank()) {
+                            uriBuilder = uriBuilder.queryParam("postalcode", postalCode);
+                        }
+                        return uriBuilder
+                                .queryParam("city", city)
+                                .queryParam("country", "Germany")
+                                .queryParam("format", "json")
+                                .queryParam("addressdetails", 1)
+                                .queryParam("limit", limit)
+                                .build();
+                    })
+                    .retrieve()
+                    .body(NominatimResult[].class);
+            return results == null ? List.of() : List.of(results);
+        } catch (RestClientException exception) {
+            return List.of();
+        }
+    }
+
     private GeocodingResponse fetchByFreeTextQuery(String address) {
         return fetch(uriBuilder -> uriBuilder.path("/search").queryParam("q", address));
     }
@@ -116,6 +188,15 @@ public class GeocodingService {
         nextRequestAt = Instant.now().plus(MIN_DELAY_BETWEEN_REQUESTS);
     }
 
-    private record NominatimResult(String lat, String lon) {
+    private record NominatimResult(String lat, String lon, Address address) {
+    }
+
+    private record Address(
+            String road,
+            @JsonProperty("house_number") String houseNumber,
+            String postcode,
+            String city,
+            String town,
+            String village) {
     }
 }

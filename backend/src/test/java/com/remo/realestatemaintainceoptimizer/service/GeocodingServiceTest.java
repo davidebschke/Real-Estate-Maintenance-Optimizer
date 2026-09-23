@@ -7,6 +7,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.remo.realestatemaintainceoptimizer.dto.AddressValidationResponse;
+import com.remo.realestatemaintainceoptimizer.dto.AddressValidationStatus;
 import com.remo.realestatemaintainceoptimizer.dto.GeocodingResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Verifies address geocoding against a mocked Nominatim HTTP response, including the city-district-suffix and
- * postal-code fallbacks, error handling, and per-address caching.
+ * postal-code fallbacks, error handling, per-address caching, and structured address validation.
  */
 class GeocodingServiceTest {
 
@@ -114,5 +116,73 @@ class GeocodingServiceTest {
         service.geocode("Aachener Str. 512, 50933 Köln");
 
         mockServer.verify();
+    }
+
+    @Test
+    void validatesAnAddressThatExistsExactlyAsEntered() {
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andExpect(requestTo(containsString("postalcode=50933")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\"}]", MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Aachener Str.", "512", "50933", "Köln");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.MATCH);
+        assertThat(response.latitude()).isEqualTo(50.9420135);
+        assertThat(response.longitude()).isEqualTo(6.8771884);
+    }
+
+    @Test
+    void suggestsTheCorrectPostalCodeWhenTheStreetIsOtherwiseUnique() {
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andExpect(requestTo(containsString("postalcode=99999")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\",\"address\":"
+                                + "{\"road\":\"Aachener Straße\",\"house_number\":\"512\",\"postcode\":\"50933\",\"city\":\"Köln\"}}]",
+                        MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Aachener Str.", "512", "99999", "Köln");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.SUGGESTION);
+        assertThat(response.suggestedStreet()).isEqualTo("Aachener Str.");
+        assertThat(response.suggestedHouseNumber()).isEqualTo("512");
+        assertThat(response.suggestedPostalCode()).isEqualTo("50933");
+        assertThat(response.suggestedCity()).isEqualTo("Köln");
+    }
+
+    @Test
+    void returnsNotFoundWhenTheStreetMatchesSeveralPossibleAddresses() {
+        mockServer
+                .expect(requestTo(containsString("street=Hauptstr.%201")))
+                .andExpect(requestTo(containsString("postalcode=99999")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("street=Hauptstr.%201")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"1\",\"lon\":\"1\"},{\"lat\":\"2\",\"lon\":\"2\"}]", MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Hauptstr.", "1", "99999", "Musterstadt");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.NOT_FOUND);
+    }
+
+    @Test
+    void returnsNotFoundWhenTheAddressCannotBeResolvedAtAll() {
+        mockServer
+                .expect(requestTo(containsString("street=Unbekannt%201")))
+                .andExpect(requestTo(containsString("postalcode=99999")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("street=Unbekannt%201")))
+                .andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Unbekannt", "1", "99999", "Nirgendwo");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.NOT_FOUND);
     }
 }

@@ -31,6 +31,14 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.createProperty).mockReset()
   vi.mocked(geocodingService.geocodeAddress).mockReset()
+  vi.mocked(geocodingService.validateAddress).mockReset()
+  vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+    status: 'MATCH',
+    suggestedStreet: null,
+    suggestedHouseNumber: null,
+    suggestedPostalCode: null,
+    suggestedCity: null,
+  })
   vi.useFakeTimers()
   document.body.innerHTML = ''
 })
@@ -282,6 +290,58 @@ describe('PropertyFormDialog', () => {
     expect(bodyField('.property-form-dialog__error').exists()).toBe(true)
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents).toBeUndefined()
+  })
+
+  it('blocks submission and shows a correction suggestion for an address with a unique fix', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'SUGGESTION',
+      suggestedStreet: 'Nordparkstr.',
+      suggestedHouseNumber: '3',
+      suggestedPostalCode: '50733',
+      suggestedCity: 'Köln',
+    })
+    const wrapper = await mountDialog()
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('99999')
+    await bodyField('#property-city').setValue('Köln')
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(geocodingService.validateAddress).toHaveBeenCalledWith('Nordparkstr.', '3', '99999', 'Köln')
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    expect(bodyField('.property-form-dialog__address-suggestion').text()).toContain(
+      'Meinten Sie folgende Adresse: Nordparkstr. 3, 50733 Köln?',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+
+    await bodyField('.property-form-dialog__accept-suggestion').trigger('click')
+
+    expect(bodyField('#property-postal-code').element.getAttribute('value')).toBe('50733')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('blocks submission with a generic error when the address cannot be resolved at all', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'NOT_FOUND',
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Diese Adresse konnte nicht gefunden werden. Bitte prüfen Sie Ihre Eingabe.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
   })
 
   it('resets every field when reopened', async () => {

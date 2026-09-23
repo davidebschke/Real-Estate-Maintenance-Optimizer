@@ -52,4 +52,40 @@ describe('geocodingService', () => {
 
     expect(axios.get).toHaveBeenCalledTimes(1)
   })
+
+  it('validates a structured address via the backend, without caching', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: {
+        status: 'SUGGESTION',
+        suggestedStreet: 'Nordparkstr.',
+        suggestedHouseNumber: '3',
+        suggestedPostalCode: '50733',
+        suggestedCity: 'Köln',
+      },
+    })
+    const { validateAddress } = await import('@/services/geocodingService')
+
+    const result = await validateAddress('Nordparkstr.', '3', '99999', 'Köln')
+
+    expect(result.status).toBe('SUGGESTION')
+    expect(result.suggestedPostalCode).toBe('50733')
+    expect(axios.get).toHaveBeenCalledWith(
+      expect.stringContaining('/api/geocode/validate'),
+      expect.objectContaining({
+        params: { street: 'Nordparkstr.', houseNumber: '3', postalCode: '99999', city: 'Köln' },
+      }),
+    )
+
+    await validateAddress('Nordparkstr.', '3', '99999', 'Köln')
+    expect(axios.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns a not-found result instead of throwing when the validation request fails', async () => {
+    vi.mocked(axios.get).mockRejectedValue(new Error('network error'))
+    const { validateAddress } = await import('@/services/geocodingService')
+
+    const result = await validateAddress('Nordparkstr.', '3', '99999', 'Köln')
+
+    expect(result.status).toBe('NOT_FOUND')
+  })
 })

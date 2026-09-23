@@ -177,4 +177,73 @@ test.describe('properties', () => {
     await expect(page.getByLabel('Postleitzahl')).not.toHaveClass(/p-invalid/)
     await expect(submitButton).toBeEnabled()
   })
+
+  test('shows a correction suggestion for an address with a wrong postal code and applies it on click', async ({
+    page,
+  }) => {
+    await page.route('**/api/geocode/validate**', async (route) => {
+      await route.fulfill({
+        json: {
+          status: 'SUGGESTION',
+          suggestedStreet: 'Aachener Str.',
+          suggestedHouseNumber: '512',
+          suggestedPostalCode: '50933',
+          suggestedCity: 'Köln',
+        },
+      })
+    })
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
+    await page.getByLabel('Postleitzahl').fill('99999')
+    await page.getByLabel('Ort').fill('Köln')
+    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
+
+    await submitButton.click()
+
+    await expect(
+      page.getByText('Meinten Sie folgende Adresse: Aachener Str. 512, 50933 Köln?'),
+    ).toBeVisible()
+    await expect(submitButton).toBeDisabled()
+
+    await page.getByRole('button', { name: 'Vorschlag übernehmen' }).click()
+
+    await expect(page.getByLabel('Postleitzahl')).toHaveValue('50933')
+    await expect(submitButton).toBeEnabled()
+  })
+
+  test('blocks submission with a generic error when the address cannot be resolved at all', async ({
+    page,
+  }) => {
+    await page.route('**/api/geocode/validate**', async (route) => {
+      await route.fulfill({
+        json: {
+          status: 'NOT_FOUND',
+          suggestedStreet: null,
+          suggestedHouseNumber: null,
+          suggestedPostalCode: null,
+          suggestedCity: null,
+        },
+      })
+    })
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Nirgendwostr.')
+    await page.getByLabel('Hausnummer').fill('1')
+    await page.getByLabel('Postleitzahl').fill('99999')
+    await page.getByLabel('Ort').fill('Nirgendwo')
+    const submitButton = page.getByRole('button', { name: 'Objekt anlegen', exact: true })
+
+    await submitButton.click()
+
+    await expect(
+      page.getByText('Diese Adresse konnte nicht gefunden werden. Bitte prüfen Sie Ihre Eingabe.'),
+    ).toBeVisible()
+    await expect(submitButton).toBeDisabled()
+  })
 })

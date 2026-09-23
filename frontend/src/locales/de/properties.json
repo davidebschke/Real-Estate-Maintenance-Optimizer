@@ -32,6 +32,9 @@
       "mapEmpty": "Straße, Hausnummer, Postleitzahl und Ort eingeben, um die Position zu sehen",
       "duplicateNameError": "Ein Objekt mit diesem Namen existiert bereits.",
       "duplicateAddressError": "Ein Objekt mit dieser Adresse existiert bereits.",
+      "addressSuggestion": "Meinten Sie folgende Adresse: {address}?",
+      "acceptSuggestion": "Vorschlag übernehmen",
+      "addressNotFoundError": "Diese Adresse konnte nicht gefunden werden. Bitte prüfen Sie Ihre Eingabe.",
       "error": "Das Objekt konnte nicht angelegt werden.",
       "submit": "Objekt anlegen",
       "cancel": "Abbrechen"

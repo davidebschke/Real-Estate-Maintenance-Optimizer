@@ -32,6 +32,9 @@
       "mapEmpty": "Enter street, house number, postal code and city to see the location",
       "duplicateNameError": "A property with this name already exists.",
       "duplicateAddressError": "A property with this address already exists.",
+      "addressSuggestion": "Did you mean the following address: {address}?",
+      "acceptSuggestion": "Apply suggestion",
+      "addressNotFoundError": "This address could not be found. Please check your input.",
       "error": "The property could not be created.",
       "submit": "Add property",
       "cancel": "Cancel"
