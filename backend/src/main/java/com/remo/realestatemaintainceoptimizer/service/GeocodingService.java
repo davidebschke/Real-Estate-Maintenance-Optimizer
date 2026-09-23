@@ -25,6 +25,7 @@ public class GeocodingService {
     private static final Duration MIN_DELAY_BETWEEN_REQUESTS = Duration.ofSeconds(1);
     private static final GeocodingResponse NOT_FOUND = new GeocodingResponse(null, null);
     private static final Pattern GERMAN_POSTAL_CODE = Pattern.compile("\\b\\d{5}\\b");
+    private static final Pattern EXACT_GERMAN_POSTAL_CODE = Pattern.compile("^\\d{5}$");
     private static final Pattern CITY_DISTRICT_SUFFIX =
             Pattern.compile("(\\d{5}\\s+\\p{Lu}\\p{L}*)-\\p{Lu}\\p{L}*");
 
@@ -82,26 +83,44 @@ public class GeocodingService {
      * can be derived, and a generic not-found result for anything ambiguous or entirely unresolvable.
      */
     public AddressValidationResponse validateAddress(String street, String houseNumber, String postalCode, String city) {
-        String streetLine = (street.trim() + " " + houseNumber.trim()).trim();
+        String trimmedHouseNumber = houseNumber.trim();
+        String trimmedPostalCode = postalCode.trim();
+        String streetLine = (street.trim() + " " + trimmedHouseNumber).trim();
 
-        List<NominatimResult> exactMatches = fetchStructured(streetLine, postalCode.trim(), city.trim(), 1);
-        if (!exactMatches.isEmpty()) {
-            AddressValidationResponse match = toMatch(exactMatches.get(0));
-            if (match != null) return match;
+        if (EXACT_GERMAN_POSTAL_CODE.matcher(trimmedPostalCode).matches()) {
+            List<NominatimResult> exactMatches = fetchStructured(streetLine, trimmedPostalCode, city.trim(), 1);
+            if (!exactMatches.isEmpty() && houseNumberMatches(exactMatches.get(0), trimmedHouseNumber)) {
+                AddressValidationResponse match = toMatch(exactMatches.get(0));
+                if (match != null) return match;
+            }
         }
 
         List<NominatimResult> withoutPostalCode = fetchStructured(streetLine, null, city.trim(), 2);
         if (withoutPostalCode.size() == 1) {
             NominatimResult result = withoutPostalCode.get(0);
+            if (!houseNumberMatches(result, trimmedHouseNumber)) {
+                return AddressValidationResponse.notFound();
+            }
             Address address = result.address();
-            if (address != null && address.postcode() != null && !address.postcode().equals(postalCode.trim())) {
-                return AddressValidationResponse.suggestion(street.trim(), houseNumber.trim(), address.postcode(), cityOf(address, city));
+            if (address != null && address.postcode() != null && !address.postcode().equals(trimmedPostalCode)) {
+                String suggestedStreet = address.road() != null ? address.road() : street.trim();
+                return AddressValidationResponse.suggestion(
+                        suggestedStreet, trimmedHouseNumber, address.postcode(), cityOf(address, city));
             }
             AddressValidationResponse match = toMatch(result);
             if (match != null) return match;
         }
 
         return AddressValidationResponse.notFound();
+    }
+
+    /**
+     * Whether the given result's house number matches the requested one, trusting the structured search when
+     * Nominatim did not return a house number to compare against.
+     */
+    private boolean houseNumberMatches(NominatimResult result, String requestedHouseNumber) {
+        Address address = result.address();
+        return address == null || address.houseNumber() == null || address.houseNumber().equals(requestedHouseNumber);
     }
 
     private AddressValidationResponse toMatch(NominatimResult result) {

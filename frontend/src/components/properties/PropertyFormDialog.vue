@@ -132,13 +132,17 @@ watch(visible, (isVisible) => {
 })
 
 watch(
-  () => [form.street, form.houseNumber, form.addressSupplement, form.postalCode, form.city],
+  () => [form.street, form.houseNumber, form.postalCode, form.city],
   () => {
     validationRequestId += 1
     addressValidation.value = null
     isValidatingAddress.value = false
-    scheduleGeocode()
   },
+)
+
+watch(
+  () => [form.street, form.houseNumber, form.addressSupplement, form.postalCode, form.city],
+  () => scheduleGeocode(),
 )
 
 /** Resets every field and the location preview to its default, called each time the dialog is opened. */
@@ -174,6 +178,11 @@ function scheduleGeocode() {
   }, GEOCODE_DEBOUNCE_MS)
 }
 
+/** Whether an address field changed, or another validation started, since the given validation request was sent. */
+function isStaleValidationResponse(requestId: number) {
+  return requestId !== validationRequestId
+}
+
 /** Creates the property from the current form state, then closes the dialog on success. */
 async function submit() {
   if (!isValid.value || isValidatingAddress.value) return
@@ -182,8 +191,7 @@ async function submit() {
   isValidatingAddress.value = true
   const result = await validateAddress(form.street, form.houseNumber, form.postalCode, form.city)
 
-  // An address field changed (or another validation started) while this one was in flight; discard the response.
-  if (requestId !== validationRequestId) return
+  if (isStaleValidationResponse(requestId)) return
 
   isValidatingAddress.value = false
 

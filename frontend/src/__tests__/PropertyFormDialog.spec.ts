@@ -412,6 +412,31 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
+  it('keeps a shown suggestion when only the address supplement changes, since that field is not part of the validated address', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'SUGGESTION',
+      suggestedStreet: 'Nordparkstr.',
+      suggestedHouseNumber: '3',
+      suggestedPostalCode: '50733',
+      suggestedCity: 'Köln',
+    })
+    const wrapper = await mountDialog()
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('99999')
+    await bodyField('#property-city').setValue('Köln')
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    expect(bodyField('.property-form-dialog__address-suggestion').exists()).toBe(true)
+
+    await bodyField('#property-address-supplement').setValue('a')
+
+    expect(bodyField('.property-form-dialog__address-suggestion').exists()).toBe(true)
+    expect(geocodingService.validateAddress).toHaveBeenCalledTimes(1)
+  })
+
   it('blocks submission with a generic error when the address cannot be resolved at all', async () => {
     vi.mocked(geocodingService.validateAddress).mockResolvedValue({
       status: 'NOT_FOUND',

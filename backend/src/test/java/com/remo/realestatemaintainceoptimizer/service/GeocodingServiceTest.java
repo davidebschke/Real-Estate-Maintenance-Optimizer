@@ -149,10 +149,47 @@ class GeocodingServiceTest {
         AddressValidationResponse response = service.validateAddress("Aachener Str.", "512", "99999", "Köln");
 
         assertThat(response.status()).isEqualTo(AddressValidationStatus.SUGGESTION);
-        assertThat(response.suggestedStreet()).isEqualTo("Aachener Str.");
+        assertThat(response.suggestedStreet()).isEqualTo("Aachener Straße");
         assertThat(response.suggestedHouseNumber()).isEqualTo("512");
         assertThat(response.suggestedPostalCode()).isEqualTo("50933");
         assertThat(response.suggestedCity()).isEqualTo("Köln");
+    }
+
+    @Test
+    void rejectsAnExactPostalCodeMatchWhoseHouseNumberDiffersFromTheOneRequested() {
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andExpect(requestTo(containsString("postalcode=50933")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\",\"address\":"
+                                + "{\"road\":\"Aachener Straße\",\"house_number\":\"510\",\"postcode\":\"50933\"}}]",
+                        MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\",\"address\":"
+                                + "{\"road\":\"Aachener Straße\",\"house_number\":\"510\",\"postcode\":\"50933\"}}]",
+                        MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Aachener Str.", "512", "50933", "Köln");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.NOT_FOUND);
+    }
+
+    @Test
+    void doesNotBlindlyAcceptTheFirstHitWhenThePostalCodeIsBlank() {
+        mockServer
+                .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\",\"address\":"
+                                + "{\"road\":\"Aachener Straße\",\"house_number\":\"512\",\"postcode\":\"50933\",\"city\":\"Köln\"}}]",
+                        MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Aachener Str.", "512", "", "Köln");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.SUGGESTION);
+        assertThat(response.suggestedPostalCode()).isEqualTo("50933");
+        mockServer.verify();
     }
 
     @Test
