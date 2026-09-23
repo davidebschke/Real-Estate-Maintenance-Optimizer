@@ -200,11 +200,13 @@ async function submit() {
     return
   }
 
+  if (!isValid.value) return
+
   const created = await store.createProperty({
     name: form.name,
     address: combinedAddress.value,
-    latitude: geocodedPosition.value?.lat ?? null,
-    longitude: geocodedPosition.value?.lng ?? null,
+    latitude: result.latitude ?? geocodedPosition.value?.lat ?? null,
+    longitude: result.longitude ?? geocodedPosition.value?.lng ?? null,
   })
 
   if (created) visible.value = false

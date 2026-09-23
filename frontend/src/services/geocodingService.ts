@@ -9,9 +9,11 @@ export interface GeocodedPosition {
 /** Outcome of validating whether an entered address combination really exists. */
 export type AddressValidationStatus = 'MATCH' | 'SUGGESTION' | 'NOT_FOUND'
 
-/** Result of validating an entered address, with a correction suggestion for a "SUGGESTION" status. */
+/** Result of validating an entered address, with coordinates for a "MATCH" and a correction suggestion for a "SUGGESTION" status. */
 export interface AddressValidationResult {
   status: AddressValidationStatus
+  latitude: number | null
+  longitude: number | null
   suggestedStreet: string | null
   suggestedHouseNumber: string | null
   suggestedPostalCode: string | null
@@ -20,6 +22,8 @@ export interface AddressValidationResult {
 
 const NOT_FOUND_RESULT: AddressValidationResult = {
   status: 'NOT_FOUND',
+  latitude: null,
+  longitude: null,
   suggestedStreet: null,
   suggestedHouseNumber: null,
   suggestedPostalCode: null,

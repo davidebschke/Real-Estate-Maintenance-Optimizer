@@ -34,6 +34,8 @@ beforeEach(() => {
   vi.mocked(geocodingService.validateAddress).mockReset()
   vi.mocked(geocodingService.validateAddress).mockResolvedValue({
     status: 'MATCH',
+    latitude: null,
+    longitude: null,
     suggestedStreet: null,
     suggestedHouseNumber: null,
     suggestedPostalCode: null,
@@ -278,6 +280,38 @@ describe('PropertyFormDialog', () => {
     expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
   })
 
+  it('prefers the coordinates confirmed by address validation over a failed preview geocode', async () => {
+    vi.mocked(geocodingService.validateAddress).mockResolvedValue({
+      status: 'MATCH',
+      latitude: 50.9420135,
+      longitude: 6.8771884,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    vi.mocked(geocodingService.geocodeAddress).mockResolvedValue(null)
+    vi.mocked(propertyService.createProperty).mockResolvedValue({
+      id: '5',
+      name: 'Wohnanlage Nordpark',
+      address: 'Nordparkstr. 3, 50733 Köln',
+      icon: 'pi-building',
+      latitude: 50.9420135,
+      longitude: 6.8771884,
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+    await vi.advanceTimersByTimeAsync(500)
+    await flushPromises()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(propertyService.createProperty).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 50.9420135, longitude: 6.8771884 }),
+    )
+  })
+
   it('creates the property with the combined address and geocoded coordinates, then closes the dialog', async () => {
     vi.mocked(geocodingService.geocodeAddress).mockResolvedValue({ lat: 50.97, lng: 6.95 })
     vi.mocked(propertyService.createProperty).mockResolvedValue({
@@ -384,6 +418,8 @@ describe('PropertyFormDialog', () => {
   it('blocks submission and shows a correction suggestion for an address with a unique fix', async () => {
     vi.mocked(geocodingService.validateAddress).mockResolvedValue({
       status: 'SUGGESTION',
+      latitude: null,
+      longitude: null,
       suggestedStreet: 'Nordparkstr.',
       suggestedHouseNumber: '3',
       suggestedPostalCode: '50733',
@@ -415,6 +451,8 @@ describe('PropertyFormDialog', () => {
   it('keeps a shown suggestion when only the address supplement changes, since that field is not part of the validated address', async () => {
     vi.mocked(geocodingService.validateAddress).mockResolvedValue({
       status: 'SUGGESTION',
+      latitude: null,
+      longitude: null,
       suggestedStreet: 'Nordparkstr.',
       suggestedHouseNumber: '3',
       suggestedPostalCode: '50733',
@@ -440,6 +478,8 @@ describe('PropertyFormDialog', () => {
   it('blocks submission with a generic error when the address cannot be resolved at all', async () => {
     vi.mocked(geocodingService.validateAddress).mockResolvedValue({
       status: 'NOT_FOUND',
+      latitude: null,
+      longitude: null,
       suggestedStreet: null,
       suggestedHouseNumber: null,
       suggestedPostalCode: null,
@@ -475,6 +515,8 @@ describe('PropertyFormDialog', () => {
 
     resolveFirstValidation({
       status: 'MATCH',
+      latitude: null,
+      longitude: null,
       suggestedStreet: null,
       suggestedHouseNumber: null,
       suggestedPostalCode: null,
@@ -485,6 +527,37 @@ describe('PropertyFormDialog', () => {
     expect(propertyService.createProperty).not.toHaveBeenCalled()
     // the edited (never-validated) address must not be silently approved by the stale response
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
+  it('does not create the property if the name became a duplicate while address validation was in flight', async () => {
+    const store = usePropertiesStore()
+    store.properties = [createExistingProperty({ name: 'Bereits Vergeben' })]
+    let resolveValidation!: (result: geocodingService.AddressValidationResult) => void
+    vi.mocked(geocodingService.validateAddress).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveValidation = resolve
+      }),
+    )
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    // the user renames the property to a duplicate while the validation request is still in flight
+    await bodyField('#property-name').setValue('Bereits Vergeben')
+
+    resolveValidation({
+      status: 'MATCH',
+      latitude: null,
+      longitude: null,
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
   })
 
   it('resets every field when reopened', async () => {

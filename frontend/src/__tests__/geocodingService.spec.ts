@@ -57,6 +57,8 @@ describe('geocodingService', () => {
     vi.mocked(axios.get).mockResolvedValue({
       data: {
         status: 'SUGGESTION',
+        latitude: null,
+        longitude: null,
         suggestedStreet: 'Nordparkstr.',
         suggestedHouseNumber: '3',
         suggestedPostalCode: '50733',
@@ -78,6 +80,27 @@ describe('geocodingService', () => {
 
     await validateAddress('Nordparkstr.', '3', '99999', 'Köln')
     expect(axios.get).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns the coordinates the backend resolved for a matched address', async () => {
+    vi.mocked(axios.get).mockResolvedValue({
+      data: {
+        status: 'MATCH',
+        latitude: 50.9420135,
+        longitude: 6.8771884,
+        suggestedStreet: null,
+        suggestedHouseNumber: null,
+        suggestedPostalCode: null,
+        suggestedCity: null,
+      },
+    })
+    const { validateAddress } = await import('@/services/geocodingService')
+
+    const result = await validateAddress('Aachener Str.', '512', '50933', 'Köln')
+
+    expect(result.status).toBe('MATCH')
+    expect(result.latitude).toBe(50.9420135)
+    expect(result.longitude).toBe(6.8771884)
   })
 
   it('returns a not-found result instead of throwing when the validation request fails', async () => {
