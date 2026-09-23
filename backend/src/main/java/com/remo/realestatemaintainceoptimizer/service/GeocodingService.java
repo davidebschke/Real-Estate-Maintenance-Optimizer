@@ -89,7 +89,9 @@ public class GeocodingService {
 
         if (EXACT_GERMAN_POSTAL_CODE.matcher(trimmedPostalCode).matches()) {
             List<NominatimResult> exactMatches = fetchStructured(streetLine, trimmedPostalCode, city.trim(), 1);
-            if (!exactMatches.isEmpty() && houseNumberMatches(exactMatches.get(0), trimmedHouseNumber)) {
+            if (!exactMatches.isEmpty()
+                    && houseNumberMatches(exactMatches.get(0), trimmedHouseNumber)
+                    && postalCodeMatches(exactMatches.get(0), trimmedPostalCode)) {
                 AddressValidationResponse match = toMatch(exactMatches.get(0));
                 if (match != null) return match;
             }
@@ -121,6 +123,16 @@ public class GeocodingService {
     private boolean houseNumberMatches(NominatimResult result, String requestedHouseNumber) {
         Address address = result.address();
         return address == null || address.houseNumber() == null || address.houseNumber().equals(requestedHouseNumber);
+    }
+
+    /**
+     * Whether the given result's postal code matches the requested one, required to accept a "postalcode"-biased
+     * structured search as a real match since Nominatim treats that parameter as a ranking hint, not a hard filter,
+     * and can otherwise return the correct street/city with a different real postal code than the one requested.
+     */
+    private boolean postalCodeMatches(NominatimResult result, String requestedPostalCode) {
+        Address address = result.address();
+        return address == null || address.postcode() == null || address.postcode().equals(requestedPostalCode);
     }
 
     private AddressValidationResponse toMatch(NominatimResult result) {

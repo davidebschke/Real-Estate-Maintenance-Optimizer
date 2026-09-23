@@ -177,6 +177,29 @@ class GeocodingServiceTest {
     }
 
     @Test
+    void suggestsTheCorrectPostalCodeWhenNominatimIgnoresTheWrongOneGivenAsASearchBias() {
+        mockServer
+                .expect(requestTo(containsString("street=Schlo%C3%9Fstra%C3%9Fe%2027")))
+                .andExpect(requestTo(containsString("postalcode=44444")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"51.6\",\"lon\":\"7.1\",\"address\":"
+                                + "{\"road\":\"Schloßstraße\",\"house_number\":\"27\",\"postcode\":\"45701\",\"city\":\"Herten\"}}]",
+                        MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(requestTo(containsString("street=Schlo%C3%9Fstra%C3%9Fe%2027")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"51.6\",\"lon\":\"7.1\",\"address\":"
+                                + "{\"road\":\"Schloßstraße\",\"house_number\":\"27\",\"postcode\":\"45701\",\"city\":\"Herten\"}}]",
+                        MediaType.APPLICATION_JSON));
+
+        AddressValidationResponse response = service.validateAddress("Schloßstraße", "27", "44444", "Herten");
+
+        assertThat(response.status()).isEqualTo(AddressValidationStatus.SUGGESTION);
+        assertThat(response.suggestedPostalCode()).isEqualTo("45701");
+        assertThat(response.suggestedCity()).isEqualTo("Herten");
+    }
+
+    @Test
     void doesNotBlindlyAcceptTheFirstHitWhenThePostalCodeIsBlank() {
         mockServer
                 .expect(requestTo(containsString("street=Aachener%20Str.%20512")))
