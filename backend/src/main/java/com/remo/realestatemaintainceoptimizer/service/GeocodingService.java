@@ -116,63 +116,58 @@ public class GeocodingService {
         if (address.city() != null) return address.city();
         if (address.town() != null) return address.town();
         if (address.village() != null) return address.village();
-        return fallback;
+        return fallback.trim();
     }
 
-    private synchronized List<NominatimResult> fetchStructured(String street, String postalCode, String city, int limit) {
-        waitForRateLimit();
-        try {
-            NominatimResult[] results = restClient
-                    .get()
-                    .uri(uriBuilder -> {
-                        uriBuilder = uriBuilder.path("/search").queryParam("street", street);
-                        if (postalCode != null && !postalCode.isBlank()) {
-                            uriBuilder = uriBuilder.queryParam("postalcode", postalCode);
-                        }
-                        return uriBuilder
-                                .queryParam("city", city)
-                                .queryParam("country", "Germany")
-                                .queryParam("format", "json")
-                                .queryParam("addressdetails", 1)
-                                .queryParam("limit", limit)
-                                .build();
-                    })
-                    .retrieve()
-                    .body(NominatimResult[].class);
-            return results == null ? List.of() : List.of(results);
-        } catch (RestClientException exception) {
-            return List.of();
-        }
+    private List<NominatimResult> fetchStructured(String street, String postalCode, String city, int limit) {
+        return fetchRaw(uriBuilder -> {
+            uriBuilder = uriBuilder.path("/search").queryParam("street", street);
+            if (postalCode != null && !postalCode.isBlank()) {
+                uriBuilder = uriBuilder.queryParam("postalcode", postalCode);
+            }
+            return uriBuilder.queryParam("city", city).queryParam("country", "Germany").queryParam("addressdetails", 1);
+        }, limit);
     }
 
     private GeocodingResponse fetchByFreeTextQuery(String address) {
-        return fetch(uriBuilder -> uriBuilder.path("/search").queryParam("q", address));
+        return toGeocodingResponse(fetchRaw(uriBuilder -> uriBuilder.path("/search").queryParam("q", address), 1));
     }
 
     private GeocodingResponse fetchByPostalCode(String postalCode) {
-        return fetch(uriBuilder -> uriBuilder
-                .path("/search")
-                .queryParam("postalcode", postalCode)
-                .queryParam("country", "Germany"));
+        return toGeocodingResponse(fetchRaw(
+                uriBuilder -> uriBuilder.path("/search").queryParam("postalcode", postalCode).queryParam("country", "Germany"),
+                1));
     }
 
-    private synchronized GeocodingResponse fetch(UnaryOperator<UriBuilder> query) {
+    private GeocodingResponse toGeocodingResponse(List<NominatimResult> results) {
+        if (results.isEmpty()) {
+            return NOT_FOUND;
+        }
+        try {
+            return new GeocodingResponse(Double.parseDouble(results.get(0).lat()), Double.parseDouble(results.get(0).lon()));
+        } catch (NumberFormatException exception) {
+            return NOT_FOUND;
+        }
+    }
+
+    /**
+     * Runs the given Nominatim search query, rate-limited and cleared to a JSON result list, returning an empty
+     * list instead of throwing if the request fails.
+     */
+    private synchronized List<NominatimResult> fetchRaw(UnaryOperator<UriBuilder> query, int limit) {
         waitForRateLimit();
         try {
             NominatimResult[] results = restClient
                     .get()
                     .uri(uriBuilder -> query.apply(uriBuilder)
                             .queryParam("format", "json")
-                            .queryParam("limit", 1)
+                            .queryParam("limit", limit)
                             .build())
                     .retrieve()
                     .body(NominatimResult[].class);
-            if (results == null || results.length == 0) {
-                return NOT_FOUND;
-            }
-            return new GeocodingResponse(Double.parseDouble(results[0].lat()), Double.parseDouble(results[0].lon()));
-        } catch (RestClientException | NumberFormatException exception) {
-            return NOT_FOUND;
+            return results == null ? List.of() : List.of(results);
+        } catch (RestClientException exception) {
+            return List.of();
         }
     }
 

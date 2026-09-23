@@ -41,6 +41,8 @@ let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
 
 const addressValidation = ref<AddressValidationResult | null>(null)
 const isValidatingAddress = ref(false)
+/** Incremented on every address-field change and validation attempt, to discard a stale in-flight validation response. */
+let validationRequestId = 0
 
 /** Whether the last address validation blocks submission, i.e. it found either a suggestion or no match at all. */
 const hasBlockingAddressError = computed(() => addressValidation.value !== null)
@@ -114,7 +116,9 @@ watch(visible, (isVisible) => {
 watch(
   () => [form.street, form.houseNumber, form.addressSupplement, form.postalCode, form.city],
   () => {
+    validationRequestId += 1
     addressValidation.value = null
+    isValidatingAddress.value = false
     scheduleGeocode()
   },
 )
@@ -131,6 +135,7 @@ function resetForm() {
   isGeocoding.value = false
   addressValidation.value = null
   isValidatingAddress.value = false
+  validationRequestId += 1
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
 }
 
@@ -160,8 +165,13 @@ function scheduleGeocode() {
 async function submit() {
   if (!isValid.value || isValidatingAddress.value) return
 
+  const requestId = (validationRequestId += 1)
   isValidatingAddress.value = true
   const result = await validateAddress(form.street, form.houseNumber, form.postalCode, form.city)
+
+  // An address field changed (or another validation started) while this one was in flight; discard the response.
+  if (requestId !== validationRequestId) return
+
   isValidatingAddress.value = false
 
   if (result.status !== 'MATCH') {

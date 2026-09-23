@@ -344,6 +344,35 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
   })
 
+  it('discards a stale validation response for an address the user has since changed, instead of creating it unchecked', async () => {
+    let resolveFirstValidation!: (result: geocodingService.AddressValidationResult) => void
+    vi.mocked(geocodingService.validateAddress).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFirstValidation = resolve
+      }),
+    )
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+    // the user keeps editing while the first validation is still in flight
+    await bodyField('#property-postal-code').setValue('99999')
+
+    resolveFirstValidation({
+      status: 'MATCH',
+      suggestedStreet: null,
+      suggestedHouseNumber: null,
+      suggestedPostalCode: null,
+      suggestedCity: null,
+    })
+    await flushPromises()
+
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    // the edited (never-validated) address must not be silently approved by the stale response
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
+  })
+
   it('resets every field when reopened', async () => {
     const wrapper = await mountDialog()
     await fillRequiredFields()
