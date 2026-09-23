@@ -15,13 +15,14 @@ import {
 
 const NAME_MAX_LENGTH = 50
 const STREET_MAX_LENGTH = 100
-const HOUSE_NUMBER_MAX_LENGTH = 10
+const HOUSE_NUMBER_MAX_LENGTH = 5
 const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
+const CITY_MAX_LENGTH = 50
 const GEOCODE_DEBOUNCE_MS = 500
-const HOUSE_NUMBER_PATTERN = /^\d+$/
+const HOUSE_NUMBER_PATTERN = /^\d{1,5}$/
 const POSTAL_CODE_PATTERN = /^\d{5}$/
-/** Letters (incl. diacritics), digits, spaces, real-German-street punctuation, and the typographic apostrophe/dash/non-breaking-space "smart punctuation" autocorrect commonly substitutes. */
-const STREET_PATTERN = /^[\p{L}\d .'’ /–-]+$/u
+/** Letters (incl. diacritics), digits, spaces, punctuation common to real German street/place names, and the typographic apostrophe/dash/non-breaking-space "smart punctuation" autocorrect commonly substitutes. */
+const PLACE_NAME_PATTERN = /^[\p{L}\d .'’ /–-]+$/u
 
 const visible = defineModel<boolean>('visible', { required: true })
 
@@ -60,10 +61,11 @@ const suggestedAddressLine = computed(() => {
 const isAddressFormatValid = computed(
   () =>
     form.street.trim().length > 0 &&
-    STREET_PATTERN.test(form.street.trim()) &&
+    PLACE_NAME_PATTERN.test(form.street.trim()) &&
     HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
     POSTAL_CODE_PATTERN.test(form.postalCode) &&
-    form.city.trim().length > 0,
+    form.city.trim().length > 0 &&
+    PLACE_NAME_PATTERN.test(form.city.trim()),
 )
 
 const isValid = computed(
@@ -79,7 +81,13 @@ const isValid = computed(
 /** Whether the street has been touched but contains a character that occurs in no real German street name. */
 const isStreetFormatInvalid = computed(() => {
   const street = form.street.trim()
-  return street.length > 0 && !STREET_PATTERN.test(street)
+  return street.length > 0 && !PLACE_NAME_PATTERN.test(street)
+})
+
+/** Whether the city has been touched but contains a character that occurs in no real German place name. */
+const isCityFormatInvalid = computed(() => {
+  const city = form.city.trim()
+  return city.length > 0 && !PLACE_NAME_PATTERN.test(city)
 })
 
 /** Whether the house number has been touched but is not purely digits. */
@@ -295,9 +303,13 @@ function cancel() {
         <InputText
           id="property-city"
           v-model="form.city"
-          :invalid="isDuplicateAddress"
+          :maxlength="CITY_MAX_LENGTH"
+          :invalid="isDuplicateAddress || isCityFormatInvalid"
           :placeholder="t('properties.create.cityPlaceholder')"
         />
+        <p v-if="isCityFormatInvalid" class="property-form-dialog__field-error">
+          {{ t('properties.create.cityFormatError') }}
+        </p>
       </div>
     </div>
 

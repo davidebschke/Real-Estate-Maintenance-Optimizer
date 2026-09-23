@@ -180,9 +180,56 @@ describe('PropertyFormDialog', () => {
 
     expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
     expect(bodyField('.property-form-dialog__field-error').text()).toBe(
-      'Die Hausnummer darf nur aus Zahlen bestehen.',
+      'Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.',
     )
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('limits the house number field to 5 digits and rejects a longer numeric value', async () => {
+    const wrapper = await mountDialog()
+
+    expect(bodyField('#property-house-number').attributes('maxlength')).toBe('5')
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('123456')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln')
+
+    expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      'Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.',
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('flags a city containing a symbol no real German place name contains, with a hint and a red border, and disables submit', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('Köln@Stadt')
+
+    expect(bodyField('#property-city').classes()).toContain('p-invalid')
+    expect(bodyField('.property-form-dialog__field-error').text()).toBe(
+      "Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten.",
+    )
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+  })
+
+  it('accepts a city with an umlaut, a period and a hyphen', async () => {
+    const wrapper = await mountDialog()
+
+    await bodyField('#property-name').setValue('Wohnanlage Nordpark')
+    await bodyField('#property-street').setValue('Nordparkstr.')
+    await bodyField('#property-house-number').setValue('3')
+    await bodyField('#property-postal-code').setValue('50733')
+    await bodyField('#property-city').setValue('St. Wendel-Bliesen')
+
+    expect(bodyField('#property-city').classes()).not.toContain('p-invalid')
+    expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
   it('geocodes the combined address after a debounce and forwards the position to the preview map', async () => {

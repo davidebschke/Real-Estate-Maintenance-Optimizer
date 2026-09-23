@@ -169,13 +169,45 @@ test.describe('properties', () => {
     await page.getByLabel('Postleitzahl').fill('50933')
     await page.getByLabel('Ort').fill('Köln')
 
-    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toBeVisible()
+    await expect(page.getByText('Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.')).toBeVisible()
     await expect(page.getByLabel('Hausnummer')).toHaveClass(/p-invalid/)
     await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
 
     await page.getByLabel('Hausnummer').fill('512')
-    await expect(page.getByText('Die Hausnummer darf nur aus Zahlen bestehen.')).toHaveCount(0)
+    await expect(page.getByText('Die Hausnummer darf nur aus maximal 5 Ziffern bestehen.')).toHaveCount(0)
     await expect(page.getByLabel('Hausnummer')).not.toHaveClass(/p-invalid/)
+  })
+
+  test('limits the house number field to 5 digits', async ({ page }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await expect(page.getByLabel('Hausnummer')).toHaveAttribute('maxlength', '5')
+  })
+
+  test('flags a city containing a symbol no real German place name contains with a red-bordered hint and disables submit', async ({
+    page,
+  }) => {
+    await page.goto('/properties')
+
+    await page.locator('.property-create-card').click()
+    await page.getByLabel('Name').fill('E2E Testobjekt')
+    await page.getByLabel('Straße').fill('Aachener Str.')
+    await page.getByLabel('Hausnummer').fill('512')
+    await page.getByLabel('Postleitzahl').fill('50933')
+    await page.getByLabel('Ort').fill('Köln@Stadt')
+
+    await expect(
+      page.getByText("Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toBeVisible()
+    await expect(page.getByLabel('Ort')).toHaveClass(/p-invalid/)
+    await expect(page.getByRole('button', { name: 'Objekt anlegen', exact: true })).toBeDisabled()
+
+    await page.getByLabel('Ort').fill('Köln')
+    await expect(
+      page.getByText("Der Ort darf nur Buchstaben, Ziffern, Leerzeichen sowie . - ' / enthalten."),
+    ).toHaveCount(0)
+    await expect(page.getByLabel('Ort')).not.toHaveClass(/p-invalid/)
   })
 
   test('flags a postal code that is not exactly 5 digits with a red-bordered hint and disables submit', async ({
