@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import VueCal from 'vue-cal'
 import { i18n } from '@/i18n'
@@ -72,6 +72,38 @@ describe('AppCalendar', () => {
     })
 
     expect(wrapper.findComponent(VueCal).props('hideWeekdays')).toEqual([7])
+  })
+
+  it('exposes each rendered appointment card as a drag-and-drop source via its appointment id', async () => {
+    const today = new Date()
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      {
+        id: 'a1',
+        seriesId: null,
+        title: 'Heizungswartung',
+        propertyId: 'property-1',
+        propertyName: 'Sonnenhof',
+        propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+        description: '',
+        category: 'maintenance',
+        start: today,
+        end: new Date(today.getTime() + 60 * 60 * 1000),
+        locked: false,
+        recurring: false,
+        recurrenceIntervalMonths: null,
+        materials: [],
+        history: [],
+        travelDistanceKm: 0,
+        actualEnd: null,
+        completed: false,
+      },
+    ])
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('[data-appointment-id="a1"]').exists()).toBe(true)
   })
 
   it('opens the detail view for the clicked appointment', () => {

@@ -75,6 +75,17 @@ describe('useCalendarAppointments', () => {
     ])
   })
 
+  it('adds the locked class for a fixed appointment', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment({ locked: true })]
+
+    const { events } = useCalendarAppointments()
+
+    expect(events.value).toEqual([
+      expect.objectContaining({ class: 'calendar-event--maintenance calendar-event--locked' }),
+    ])
+  })
+
   it('extends a completed event when the actual end is later than the planned end', () => {
     const store = useAppointmentsStore()
     store.appointments = [

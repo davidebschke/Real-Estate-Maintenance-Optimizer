@@ -40,7 +40,16 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
     vueCalRef.value?.updateSelectedDate(new Date())
   }
 
-  return { vueCalRef, activeView, rangeLabel, handleViewChange, goToPrevious, goToNext, goToToday }
+  return {
+    vueCalRef,
+    activeView,
+    visibleRange,
+    rangeLabel,
+    handleViewChange,
+    goToPrevious,
+    goToNext,
+    goToToday,
+  }
 }
 
 /** Computes the visible start/end range for the given view around a reference date, used before vue-cal reports its own range on navigation. */

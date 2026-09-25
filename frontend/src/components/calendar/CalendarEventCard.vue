@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
+  appointmentId: string
   title: string
   propertyName: string
   start: Date
@@ -23,7 +24,7 @@ const fullLabel = computed(() => `${props.title} · ${props.propertyName} · ${t
 </script>
 
 <template>
-  <div class="calendar-event-card" :title="fullLabel">
+  <div class="calendar-event-card" :title="fullLabel" :data-appointment-id="appointmentId">
     <span class="calendar-event-card__title">{{ title }}</span>
     <span class="calendar-event-card__meta">{{ propertyName }} · {{ timeRangeLabel }}</span>
   </div>

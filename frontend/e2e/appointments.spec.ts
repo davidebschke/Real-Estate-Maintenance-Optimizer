@@ -38,6 +38,21 @@ async function deleteAppointment(page: Page, id: string, scope: 'single' | 'seri
   await page.request.delete(`${BACKEND_BASE_URL}/api/appointments/${id}`, { params: { scope } })
 }
 
+/** Drags the calendar card with the given title 200px down, past the creation dialog's still-closing mask so the low-level mouse events actually reach the grid. */
+async function dragAppointmentCardDown(page: Page, title: string) {
+  await page
+    .locator('.p-dialog-mask')
+    .waitFor({ state: 'detached' })
+    .catch(() => {})
+  const box = await page.getByText(title).boundingBox()
+  if (!box) throw new Error(`appointment card "${title}" not found`)
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 200, { steps: 10 })
+  await page.mouse.up()
+}
+
 test.describe('appointments', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
@@ -77,6 +92,50 @@ test.describe('appointments', () => {
       await page.getByRole('button', { name: 'Speichern' }).click()
 
       await expect(page.getByRole('button', { name: 'Verschieben' })).toBeVisible()
+    } finally {
+      await deleteAppointment(page, id)
+    }
+  })
+
+  test('reschedules an unlocked appointment by dragging it onto a new time slot', async ({
+    page,
+  }) => {
+    test.skip(new Date().getDay() === 0, 'no appointments are scheduled on Sundays')
+    await page.goto('/calendar')
+    const title = `E2E Drag ${Date.now()}`
+
+    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+
+    try {
+      await dragAppointmentCardDown(page, title)
+
+      await page.getByText(title).click()
+      await expect(page.locator('.appointment-detail-drawer__badge')).not.toContainText('07:00')
+    } finally {
+      await deleteAppointment(page, id)
+    }
+  })
+
+  test('a locked appointment cannot be rescheduled by dragging it', async ({ page }) => {
+    test.skip(new Date().getDay() === 0, 'no appointments are scheduled on Sundays')
+    await page.goto('/calendar')
+    const title = `E2E Drag Unverschiebbar ${Date.now()}`
+
+    const id = await createAppointment(page, {
+      title,
+      property: 'Wohnanlage Sonnenhof',
+      locked: true,
+    })
+
+    try {
+      await dragAppointmentCardDown(page, title)
+
+      await page.getByText(title).click()
+      await expect(
+        page.locator(
+          '.appointment-detail-drawer__badge:not(.appointment-detail-drawer__badge--locked)',
+        ),
+      ).toContainText('07:00')
     } finally {
       await deleteAppointment(page, id)
     }

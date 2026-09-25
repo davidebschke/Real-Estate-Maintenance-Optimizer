@@ -23,7 +23,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts) and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments, useAppointmentMapMarkers)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments, useAppointmentMapMarkers)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
