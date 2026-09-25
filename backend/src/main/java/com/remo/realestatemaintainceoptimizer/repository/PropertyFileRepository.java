@@ -85,7 +85,7 @@ public class PropertyFileRepository {
         try {
             return Optional.of(objectMapper.readValue(file.toFile(), Property.class));
         } catch (JacksonException exception) {
-            LOGGER.warn("Skipping unreadable property file {}", file, exception);
+            LOGGER.warn("Skipping unreadable property file {}: {}", file, exception.getMessage());
             return Optional.empty();
         }
     }

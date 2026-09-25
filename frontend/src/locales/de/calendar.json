@@ -18,6 +18,7 @@
       "appointmentCountPlural": "{count} Termine",
       "travelDistance": "{km} km"
     },
-    "noAppointments": "Keine Termine"
+    "noAppointments": "Keine Termine",
+    "dragLocked": "Dieser Termin ist unverschiebbar und kann nicht verlegt werden."
   }
 }

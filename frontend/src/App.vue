@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterView } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Toast from 'primevue/toast'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppointmentFormDialog from '@/components/appointments/AppointmentFormDialog.vue'
@@ -37,6 +38,7 @@ const isDetailVisible = computed({
     />
     <PropertyFormDialog v-model:visible="propertiesStore.isCreateDialogOpen" />
     <ConfirmDialog />
+    <Toast />
   </div>
 </template>
 

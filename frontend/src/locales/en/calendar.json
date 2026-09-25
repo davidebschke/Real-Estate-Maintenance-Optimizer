@@ -18,6 +18,7 @@
       "appointmentCountPlural": "{count} appointments",
       "travelDistance": "{km} km"
     },
-    "noAppointments": "No appointments"
+    "noAppointments": "No appointments",
+    "dragLocked": "This appointment is not movable and cannot be rescheduled."
   }
 }

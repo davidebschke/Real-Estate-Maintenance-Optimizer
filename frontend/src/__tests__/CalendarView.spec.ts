@@ -7,6 +7,7 @@ import AppCalendar from '@/components/calendar/AppCalendar.vue'
 import * as appointmentService from '@/services/appointmentService'
 
 vi.mock('@/services/appointmentService')
+vi.mock('primevue/usetoast')
 vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
 
 describe('CalendarView', () => {

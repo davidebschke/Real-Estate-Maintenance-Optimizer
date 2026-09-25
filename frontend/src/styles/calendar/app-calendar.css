@@ -47,6 +47,34 @@
   padding: 0;
 }
 
+.app-calendar__drag-container {
+  position: relative;
+}
+
+.app-calendar__grid :deep(.vuecal__cell.app-calendar__cell--drop-target) {
+  background-color: color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 12%, transparent);
+  outline: 2px dashed var(--remo-calendar-accent-color, #3b82f6);
+  outline-offset: -2px;
+}
+
+.app-calendar__drag-preview {
+  background-color: var(--remo-calendar-accent-color, #3b82f6);
+  border-radius: 0.25rem;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  pointer-events: none;
+  position: fixed;
+  transform: translate(0.75rem, -50%);
+  white-space: nowrap;
+  z-index: 20;
+}
+
+.app-calendar__drag-preview--invalid {
+  background-color: var(--remo-calendar-error-color, #ef4444);
+}
+
 @media (max-width: 48rem) {
   .app-calendar__grid.vuecal {
     min-height: 32rem;
