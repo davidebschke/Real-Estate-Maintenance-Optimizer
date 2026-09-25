@@ -10,7 +10,7 @@ const TIME_TO_MINUTES = 1140
 const SNAP_MINUTES = 30
 /** Pointer movement, in pixels, that must be exceeded before a press is treated as a drag rather than a click. */
 const DRAG_THRESHOLD_PX = 6
-/** ISO weekday index vue-cal reports for a day column, used to map a visible column to a calendar date. */
+/** CSS selector for one of vue-cal's day-column cell elements in the time grid. */
 const VUECAL_CELL_SELECTOR = '.vuecal__cell'
 
 export interface DragPreviewState {
@@ -50,11 +50,15 @@ export function useAppointmentDragAndDrop(
   let hasCrossedThreshold = false
   let pendingDropStart: Date | null = null
   let targetCell: Element | null = null
+  /** The visible day-column cells, snapshotted once a drag starts so `pointermove` doesn't re-query the DOM on every event. */
+  let dayCells: Element[] = []
   /** Whether the most recently completed pointer press on a card crossed the drag threshold, so the click vue-cal fires from that same press can be ignored. */
   let didJustDrag = false
 
   /** Starts tracking a potential drag when a pointer goes down on a draggable appointment card. */
   function handlePointerDown(event: PointerEvent) {
+    if (sourceElement) return
+    didJustDrag = false
     if (event.button !== 0 && event.pointerType === 'mouse') return
     if (!isDraggableView(activeView.value)) return
 
@@ -83,7 +87,6 @@ export function useAppointmentDragAndDrop(
     startY = event.clientY
     pointerId = event.pointerId
     hasCrossedThreshold = false
-    didJustDrag = false
 
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', handlePointerUp)
@@ -108,6 +111,7 @@ export function useAppointmentDragAndDrop(
     hasCrossedThreshold = true
     didJustDrag = true
     preview.isDragging = true
+    dayCells = gridElement.value ? Array.from(gridElement.value.querySelectorAll(VUECAL_CELL_SELECTOR)) : []
     sourceElement?.setPointerCapture?.(pointerId ?? event.pointerId)
     sourceElement?.classList.add('is-dragging')
     if (sourceElement) sourceElement.style.pointerEvents = 'none'
@@ -177,6 +181,7 @@ export function useAppointmentDragAndDrop(
     pointerId = null
     hasCrossedThreshold = false
     pendingDropStart = null
+    dayCells = []
     preview.isDragging = false
     preview.isValidDrop = false
     preview.label = ''
@@ -185,10 +190,9 @@ export function useAppointmentDragAndDrop(
   /** Returns the calendar date/time under the given pointer coordinates, or null when outside the time grid. */
   function resolveDropStart(clientX: number, clientY: number): Date | null {
     const cell = findCellAt(clientX, clientY)
-    if (!cell || !gridElement.value) return null
+    if (!cell) return null
 
-    const cells = Array.from(gridElement.value.querySelectorAll(VUECAL_CELL_SELECTOR))
-    const columnIndex = cells.indexOf(cell)
+    const columnIndex = dayCells.indexOf(cell)
     if (columnIndex === -1) return null
 
     const date = new Date(visibleRange.value.start)

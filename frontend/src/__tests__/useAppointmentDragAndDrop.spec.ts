@@ -269,9 +269,61 @@ describe('useAppointmentDragAndDrop', () => {
       onDrop,
     )
 
-    // Drops at 10:30, a different time than the appointment's own 09:00 start but still before the faked "now" of 13:00.
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 200 })
 
     expect(onDrop).not.toHaveBeenCalled()
+  })
+
+  it('does not suppress a click on a different, non-draggable card after an earlier drag completed', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [
+      createAppointment({ id: 'a1' }),
+      createAppointment({ id: 'a2', locked: true }),
+    ]
+    const { grid, cells } = buildGridCells(1)
+    const draggedCard = buildCard(cells[0]!, 'a1', 120, 60)
+    const lockedCard = buildCard(cells[0]!, 'a2', 300, 60)
+    mockElementFromPoint(cells[0]!)
+
+    const onDrop = mockOnDrop()
+    const { handlePointerDown, wasLastInteractionADrag } = useAppointmentDragAndDrop(
+      ref(grid),
+      ref<VueCalView>('day'),
+      ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
+      onDrop,
+    )
+
+    drag(grid, handlePointerDown, draggedCard, { x: 0, y: 120 }, { x: 0, y: 300 })
+    expect(onDrop).toHaveBeenCalled()
+
+    lockedCard.dispatchEvent(pointerEvent('pointerdown', { x: 0, y: 300 }))
+
+    expect(wasLastInteractionADrag()).toBe(false)
+  })
+
+  it('ignores a second press on another card while a drag is already in progress', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment({ id: 'a1' }), createAppointment({ id: 'a2' })]
+    const { grid, cells } = buildGridCells(1)
+    const cardA = buildCard(cells[0]!, 'a1', 120, 60)
+    const cardB = buildCard(cells[0]!, 'a2', 300, 60)
+    mockElementFromPoint(cells[0]!)
+
+    const onDrop = mockOnDrop()
+    const { handlePointerDown } = useAppointmentDragAndDrop(
+      ref(grid),
+      ref<VueCalView>('day'),
+      ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
+      onDrop,
+    )
+
+    grid.addEventListener('pointerdown', handlePointerDown as EventListener)
+    cardA.dispatchEvent(pointerEvent('pointerdown', { x: 0, y: 120 }))
+    window.dispatchEvent(pointerEvent('pointermove', { x: 0, y: 300 }))
+    cardB.dispatchEvent(pointerEvent('pointerdown', { x: 0, y: 300 }))
+    window.dispatchEvent(pointerEvent('pointerup', { x: 0, y: 300 }))
+
+    expect(onDrop).toHaveBeenCalledTimes(1)
+    expect(onDrop).toHaveBeenCalledWith('a1', expect.any(Date), 60)
   })
 })

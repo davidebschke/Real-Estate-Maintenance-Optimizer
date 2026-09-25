@@ -34,6 +34,7 @@
 .calendar-event--locked .calendar-event-card,
 .calendar-event--completed .calendar-event-card {
   cursor: default;
+  touch-action: auto;
 }
 
 .calendar-event-card:hover {
