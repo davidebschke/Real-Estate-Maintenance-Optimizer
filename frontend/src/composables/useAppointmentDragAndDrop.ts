@@ -211,6 +211,8 @@ export function useAppointmentDragAndDrop(
     sourceElement = null
     sourceAppointmentId = null
     sourceOriginalStart = null
+    sourceDurationMinutes = 0
+    grabOffsetMinutes = 0
     pointerId = null
     hasCrossedThreshold = false
     isLockedPress = false

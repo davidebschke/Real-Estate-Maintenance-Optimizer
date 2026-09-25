@@ -35,6 +35,18 @@ const appointmentsStore = useAppointmentsStore()
 /** Milliseconds the "this appointment can't be dragged" toast stays visible before it dismisses itself. */
 const TOAST_LIFE_MS = 3000
 
+let isLockedDragToastVisible = false
+
+/** Shows the "this appointment can't be dragged" toast, ignoring a repeat attempt while one is already visible so they don't stack. */
+function showLockedDragToast() {
+  if (isLockedDragToastVisible) return
+  isLockedDragToastVisible = true
+  toast.add({ severity: 'warn', detail: t('calendar.dragLocked'), life: TOAST_LIFE_MS })
+  setTimeout(() => {
+    isLockedDragToastVisible = false
+  }, TOAST_LIFE_MS)
+}
+
 const calendarGridRef = ref<HTMLElement | null>(null)
 const {
   preview: dragPreview,
@@ -47,7 +59,7 @@ const {
   async (appointmentId, newStart, durationMinutes) => {
     await appointmentsStore.moveAppointment(appointmentId, { start: newStart, durationMinutes })
   },
-  () => toast.add({ severity: 'warn', detail: t('calendar.dragLocked'), life: TOAST_LIFE_MS }),
+  showLockedDragToast,
 )
 
 /** vue-cal's ISO weekday number for Sunday, hidden from every calendar view since the company does not schedule appointments then. */

@@ -33,7 +33,7 @@ async function createAppointment(
   return body.id
 }
 
-/** Freezes the browser clock to 06:00 today, before the calendar's 07:00–19:00 business hours, so a drag test's target time is never accidentally in the past depending on when the test happens to run. Must be called before `page.goto`. */
+/** Freezes the browser clock (must be called before `page.goto`) to 06:00 today, before the calendar's 07:00–19:00 business hours, so a drag test's target time is never accidentally in the past depending on when the test happens to run. */
 async function freezeClockBeforeBusinessHours(page: Page) {
   const sixAmToday = new Date()
   sixAmToday.setHours(6, 0, 0, 0)
@@ -139,9 +139,14 @@ test.describe('appointments', () => {
     try {
       await dragAppointmentCardDown(page, title)
 
-      await expect(
-        page.getByText('Dieser Termin ist unverschiebbar und kann nicht verlegt werden.'),
-      ).toBeVisible()
+      const toast = page.getByText(
+        'Dieser Termin ist unverschiebbar und kann nicht verlegt werden.',
+      )
+      await expect(toast).toBeVisible()
+
+      await page.clock.fastForward('00:04')
+      await expect(toast).toBeHidden()
+
       await page.getByText(title).click()
       await expect(
         page.locator(
