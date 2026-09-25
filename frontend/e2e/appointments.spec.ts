@@ -33,6 +33,13 @@ async function createAppointment(
   return body.id
 }
 
+/** Freezes the browser clock to 06:00 today, before the calendar's 07:00–19:00 business hours, so a drag test's target time is never accidentally in the past depending on when the test happens to run. Must be called before `page.goto`. */
+async function freezeClockBeforeBusinessHours(page: Page) {
+  const sixAmToday = new Date()
+  sixAmToday.setHours(6, 0, 0, 0)
+  await page.clock.install({ time: sixAmToday })
+}
+
 /** Deletes the appointment with the given id directly via the API, so tests don't leave data behind. */
 async function deleteAppointment(page: Page, id: string, scope: 'single' | 'series' = 'single') {
   await page.request.delete(`${BACKEND_BASE_URL}/api/appointments/${id}`, { params: { scope } })
@@ -101,6 +108,7 @@ test.describe('appointments', () => {
     page,
   }) => {
     test.skip(new Date().getDay() === 0, 'no appointments are scheduled on Sundays')
+    await freezeClockBeforeBusinessHours(page)
     await page.goto('/calendar')
     const title = `E2E Drag ${Date.now()}`
 
@@ -118,6 +126,7 @@ test.describe('appointments', () => {
 
   test('a locked appointment cannot be rescheduled by dragging it', async ({ page }) => {
     test.skip(new Date().getDay() === 0, 'no appointments are scheduled on Sundays')
+    await freezeClockBeforeBusinessHours(page)
     await page.goto('/calendar')
     const title = `E2E Drag Unverschiebbar ${Date.now()}`
 
@@ -130,6 +139,9 @@ test.describe('appointments', () => {
     try {
       await dragAppointmentCardDown(page, title)
 
+      await expect(
+        page.getByText('Dieser Termin ist unverschiebbar und kann nicht verlegt werden.'),
+      ).toBeVisible()
       await page.getByText(title).click()
       await expect(
         page.locator(

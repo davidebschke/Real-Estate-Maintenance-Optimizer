@@ -27,6 +27,7 @@ export function useAppointmentDragAndDrop(
   activeView: Ref<VueCalView>,
   visibleRange: Ref<{ start: Date; end: Date }>,
   onDrop: (appointmentId: string, newStart: Date, durationMinutes: number) => void | Promise<void>,
+  onLockedDragAttempt: (appointmentId: string) => void,
 ) {
   const store = useAppointmentsStore()
 
@@ -54,6 +55,8 @@ export function useAppointmentDragAndDrop(
   let dayCells: Element[] = []
   /** Whether the most recently completed pointer press on a card crossed the drag threshold, so the click vue-cal fires from that same press can be ignored. */
   let didJustDrag = false
+  /** Whether the current press is tracked only to detect a drag attempt on a locked appointment, never to actually move it. */
+  let isLockedPress = false
 
   /** Starts tracking a potential drag when a pointer goes down on a draggable appointment card. */
   function handlePointerDown(event: PointerEvent) {
@@ -69,7 +72,12 @@ export function useAppointmentDragAndDrop(
     if (!appointmentId) return
 
     const appointment = store.appointments.find((candidate) => candidate.id === appointmentId)
-    if (!appointment || appointment.locked || appointment.completed) return
+    if (!appointment || appointment.completed) return
+
+    if (appointment.locked) {
+      trackLockedPress(card, appointmentId, event)
+      return
+    }
 
     const durationMinutes = (appointment.end.getTime() - appointment.start.getTime()) / 60000
     if (durationMinutes >= TIME_TO_MINUTES - TIME_FROM_MINUTES) return
@@ -87,6 +95,22 @@ export function useAppointmentDragAndDrop(
     startY = event.clientY
     pointerId = event.pointerId
     hasCrossedThreshold = false
+    isLockedPress = false
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerCancel)
+  }
+
+  /** Tracks a press on a locked card only far enough to tell a real drag attempt apart from a plain click, so a blocked drag can still surface feedback. */
+  function trackLockedPress(card: HTMLElement, appointmentId: string, event: PointerEvent) {
+    sourceElement = card
+    sourceAppointmentId = appointmentId
+    startX = event.clientX
+    startY = event.clientY
+    pointerId = event.pointerId
+    hasCrossedThreshold = false
+    isLockedPress = true
 
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', handlePointerUp)
@@ -100,6 +124,13 @@ export function useAppointmentDragAndDrop(
     if (!hasCrossedThreshold) {
       const distance = Math.hypot(event.clientX - startX, event.clientY - startY)
       if (distance < DRAG_THRESHOLD_PX) return
+
+      if (isLockedPress) {
+        didJustDrag = true
+        onLockedDragAttempt(sourceAppointmentId)
+        resetDragState()
+        return
+      }
       enterDragMode(event)
     }
 
@@ -111,7 +142,9 @@ export function useAppointmentDragAndDrop(
     hasCrossedThreshold = true
     didJustDrag = true
     preview.isDragging = true
-    dayCells = gridElement.value ? Array.from(gridElement.value.querySelectorAll(VUECAL_CELL_SELECTOR)) : []
+    dayCells = gridElement.value
+      ? Array.from(gridElement.value.querySelectorAll(VUECAL_CELL_SELECTOR))
+      : []
     sourceElement?.setPointerCapture?.(pointerId ?? event.pointerId)
     sourceElement?.classList.add('is-dragging')
     if (sourceElement) sourceElement.style.pointerEvents = 'none'
@@ -180,6 +213,7 @@ export function useAppointmentDragAndDrop(
     sourceOriginalStart = null
     pointerId = null
     hasCrossedThreshold = false
+    isLockedPress = false
     pendingDropStart = null
     dayCells = []
     preview.isDragging = false

@@ -88,6 +88,11 @@ function mockOnDrop() {
   return vi.fn<(appointmentId: string, newStart: Date, durationMinutes: number) => void>()
 }
 
+/** Builds a typed mock for the composable's `onLockedDragAttempt` callback. */
+function mockOnLockedDragAttempt() {
+  return vi.fn<(appointmentId: string) => void>()
+}
+
 /** Wires the composable's pointerdown handler onto the grid exactly as `AppCalendar.vue` does, and dispatches a full pointer sequence. */
 function drag(
   grid: HTMLElement,
@@ -140,6 +145,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 300 })
@@ -162,6 +168,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('week'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 16) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 100, y: 120 })
@@ -169,7 +176,7 @@ describe('useAppointmentDragAndDrop', () => {
     expect(onDrop).toHaveBeenCalledWith('a1', new Date(2026, 7, 11, 9, 0, 0, 0), 60)
   })
 
-  it('does not start a drag for a locked appointment', () => {
+  it('does not start a drag for a locked appointment, but reports the blocked attempt', () => {
     const store = useAppointmentsStore()
     store.appointments = [createAppointment({ locked: true })]
     const { grid, cells } = buildGridCells(1)
@@ -177,17 +184,42 @@ describe('useAppointmentDragAndDrop', () => {
     mockElementFromPoint(cells[0]!)
 
     const onDrop = mockOnDrop()
-    const { handlePointerDown, preview } = useAppointmentDragAndDrop(
+    const onLockedDragAttempt = mockOnLockedDragAttempt()
+    const { handlePointerDown, preview, wasLastInteractionADrag } = useAppointmentDragAndDrop(
       ref(grid),
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      onLockedDragAttempt,
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 300 })
 
     expect(onDrop).not.toHaveBeenCalled()
     expect(preview.isDragging).toBe(false)
+    expect(onLockedDragAttempt).toHaveBeenCalledWith('a1')
+    expect(wasLastInteractionADrag()).toBe(true)
+  })
+
+  it('does not report a blocked attempt for a plain click on a locked appointment', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment({ locked: true })]
+    const { grid, cells } = buildGridCells(1)
+    const card = buildCard(cells[0]!, 'a1', 120, 60)
+    mockElementFromPoint(cells[0]!)
+
+    const onLockedDragAttempt = mockOnLockedDragAttempt()
+    const { handlePointerDown } = useAppointmentDragAndDrop(
+      ref(grid),
+      ref<VueCalView>('day'),
+      ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
+      mockOnDrop(),
+      onLockedDragAttempt,
+    )
+
+    drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 122 })
+
+    expect(onLockedDragAttempt).not.toHaveBeenCalled()
   })
 
   it('does not start a drag for a completed appointment', () => {
@@ -203,6 +235,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 300 })
@@ -223,6 +256,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('month'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 300 })
@@ -243,6 +277,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 122 })
@@ -267,6 +302,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, card, { x: 0, y: 120 }, { x: 0, y: 200 })
@@ -291,6 +327,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     drag(grid, handlePointerDown, draggedCard, { x: 0, y: 120 }, { x: 0, y: 300 })
@@ -315,6 +352,7 @@ describe('useAppointmentDragAndDrop', () => {
       ref<VueCalView>('day'),
       ref({ start: new Date(2026, 7, 10), end: new Date(2026, 7, 10) }),
       onDrop,
+      mockOnLockedDragAttempt(),
     )
 
     grid.addEventListener('pointerdown', handlePointerDown as EventListener)

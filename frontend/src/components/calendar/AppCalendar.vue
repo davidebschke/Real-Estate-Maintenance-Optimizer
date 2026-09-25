@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import VueCal from 'vue-cal'
 import { useI18n } from 'vue-i18n'
+import { useToast } from 'primevue/usetoast'
 import 'vue-cal/dist/vuecal.css'
 import deLocale from 'vue-cal/dist/i18n/de.es.js'
 import enLocale from 'vue-cal/dist/i18n/en.es.js'
@@ -17,6 +18,7 @@ import type { VueCalEventClickEvent, VueCalSlotEvent, VueCalWeekdayHeading } fro
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const toast = useToast()
 const {
   vueCalRef,
   activeView,
@@ -30,6 +32,9 @@ const {
 const { events, getDaySummary } = useCalendarAppointments()
 const appointmentsStore = useAppointmentsStore()
 
+/** Milliseconds the "this appointment can't be dragged" toast stays visible before it dismisses itself. */
+const TOAST_LIFE_MS = 3000
+
 const calendarGridRef = ref<HTMLElement | null>(null)
 const {
   preview: dragPreview,
@@ -42,6 +47,7 @@ const {
   async (appointmentId, newStart, durationMinutes) => {
     await appointmentsStore.moveAppointment(appointmentId, { start: newStart, durationMinutes })
   },
+  () => toast.add({ severity: 'warn', detail: t('calendar.dragLocked'), life: TOAST_LIFE_MS }),
 )
 
 /** vue-cal's ISO weekday number for Sunday, hidden from every calendar view since the company does not schedule appointments then. */
