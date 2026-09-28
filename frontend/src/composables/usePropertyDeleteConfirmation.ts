@@ -14,6 +14,8 @@ export function usePropertyDeleteConfirmation() {
       message: t('properties.card.deleteConfirm.message', { name: property.name }),
       acceptLabel: t('properties.card.deleteConfirm.confirm'),
       rejectLabel: t('properties.card.deleteConfirm.cancel'),
+      acceptProps: { severity: 'danger' },
+      rejectProps: { severity: 'secondary', text: true },
       accept: () => onConfirmed(),
     })
   }
