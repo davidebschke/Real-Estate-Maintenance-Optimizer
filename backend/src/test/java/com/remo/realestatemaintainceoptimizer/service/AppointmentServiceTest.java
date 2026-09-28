@@ -85,6 +85,19 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void subMicrosecondStartTimesAreTruncatedToTheStoredPrecisionOnCreateAndMove() {
+        LocalDateTime startWithNanos = LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_789);
+        AppointmentResponse created = service.create(new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "property-1", "", startWithNanos, 120, false, false, null, List.of()));
+
+        AppointmentResponse moved = service.move(created.id(), new MoveAppointmentRequest(startWithNanos.plusDays(1), 60));
+
+        assertThat(created.start()).isEqualTo(LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_000));
+        assertThat(moved.start()).isEqualTo(LocalDateTime.of(2026, 8, 12, 13, 0, 0, 123_456_000));
+        assertThat(service.getById(created.id())).isEqualTo(moved);
+    }
+
+    @Test
     void recurringAppointmentRequiresARecurrenceInterval() {
         assertThatThrownBy(() -> service.create(createRequest(true, null)))
                 .isInstanceOf(InvalidRecurrenceException.class);

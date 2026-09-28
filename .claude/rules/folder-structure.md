@@ -56,6 +56,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
 │   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, local spring.datasource defaults, JPA/Flyway settings)
+│   │   ├── db/migration/           # Flyway migrations (V<n>__*.sql) owning the PostgreSQL schema "remo", applied on startup
 │   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (fallback bundle, English), messages_de.properties, messages_en.properties
 │   ├── docker-compose.yml           # local PostgreSQL 17 for development, matching the application.yml datasource defaults
 │   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* environment variables

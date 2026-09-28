@@ -76,6 +76,7 @@ public class AppointmentService {
             throw new InvalidRecurrenceException("recurrenceIntervalRequired");
         }
 
+        LocalDateTime firstStart = request.start().truncatedTo(ChronoUnit.MICROS);
         Property property = propertyRepository.findById(request.propertyId())
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
@@ -86,8 +87,8 @@ public class AppointmentService {
         Appointment firstOccurrence = null;
         for (int occurrenceIndex = 0; occurrenceIndex < occurrenceCount; occurrenceIndex++) {
             LocalDateTime occurrenceStart = request.recurring()
-                    ? request.start().plusMonths((long) request.recurrenceIntervalMonths() * occurrenceIndex)
-                    : request.start();
+                    ? firstStart.plusMonths((long) request.recurrenceIntervalMonths() * occurrenceIndex)
+                    : firstStart;
             LocalDateTime occurrenceEnd = occurrenceStart.plusMinutes(request.durationMinutes());
 
             Appointment occurrence = new Appointment(
@@ -123,7 +124,7 @@ public class AppointmentService {
             throw new AppointmentLockedException(id);
         }
 
-        LocalDateTime newStart = request.start();
+        LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
         LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
         HistoryEntry moveEntry = new HistoryEntry(
                 currentInstant(),

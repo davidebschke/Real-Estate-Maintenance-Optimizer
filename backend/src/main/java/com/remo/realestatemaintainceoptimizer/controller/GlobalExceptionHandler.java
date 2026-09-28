@@ -7,6 +7,7 @@ import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceExcepti
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
     }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})
     public ResponseEntity<ErrorResponse> handleConcurrentModification(Locale locale) {
         String message = messageSource.getMessage("common.error.concurrentModification", null, locale);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));

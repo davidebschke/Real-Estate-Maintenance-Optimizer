@@ -24,6 +24,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check backend database secrets
+        env:
+          REMO_DB_URL: ${{ secrets.REMO_DB_URL }}
+          REMO_DB_USERNAME: ${{ secrets.REMO_DB_USERNAME }}
+          REMO_DB_PASSWORD: ${{ secrets.REMO_DB_PASSWORD }}
+        run: |
+          if [ -z "$REMO_DB_URL" ] || [ -z "$REMO_DB_USERNAME" ] || [ -z "$REMO_DB_PASSWORD" ]; then
+            echo "::error::REMO_DB_URL, REMO_DB_USERNAME and REMO_DB_PASSWORD secrets must all be set" >&2
+            exit 1
+          fi
+
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
@@ -66,6 +77,24 @@ jobs:
           printf '%s\n' "$ORACLE_SSH_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Write backend database configuration
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
+          ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
+          ORACLE_BACKEND_DEPLOY_PATH: ${{ secrets.ORACLE_BACKEND_DEPLOY_PATH }}
+          REMO_DB_URL: ${{ secrets.REMO_DB_URL }}
+          REMO_DB_USERNAME: ${{ secrets.REMO_DB_USERNAME }}
+          REMO_DB_PASSWORD: ${{ secrets.REMO_DB_PASSWORD }}
+        run: |
+          # systemd EnvironmentFile values are double-quoted with backslash/quote escaped, so any secret reaches the JVM unchanged
+          env_line() { printf '%s="%s"\n' "$1" "$(printf '%s' "$2" | sed -e 's/[\\"]/\\&/g')"; }
+          { env_line SPRING_DATASOURCE_URL "$REMO_DB_URL"
+            env_line SPRING_DATASOURCE_USERNAME "$REMO_DB_USERNAME"
+            env_line SPRING_DATASOURCE_PASSWORD "$REMO_DB_PASSWORD"; } \
+            | ssh -i ~/.ssh/oracle_deploy_key -p "$ORACLE_SSH_PORT" "$ORACLE_SSH_USER@$ORACLE_HOST" \
+              "umask 077 && cat > '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && chmod 600 '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && mv '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' '$ORACLE_BACKEND_DEPLOY_PATH/backend.env'"
+
       - name: Deploy frontend build
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
@@ -85,25 +114,6 @@ jobs:
         run: |
           scp -i ~/.ssh/oracle_deploy_key -P "$ORACLE_SSH_PORT" \
             backend/target/remo-backend.jar "$ORACLE_SSH_USER@$ORACLE_HOST:$ORACLE_BACKEND_DEPLOY_PATH/remo-backend.jar"
-
-      - name: Write backend database configuration
-        env:
-          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
-          ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
-          ORACLE_BACKEND_DEPLOY_PATH: ${{ secrets.ORACLE_BACKEND_DEPLOY_PATH }}
-          REMO_DB_URL: ${{ secrets.REMO_DB_URL }}
-          REMO_DB_USERNAME: ${{ secrets.REMO_DB_USERNAME }}
-          REMO_DB_PASSWORD: ${{ secrets.REMO_DB_PASSWORD }}
-        run: |
-          if [ -z "$REMO_DB_URL" ] || [ -z "$REMO_DB_USERNAME" ] || [ -z "$REMO_DB_PASSWORD" ]; then
-            echo "::error::REMO_DB_URL, REMO_DB_USERNAME and REMO_DB_PASSWORD secrets must all be set" >&2
-            exit 1
-          fi
-          printf 'SPRING_DATASOURCE_URL=%s\nSPRING_DATASOURCE_USERNAME=%s\nSPRING_DATASOURCE_PASSWORD=%s\n' \
-            "$REMO_DB_URL" "$REMO_DB_USERNAME" "$REMO_DB_PASSWORD" \
-            | ssh -i ~/.ssh/oracle_deploy_key -p "$ORACLE_SSH_PORT" "$ORACLE_SSH_USER@$ORACLE_HOST" \
-              "umask 077 && cat > '$ORACLE_BACKEND_DEPLOY_PATH/backend.env'"
 
       - name: Restart backend service
         env:

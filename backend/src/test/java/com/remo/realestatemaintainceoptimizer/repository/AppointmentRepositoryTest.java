@@ -42,6 +42,7 @@ class AppointmentRepositoryTest {
 
     @BeforeEach
     void seedProperty() {
+        propertyRepository.deleteAllInBatch();
         property = propertyRepository.save(
                 new Property("property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
     }

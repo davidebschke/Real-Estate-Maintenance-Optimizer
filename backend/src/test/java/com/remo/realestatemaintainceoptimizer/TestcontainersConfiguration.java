@@ -7,16 +7,20 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Provides a throwaway PostgreSQL container, matching the production major version, as the datasource of every test context importing it.
+ * Provides one throwaway PostgreSQL container, matching the production major version, shared as the datasource of every test context importing it.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
-    private static final DockerImageName POSTGRES_IMAGE = DockerImageName.parse("postgres:17-alpine");
+    private static final PostgreSQLContainer POSTGRES_CONTAINER =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:17-alpine"));
 
-    @Bean
+    /**
+     * Returns the shared container without letting a closing context stop it, since Testcontainers removes it when the test JVM exits.
+     */
+    @Bean(destroyMethod = "")
     @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer(POSTGRES_IMAGE);
+        return POSTGRES_CONTAINER;
     }
 }
