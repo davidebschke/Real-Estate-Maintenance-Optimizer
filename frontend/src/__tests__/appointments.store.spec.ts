@@ -68,8 +68,6 @@ describe('useAppointmentsStore', () => {
     const result = await store.createAppointment({
       title: created.title,
       propertyId: created.propertyId,
-      propertyName: created.propertyName,
-      propertyAddress: created.propertyAddress,
       description: created.description,
       start: created.start,
       durationMinutes: 120,

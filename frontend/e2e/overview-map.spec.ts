@@ -1,6 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
-
-const BACKEND_BASE_URL = 'http://localhost:8080'
+import {
+  BACKEND_BASE_URL,
+  createTestProperty,
+  deleteTestProperty,
+  type TestProperty,
+} from './support/testProperty.js'
 
 /** Opens the creation form, fills in the given title and property, and submits it. */
 async function createAppointment(page: Page, options: { title: string; property: string }) {
@@ -48,6 +52,16 @@ test.describe('overview map', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
   test.skip(new Date().getDay() === 0, 'An Sonntagen werden keine Termine vergeben')
 
+  let property: TestProperty
+
+  test.beforeEach(async ({ request }) => {
+    property = await createTestProperty(request)
+  })
+
+  test.afterEach(async ({ request }) => {
+    await deleteTestProperty(request, property.id)
+  })
+
   test('shows a marker for a newly created appointment next to the daily appointment list', async ({
     page,
   }) => {
@@ -57,9 +71,8 @@ test.describe('overview map', () => {
 
     await page.goto('/calendar')
     const title = `E2E Kartentermin ${Date.now()}`
-    // "Wohnanlage Sonnenhof" has stored coordinates (see backend/ExampleObjects/1.json), so its marker
-    // resolves without depending on a live geocoding call.
-    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    // The test property has stored coordinates, so its marker resolves without depending on a live geocoding call.
+    const id = await createAppointment(page, { title, property: property.name })
 
     try {
       await page.goto('/')

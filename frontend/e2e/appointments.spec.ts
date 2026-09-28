@@ -1,6 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
-
-const BACKEND_BASE_URL = 'http://localhost:8080'
+import {
+  BACKEND_BASE_URL,
+  createTestProperty,
+  deleteTestProperty,
+  type TestProperty,
+} from './support/testProperty.js'
 
 /** Opens the creation form, fills in the given title and property, and submits it. */
 async function createAppointment(
@@ -63,22 +67,30 @@ async function dragAppointmentCardDown(page: Page, title: string) {
 test.describe('appointments', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
+  let property: TestProperty
+
+  test.beforeEach(async ({ request }) => {
+    property = await createTestProperty(request)
+  })
+
+  test.afterEach(async ({ request }) => {
+    await deleteTestProperty(request, property.id)
+  })
+
   test('creating an appointment shows it on the calendar and in its detail view', async ({
     page,
   }) => {
     await page.goto('/calendar')
     const title = `E2E Kellerreinigung ${Date.now()}`
 
-    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    const id = await createAppointment(page, { title, property: property.name })
 
     try {
       await expect(page.getByText(title)).toBeVisible()
 
       await page.getByText(title).click()
       await expect(page.getByRole('heading', { name: title })).toBeVisible()
-      await expect(page.locator('.appointment-detail-drawer__property')).toContainText(
-        'Wohnanlage Sonnenhof',
-      )
+      await expect(page.locator('.appointment-detail-drawer__property')).toContainText(property.name)
     } finally {
       await deleteAppointment(page, id)
     }
@@ -88,7 +100,7 @@ test.describe('appointments', () => {
     await page.goto('/calendar')
     const title = `E2E Verschiebbar ${Date.now()}`
 
-    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    const id = await createAppointment(page, { title, property: property.name })
 
     try {
       await page.getByText(title).click()
@@ -112,7 +124,7 @@ test.describe('appointments', () => {
     await page.goto('/calendar')
     const title = `E2E Drag ${Date.now()}`
 
-    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    const id = await createAppointment(page, { title, property: property.name })
 
     try {
       await dragAppointmentCardDown(page, title)
@@ -132,7 +144,7 @@ test.describe('appointments', () => {
 
     const id = await createAppointment(page, {
       title,
-      property: 'Wohnanlage Sonnenhof',
+      property: property.name,
       locked: true,
     })
 
@@ -164,7 +176,7 @@ test.describe('appointments', () => {
 
     const id = await createAppointment(page, {
       title,
-      property: 'Wohnanlage Sonnenhof',
+      property: property.name,
       locked: true,
     })
 
@@ -181,7 +193,7 @@ test.describe('appointments', () => {
     await page.goto('/calendar')
     const title = `E2E Löschen ${Date.now()}`
 
-    await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    await createAppointment(page, { title, property: property.name })
 
     await page.getByText(title).click()
     await page.getByRole('button', { name: 'Termin löschen' }).click()
@@ -198,7 +210,7 @@ test.describe('appointments', () => {
     await page.goto('/calendar')
     const title = `E2E Übersicht ${Date.now()}`
 
-    const id = await createAppointment(page, { title, property: 'Wohnanlage Sonnenhof' })
+    const id = await createAppointment(page, { title, property: property.name })
 
     try {
       await page.goto('/')
@@ -218,7 +230,7 @@ test.describe('appointments', () => {
 
     const id = await createAppointment(page, {
       title,
-      property: 'Wohnanlage Sonnenhof',
+      property: property.name,
       recurring: true,
     })
 

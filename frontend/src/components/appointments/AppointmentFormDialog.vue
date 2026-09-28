@@ -98,8 +98,6 @@ async function submit() {
   await store.createAppointment({
     title: form.title,
     propertyId: property.id,
-    propertyName: property.name,
-    propertyAddress: property.address,
     description: form.description,
     start: combineDayAndTime(form.day, form.time),
     durationMinutes: form.durationMinutes,
