@@ -15,7 +15,7 @@ Functions and methods are designed to be reusable; one-off solutions for special
 When changing existing code or documentation, edit only the specific lines/sentences that actually need to change — not the surrounding section, function, or file — unless the task explicitly calls for a rewrite of that larger scope.
 
 ### V. Test Coverage as a Gate
-A test is required for every new or changed component: frontend components (Vitest + Vue Test Utils, Playwright for e2e) and backend units — services, controllers, repositories (JUnit 5, Mockito, AssertJ). If edge cases exist for a component, they are raised with the user before tests are written, not silently assumed.
+A test is required for every new or changed component: frontend components (Vitest + Vue Test Utils, Playwright for e2e) and backend units — services, controllers, repositories (JUnit 5, Mockito, AssertJ, Testcontainers PostgreSQL). If edge cases exist for a component, they are raised with the user before tests are written, not silently assumed.
 
 ### VI. Structured Git Workflow
 All features and fixes go through feature branches named `<issue-number>-<short-description>`, with issue numbers assigned sequentially across the repository (tracked in `.claude/rules/git-workflow.md`), and pull requests against `main` reviewed by the CODEOWNER (`@davidebschke`). Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`). Every issue gets an effort estimate attached as one of `Low-Effort` / `Medium-Effort` / `High-Effort` at creation time, and whoever implements it matches that label to Sonnet 5's reasoning effort (low/medium/high, see `.claude/rules/git-workflow.md`).
@@ -26,10 +26,10 @@ Every content-relevant change (not a pure typo/formatting fix) triggers a review
 
 ## Technology Constraints
 
-Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 3, Spring Security/JJWT, Spring Data JPA, Spring Mail. Databases: PostgreSQL (user/auth, via Spring Data JPA) and MongoDB (appointments/objects) — currently a temporary JSON-file storage prototype stands in for persistence where noted in the backend readme, expected to be replaced by real database persistence without changing the REST contract. AI/Intelligence: LangChain4j. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
+Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 3, Spring Security/JJWT, Spring Data JPA, Spring Mail. Database: PostgreSQL (appointments/objects, later user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
 
 ## Governance
 
 This constitution distills the binding rules already defined under `.claude/rules/` (`coding-conventions.md`, `documentation.md`, `folder-structure.md`, `git-workflow.md`, `testing.md`, `wiki.md`) and in `CLAUDE.md`; those files remain the authoritative source. An amendment here is only valid once the corresponding underlying rule file is updated first — this file is a derived summary, not an independent source of truth. Every spec, plan, and PR produced through the spec-kit workflow must comply with these principles; deviations must be justified in the plan's Complexity Tracking section.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-09-17
+**Version**: 1.0.1 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-09-28

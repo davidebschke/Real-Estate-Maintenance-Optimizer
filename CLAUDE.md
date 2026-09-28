@@ -41,15 +41,13 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 
 ### 2.3 Databases
 
-The architecture uses a polyglot persistence approach with two separate databases:
+All persistent data lives in a single relational database:
 
-| Area                             | Technology  | Hosting               |
-|-----------------------------------|-------------|------------------------|
-| Relational (User / Auth)         | PostgreSQL  | Supabase / Neon.tech   |
-| NoSQL (Appointments & Objects)    | MongoDB     | MongoDB Atlas          |
+| Area                                          | Technology  | Hosting                                   |
+|-----------------------------------------------|-------------|-------------------------------------------|
+| Appointments & Objects (later also User/Auth) | PostgreSQL  | Supabase (project "RemoDB"); locally via `backend/docker-compose.yml` |
 
-- **PostgreSQL** stores user and authentication data, accessed via Spring Data JPA.
-- **MongoDB** stores appointments and their associated objects.
+- **PostgreSQL** is accessed via Spring Data JPA, with the schema (`remo`) managed by Flyway migrations.
 
 ### 2.4 AI / Intelligence
 | Area       | Technology   |
@@ -68,8 +66,8 @@ The detailed, current implementation status (which controllers/services/componen
 - Cross-origin access from the frontend dev server is allowed via `CorsConfig`, origin configured through `remo.frontend.base-url`.
 - German/English translation for dynamic (server-generated) text via Spring's `MessageSource` (`backend/src/main/resources/locales/`, `LocalizationConfig`).
 - **Appointments (create/read/move/delete/complete):** fully implemented via `AppointmentController`/`AppointmentService`, including recurrence materialization, locking, and a completed status (`PATCH .../complete` accepts an optional explicit `actualEnd`, falling back to now when omitted; `PATCH .../reopen` reverts it).
-  - **Storage (temporary, deviates from §2.3):** `AppointmentFileRepository` persists each appointment as its own JSON file under `remo.storage.directory` (gitignored) instead of MongoDB — a temporary prototype mechanism; a real database is expected to replace it later without changing the REST contract.
-- **Properties (create/read/update/delete):** `PropertyController`/`PropertyService` expose `GET /api/properties`, `GET /api/properties/{id}`, `POST /api/properties`, `PUT /api/properties/{id}` (updates name/address/coordinates, keeping id and icon) and `DELETE /api/properties/{id}` (cascades to every appointment referencing that property) for the same objects selectable when creating an appointment, including optional `latitude`/`longitude`; a created property always gets the default icon `pi-building` (no icon field in the create form). Storage mirrors the appointment mechanism: `PropertyFileRepository` persists each property as its own JSON file under `remo.storage.properties.directory` (`ExampleObjects/`) — checked into the repository, unlike the gitignored `ExampleTerms/`, as seed data for a fresh checkout; using the "new property" feature locally now writes an additional file into this tracked folder, so check `git status` before committing.
+  - **Storage:** PostgreSQL via Spring Data JPA (`AppointmentRepository`/`PropertyRepository`), schema managed by Flyway; see `backend/readme_backend_en.md`, section "Persistence".
+- **Properties (create/read/update/delete):** `PropertyController`/`PropertyService` expose `GET /api/properties`, `GET /api/properties/{id}`, `POST /api/properties`, `PUT /api/properties/{id}` (updates name/address/coordinates, keeping id and icon) and `DELETE /api/properties/{id}` (cascades to every appointment referencing that property) for the same objects selectable when creating an appointment, including optional `latitude`/`longitude`; a created property always gets the default icon `pi-building` (no icon field in the create form). Appointments reference their property by foreign key (no copied name/address), so edits show up immediately and deleting a property cascades in the database.
 - **Address geocoding:** `GET /api/geocode` (`GeocodingController`/`GeocodingService`) proxies address lookups to the OpenStreetMap Nominatim API with a server-side identifying `User-Agent` (a browser cannot set this header itself, and Nominatim blocks requests without one); `GET /api/geocode/validate` additionally checks whether a structured street/house-number/postal-code/city combination really exists, returning `MATCH`/`SUGGESTION` (with a correction)/`NOT_FOUND` — see `backend/readme_backend_en.md`, section "Address Geocoding".
 
 ### 3.2 Frontend
@@ -112,7 +110,7 @@ Backlog (native Android/iOS app, voice/audio appointment capture) is tracked in 
 
 ## 7. Build & Run
 
-Backend: `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`).
+Backend: `docker compose up -d` (local PostgreSQL) then `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`); `mvn test` needs a running Docker daemon (Testcontainers).
 Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright) for tests.
 
 ## 8. Tests

@@ -17,7 +17,7 @@ After adding or materially changing a frontend component/composable/store or a b
 2. **Check for a test**: Confirm a corresponding test exists — Vitest under `frontend/src/__tests__/` for frontend units, JUnit 5 under `backend/src/test/java/...` for backend units. If e2e-relevant (a full user flow), also check `frontend/e2e/`.
 3. **Edge cases**: If the unit has non-trivial edge cases (error branches, empty/boundary inputs, concurrent access, locking), ask the user whether these edge cases should also be covered before writing the tests — do not silently decide scope, per the binding rule.
 4. **Write or extend the test**: Add the missing test (or extend an existing one), following the existing test file's structure and naming in the same directory.
-5. **Isolation**: For backend repository tests touching file storage, confirm isolation via JUnit `@TempDir` rather than the real `backend/ExampleTerms/` directory.
+5. **Isolation**: For backend tests touching persistence, confirm they run against the Testcontainers PostgreSQL database (`@Import(TestcontainersConfiguration.class)`) rather than the local or production database, and that tests sharing a Spring context empty the tables in `@BeforeEach`.
 
 ## Non-goals
 

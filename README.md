@@ -99,7 +99,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 | Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly |
 | Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`) |
 
-Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. PostgreSQL and MongoDB stay hosted (Supabase/Neon.tech, MongoDB Atlas).
+Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. The PostgreSQL database stays hosted on Supabase (project "RemoDB"), reached from the Oracle Cloud instance via Supabase's session pooler; the connection is passed in through the GitHub secrets `REMO_DB_URL`, `REMO_DB_USERNAME` and `REMO_DB_PASSWORD`.
 
 ## German
 Das Projekt soll im Kern einer Immobilienverwaltung helfen Wartungen zu optimieren. Dies soll geschehen indem Anfahrtswege reduziert werden, Termine anhand des Ortes und der dauer besser abgestimmt werden und die potenzielle Dauer von Terminen eingeschätzt werden aufgrund von vorran gegangenen Terminen ähnlichen Kontextes. Das Unternehmen spart damit nicht nur Zeit sondern auch bares Geld. Zusätzlich könnten Betriebskosten dadurch gesenkt werden . Dies würde auch den Mieter freuen. Mehr wird später kommen.
@@ -156,7 +156,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 | Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed |
 | Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`) |
 
-Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. PostgreSQL und MongoDB bleiben gehostet (Supabase/Neon.tech, MongoDB Atlas).
+Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. Die PostgreSQL-Datenbank bleibt bei Supabase gehostet (Projekt "RemoDB") und wird von der Oracle-Cloud-Instanz über Supabases Session-Pooler erreicht; die Verbindung wird über die GitHub-Secrets `REMO_DB_URL`, `REMO_DB_USERNAME` und `REMO_DB_PASSWORD` übergeben.
 
 ------------
 
@@ -174,7 +174,7 @@ Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Fronten
 * **Data Access & Mail:** Spring Data JPA, Spring Mail
 
 ### 🗄️ Datenbank
-* **Database:** PostgreSQL (User/Auth), MongoDB (Termine & Objekte / Appointments & Objects)
+* **Database:** PostgreSQL on Supabase (Termine & Objekte, später User/Auth / Appointments & Objects, later User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
 * **Framework:** LangChain4j
