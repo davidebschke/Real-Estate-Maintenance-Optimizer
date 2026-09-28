@@ -61,9 +61,9 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$ORACLE_SSH_PRIVATE_KEY" > ~/.ssh/oracle_deploy_key
+          printf '%s\n' "$ORACLE_SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/oracle_deploy_key
           chmod 600 ~/.ssh/oracle_deploy_key
-          printf '%s\n' "$ORACLE_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$ORACLE_SSH_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy frontend build
