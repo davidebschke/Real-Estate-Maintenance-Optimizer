@@ -3,13 +3,21 @@
     "list": {
       "heading": "Properties",
       "empty": "No properties have been added yet.",
-      "loadError": "The properties could not be loaded."
+      "loadError": "The properties could not be loaded.",
+      "deleteError": "The property could not be deleted."
     },
     "card": {
       "openAppointments": "Open appointments",
       "completedAppointments": "Completed appointments",
       "nextAppointment": "Next appointment: {title}",
-      "noNextAppointment": "No upcoming appointment"
+      "noNextAppointment": "No upcoming appointment",
+      "deleteButton": "Delete",
+      "deleteConfirm": {
+        "header": "Delete property",
+        "message": "Do you really want to delete the property \"{name}\"? This will also delete all of its appointments.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
     },
     "create": {
       "cardLabel": "Add new property",

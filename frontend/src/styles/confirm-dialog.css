@@ -1,0 +1,32 @@
+/* PrimeVue injects its own `.p-dialog` background/border rule into the document on first mount, after
+   this stylesheet, so a plain single-class selector loses that tie; `.p-dialog` here isn't decoration,
+   it's what makes this override win regardless of injection order (same reasoning as the form dialogs). */
+.p-confirmdialog.p-dialog {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
+  border-color: var(--remo-calendar-border-color, #24282e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  overflow: hidden;
+  width: min(28rem, 92vw);
+}
+
+.p-confirmdialog .p-dialog-header,
+.p-confirmdialog .p-dialog-content,
+.p-confirmdialog .p-dialog-footer {
+  background: transparent;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.p-confirmdialog-message {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.p-confirmdialog .p-dialog-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}

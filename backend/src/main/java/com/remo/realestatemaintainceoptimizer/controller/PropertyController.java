@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
- * Exposes property create and read lookups to the frontend.
+ * Exposes property create, read and delete lookups to the frontend.
  */
 @RestController
 @RequestMapping("/api/properties")
@@ -55,5 +56,14 @@ public class PropertyController {
                 .buildAndExpand(created.id())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    /**
+     * Deletes the property with the given id along with every appointment referencing it.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProperty(@PathVariable String id) {
+        propertyService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

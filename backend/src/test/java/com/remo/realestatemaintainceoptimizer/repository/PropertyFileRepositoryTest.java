@@ -66,6 +66,15 @@ class PropertyFileRepositoryTest {
         assertThat(repository.findAll()).extracting(Property::id).containsExactly("1");
     }
 
+    @Test
+    void deleteByIdRemovesTheProperty() {
+        repository.save(createProperty("1", "Wohnanlage Sonnenhof"));
+
+        repository.deleteById("1");
+
+        assertThat(repository.findById("1")).isEmpty();
+    }
+
     private Property createProperty(String id, String name) {
         return new Property(id, name, "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building");
     }

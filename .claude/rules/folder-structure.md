@@ -23,7 +23,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts) and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, useTodaysAppointments, useAppointmentMapMarkers)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
@@ -37,7 +37,8 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css, property-create-card.css, property-form-dialog.css, property-location-preview-map.css)
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
-│   │   │   └── view-placeholder.css # styling for the shared ViewPlaceholder component
+│   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
+│   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
 │   │   └── __tests__/             # Vitest unit tests
 │   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts)
 │   ├── public/

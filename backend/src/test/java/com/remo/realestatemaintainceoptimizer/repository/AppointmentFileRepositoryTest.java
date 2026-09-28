@@ -80,13 +80,28 @@ class AppointmentFileRepositoryTest {
         assertThat(repository.findById("1")).isEmpty();
     }
 
+    @Test
+    void findByPropertyIdReturnsOnlyMatchingAppointments() {
+        repository.save(createAppointment("1", null, "property-1"));
+        repository.save(createAppointment("2", null, "property-1"));
+        repository.save(createAppointment("3", null, "property-2"));
+
+        assertThat(repository.findByPropertyId("property-1"))
+                .extracting(Appointment::id)
+                .containsExactlyInAnyOrder("1", "2");
+    }
+
     private Appointment createAppointment(String id, String seriesId) {
+        return createAppointment(id, seriesId, "property-1");
+    }
+
+    private Appointment createAppointment(String id, String seriesId, String propertyId) {
         LocalDateTime start = LocalDateTime.of(2026, 8, 11, 13, 0);
         return new Appointment(
                 id,
                 seriesId,
                 "Kellerreinigung Q3",
-                "property-1",
+                propertyId,
                 "Wohnanlage Sonnenhof",
                 "Aachener Str. 512, 50933 Köln-Braunsenfeld",
                 "Was ist zu tun?",

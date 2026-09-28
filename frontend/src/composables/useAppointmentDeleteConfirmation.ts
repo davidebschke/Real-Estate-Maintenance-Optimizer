@@ -19,6 +19,8 @@ export function useAppointmentDeleteConfirmation() {
         message: t('appointments.detail.deleteConfirm.singleMessage'),
         acceptLabel: t('appointments.detail.deleteConfirm.confirm'),
         rejectLabel: t('appointments.detail.deleteConfirm.cancel'),
+        acceptProps: { severity: 'danger' },
+        rejectProps: { severity: 'secondary', text: true },
         accept: () => onConfirmed('single'),
       })
       return
@@ -29,6 +31,8 @@ export function useAppointmentDeleteConfirmation() {
       message: t('appointments.detail.deleteConfirm.recurringMessage'),
       acceptLabel: t('appointments.detail.deleteConfirm.allFollowing'),
       rejectLabel: t('appointments.detail.deleteConfirm.onlyThisOne'),
+      acceptProps: { severity: 'danger' },
+      rejectProps: { severity: 'secondary', text: true },
       accept: () => onConfirmed('series'),
       reject: () => onConfirmed('single'),
     })

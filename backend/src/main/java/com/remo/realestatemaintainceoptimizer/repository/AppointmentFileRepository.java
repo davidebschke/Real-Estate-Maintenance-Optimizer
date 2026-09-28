@@ -91,6 +91,15 @@ public class AppointmentFileRepository {
     }
 
     /**
+     * Returns every appointment referencing the given property id.
+     */
+    public List<Appointment> findByPropertyId(String propertyId) {
+        return findAll().stream()
+                .filter(appointment -> propertyId.equals(appointment.propertyId()))
+                .toList();
+    }
+
+    /**
      * Deletes the appointment file with the given id, if it exists.
      */
     public void deleteById(String id) {

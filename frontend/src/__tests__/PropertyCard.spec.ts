@@ -47,6 +47,8 @@ afterEach(() => {
   i18n.global.locale.value = 'de'
 })
 
+const globalMountOptions = { plugins: [i18n], directives: { tooltip: {} } }
+
 describe('PropertyCard', () => {
   it('renders the icon, name, address and appointment counts', () => {
     const wrapper = mount(PropertyCard, {
@@ -56,7 +58,7 @@ describe('PropertyCard', () => {
         completedCount: 12,
         nextAppointment: null,
       },
-      global: { plugins: [i18n] },
+      global: globalMountOptions,
     })
 
     expect(wrapper.find('.property-card__icon').classes()).toContain('pi-building')
@@ -79,7 +81,7 @@ describe('PropertyCard', () => {
         completedCount: 0,
         nextAppointment: null,
       },
-      global: { plugins: [i18n] },
+      global: globalMountOptions,
     })
 
     expect(wrapper.find('.property-card__name').text()).toBe(longName)
@@ -94,7 +96,7 @@ describe('PropertyCard', () => {
         completedCount: 2,
         nextAppointment: null,
       },
-      global: { plugins: [i18n] },
+      global: globalMountOptions,
     })
 
     expect(wrapper.find('.property-card__next-appointment').exists()).toBe(false)
@@ -109,7 +111,7 @@ describe('PropertyCard', () => {
         completedCount: 0,
         nextAppointment: createAppointment({ id: '42', title: 'Heizungswartung' }),
       },
-      global: { plugins: [i18n] },
+      global: globalMountOptions,
     })
 
     const link = wrapper.find('.property-card__next-appointment')
@@ -120,5 +122,22 @@ describe('PropertyCard', () => {
     await link.trigger('click')
 
     expect(wrapper.emitted('open-appointment')).toEqual([['42']])
+  })
+
+  it('emits the property when the delete button is clicked', async () => {
+    const property = createProperty()
+    const wrapper = mount(PropertyCard, {
+      props: {
+        property,
+        openCount: 0,
+        completedCount: 0,
+        nextAppointment: null,
+      },
+      global: globalMountOptions,
+    })
+
+    await wrapper.find('.property-card__delete').trigger('click')
+
+    expect(wrapper.emitted('delete-property')).toEqual([[property]])
   })
 })

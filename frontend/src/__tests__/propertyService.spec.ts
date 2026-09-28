@@ -1,12 +1,13 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import axios from 'axios'
-import { createProperty, fetchProperties } from '@/services/propertyService'
+import { createProperty, deleteProperty, fetchProperties } from '@/services/propertyService'
 
 vi.mock('axios')
 
 afterEach(() => {
   vi.mocked(axios.get).mockReset()
   vi.mocked(axios.post).mockReset()
+  vi.mocked(axios.delete).mockReset()
 })
 
 describe('propertyService', () => {
@@ -70,5 +71,13 @@ describe('propertyService', () => {
       expect.stringContaining('/api/properties'),
       expect.objectContaining({ name: 'Wohnanlage Nordpark' }),
     )
+  })
+
+  it('deletes a property by id', async () => {
+    vi.mocked(axios.delete).mockResolvedValue({ data: undefined })
+
+    await deleteProperty('1')
+
+    expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/api/properties/1'))
   })
 })

@@ -43,3 +43,4 @@ const isDetailVisible = computed({
 </template>
 
 <style scoped src="@/styles/app.css"></style>
+<style src="@/styles/confirm-dialog.css"></style>

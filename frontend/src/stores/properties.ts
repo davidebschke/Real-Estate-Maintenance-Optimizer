@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
+import { useAppointmentsStore } from '@/stores/appointments'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -8,6 +9,7 @@ export const usePropertiesStore = defineStore('properties', () => {
   const properties = ref<Property[]>([])
   const hasLoadError = ref(false)
   const hasCreateError = ref(false)
+  const hasDeleteError = ref(false)
   const isCreateDialogOpen = ref(false)
   /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
   let latestChangeToken = 0
@@ -40,6 +42,30 @@ export const usePropertiesStore = defineStore('properties', () => {
     }
   }
 
+  /** Deletes a property and every appointment referencing it, recording whether the delete request itself failed; a failure to refresh the appointments store afterwards does not count as a delete failure. */
+  async function deleteProperty(id: string): Promise<boolean> {
+    try {
+      await propertyService.deleteProperty(id)
+    } catch {
+      hasDeleteError.value = true
+      return false
+    }
+    latestChangeToken++
+    properties.value = properties.value.filter((property) => property.id !== id)
+    hasDeleteError.value = false
+    await refreshAppointmentsAfterDelete()
+    return true
+  }
+
+  /** Re-fetches the appointments store after a cascading delete, swallowing a failure since the deletion itself already succeeded. */
+  async function refreshAppointmentsAfterDelete() {
+    try {
+      await useAppointmentsStore().fetchAppointments()
+    } catch {
+      return
+    }
+  }
+
   /** Opens the property creation form. */
   function openCreateDialog() {
     isCreateDialogOpen.value = true
@@ -54,9 +80,11 @@ export const usePropertiesStore = defineStore('properties', () => {
     properties,
     hasLoadError,
     hasCreateError,
+    hasDeleteError,
     isCreateDialogOpen,
     fetchProperties,
     createProperty,
+    deleteProperty,
     openCreateDialog,
     closeCreateDialog,
   }
