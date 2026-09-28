@@ -16,10 +16,10 @@ export function parsePropertyAddress(address: string): ParsedPropertyAddress | n
   if (!streetMatch || !cityMatch) return null
 
   return {
-    street: streetMatch[1],
-    houseNumber: streetMatch[2],
-    addressSupplement: streetMatch[3],
-    postalCode: cityMatch[1],
-    city: cityMatch[2],
+    street: streetMatch[1]!,
+    houseNumber: streetMatch[2]!,
+    addressSupplement: streetMatch[3]!,
+    postalCode: cityMatch[1]!,
+    city: cityMatch[2]!,
   }
 }
