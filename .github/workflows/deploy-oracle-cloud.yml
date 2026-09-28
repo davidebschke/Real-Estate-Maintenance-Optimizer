@@ -73,7 +73,7 @@ jobs:
           ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
           ORACLE_FRONTEND_DEPLOY_PATH: ${{ secrets.ORACLE_FRONTEND_DEPLOY_PATH }}
         run: |
-          rsync -avz --delete --no-owner --no-group --chmod=Dg+rwxs,Fg+rw -e "ssh -i ~/.ssh/oracle_deploy_key -p $ORACLE_SSH_PORT" \
+          rsync -avz --delete --no-owner --no-group --omit-dir-times --chmod=Dg+rwxs,Fg+rw -e "ssh -i ~/.ssh/oracle_deploy_key -p $ORACLE_SSH_PORT" \
             frontend/dist/ "$ORACLE_SSH_USER@$ORACLE_HOST:$ORACLE_FRONTEND_DEPLOY_PATH/"
 
       - name: Deploy backend jar
