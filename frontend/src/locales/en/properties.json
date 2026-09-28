@@ -11,6 +11,7 @@
       "completedAppointments": "Completed appointments",
       "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment",
+      "editButton": "Edit",
       "deleteButton": "Delete",
       "deleteConfirm": {
         "header": "Delete property",
@@ -48,6 +49,11 @@
       "error": "The property could not be created.",
       "submit": "Add property",
       "cancel": "Cancel"
+    },
+    "edit": {
+      "title": "Edit property",
+      "submit": "Save",
+      "error": "The property could not be updated."
     }
   }
 }

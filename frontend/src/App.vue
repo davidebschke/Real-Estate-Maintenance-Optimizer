@@ -36,7 +36,7 @@ const isDetailVisible = computed({
       v-model:visible="isDetailVisible"
       :appointment-id="appointmentsStore.activeDetailAppointmentId"
     />
-    <PropertyFormDialog v-model:visible="propertiesStore.isCreateDialogOpen" />
+    <PropertyFormDialog v-model:visible="propertiesStore.isFormDialogOpen" />
     <ConfirmDialog />
     <Toast />
   </div>

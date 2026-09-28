@@ -16,7 +16,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
 │   │   │   ├── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard)
 │   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
-│   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog for its creation dialog, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
+│   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard with its edit/delete icon buttons, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog shared by creation and, pre-filled, editing, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   └── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
@@ -25,7 +25,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
 │   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
-│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts)
+│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
 │   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json)

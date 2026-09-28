@@ -18,6 +18,12 @@ export async function createProperty(payload: CreatePropertyPayload): Promise<Pr
   return data
 }
 
+/** Updates the name, address and coordinates of the property with the given id. */
+export async function updateProperty(id: string, payload: CreatePropertyPayload): Promise<Property> {
+  const { data } = await axios.put<PropertyResponseDto>(`${apiBaseUrl}/api/properties/${id}`, payload)
+  return data
+}
+
 /** Deletes the property with the given id along with every appointment referencing it. */
 export async function deleteProperty(id: string): Promise<void> {
   await axios.delete(`${apiBaseUrl}/api/properties/${id}`)

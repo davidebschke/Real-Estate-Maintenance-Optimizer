@@ -1,12 +1,13 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import axios from 'axios'
-import { createProperty, deleteProperty, fetchProperties } from '@/services/propertyService'
+import { createProperty, deleteProperty, fetchProperties, updateProperty } from '@/services/propertyService'
 
 vi.mock('axios')
 
 afterEach(() => {
   vi.mocked(axios.get).mockReset()
   vi.mocked(axios.post).mockReset()
+  vi.mocked(axios.put).mockReset()
   vi.mocked(axios.delete).mockReset()
 })
 
@@ -69,6 +70,39 @@ describe('propertyService', () => {
     })
     expect(axios.post).toHaveBeenCalledWith(
       expect.stringContaining('/api/properties'),
+      expect.objectContaining({ name: 'Wohnanlage Nordpark' }),
+    )
+  })
+
+  it('updates an existing property by id', async () => {
+    vi.mocked(axios.put).mockResolvedValue({
+      data: {
+        id: '1',
+        name: 'Wohnanlage Nordpark',
+        address: 'Nordparkstr. 3, 50733 Köln',
+        icon: 'pi-building',
+        latitude: 50.97,
+        longitude: 6.95,
+      },
+    })
+
+    const property = await updateProperty('1', {
+      name: 'Wohnanlage Nordpark',
+      address: 'Nordparkstr. 3, 50733 Köln',
+      latitude: 50.97,
+      longitude: 6.95,
+    })
+
+    expect(property).toEqual({
+      id: '1',
+      name: 'Wohnanlage Nordpark',
+      address: 'Nordparkstr. 3, 50733 Köln',
+      icon: 'pi-building',
+      latitude: 50.97,
+      longitude: 6.95,
+    })
+    expect(axios.put).toHaveBeenCalledWith(
+      expect.stringContaining('/api/properties/1'),
       expect.objectContaining({ name: 'Wohnanlage Nordpark' }),
     )
   })

@@ -98,6 +98,7 @@
   padding-top: 1.125rem;
 }
 
+.property-card__edit,
 .property-card__delete {
   align-items: center;
   background: none;
@@ -111,8 +112,20 @@
   height: 3.5rem;
   justify-content: center;
   position: absolute;
-  right: 0.75rem;
   width: 3.5rem;
+}
+
+.property-card__edit {
+  right: 5rem;
+}
+
+.property-card__delete {
+  right: 0.75rem;
+}
+
+.property-card__edit:hover {
+  background: var(--remo-calendar-border-color, #24282e);
+  color: var(--remo-calendar-accent-color, #3b82f6);
 }
 
 .property-card__delete:hover {

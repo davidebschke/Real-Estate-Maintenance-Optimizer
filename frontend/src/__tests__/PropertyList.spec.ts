@@ -131,6 +131,18 @@ describe('PropertyList', () => {
     expect(propertiesStore.isCreateDialogOpen).toBe(true)
   })
 
+  it('opens the property edit dialog with the clicked property', async () => {
+    const property = createProperty({ id: '1' })
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([property])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+    const propertiesStore = usePropertiesStore()
+
+    await wrapper.find('.property-card__edit').trigger('click')
+
+    expect(propertiesStore.editingProperty).toEqual(property)
+  })
+
   it('deletes a property after confirmation and refreshes the appointments', async () => {
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
     vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)

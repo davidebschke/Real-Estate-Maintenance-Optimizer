@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,7 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Verifies the property create, read and delete REST API against an isolated, temporary storage directory.
+ * Verifies the property create, read, update and delete REST API against an isolated, temporary storage directory.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -135,6 +136,57 @@ class PropertyControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatesAProperty() throws Exception {
+        String requestBody = """
+                {
+                  "name": "Wohnanlage Nordpark",
+                  "address": "Nordparkstr. 3, 50733 Köln",
+                  "latitude": 50.97,
+                  "longitude": 6.95
+                }
+                """;
+
+        mockMvc.perform(put("/api/properties/{id}", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", equalTo("1")))
+                .andExpect(jsonPath("$.name", equalTo("Wohnanlage Nordpark")))
+                .andExpect(jsonPath("$.address", equalTo("Nordparkstr. 3, 50733 Köln")))
+                .andExpect(jsonPath("$.icon", equalTo("pi-building")));
+    }
+
+    @Test
+    void updatingAPropertyWithoutANameReturnsBadRequest() throws Exception {
+        String requestBody = """
+                {
+                  "name": "",
+                  "address": "Nordparkstr. 3, 50733 Köln"
+                }
+                """;
+
+        mockMvc.perform(put("/api/properties/{id}", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updatingAnUnknownPropertyReturnsNotFound() throws Exception {
+        String requestBody = """
+                {
+                  "name": "Wohnanlage Nordpark",
+                  "address": "Nordparkstr. 3, 50733 Köln"
+                }
+                """;
+
+        mockMvc.perform(put("/api/properties/{id}", "unknown-id")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -13,7 +13,11 @@ const props = defineProps<{
   nextAppointment: Appointment | null
 }>()
 
-defineEmits<{ 'open-appointment': [appointmentId: string]; 'delete-property': [property: Property] }>()
+defineEmits<{
+  'open-appointment': [appointmentId: string]
+  'edit-property': [property: Property]
+  'delete-property': [property: Property]
+}>()
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
@@ -74,6 +78,16 @@ const nextAppointmentLabel = computed(() => {
     <p v-else class="property-card__no-next-appointment">
       {{ t('properties.card.noNextAppointment') }}
     </p>
+
+    <button
+      v-tooltip.top="t('properties.card.editButton')"
+      type="button"
+      class="property-card__edit"
+      :aria-label="t('properties.card.editButton')"
+      @click="$emit('edit-property', property)"
+    >
+      <i class="pi pi-pencil" aria-hidden="true"></i>
+    </button>
 
     <button
       v-tooltip.top="t('properties.card.deleteButton')"

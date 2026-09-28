@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Verifies property listing (sorted by name), lookup by id, and cascading delete, including the not-found case.
+ * Verifies property listing (sorted by name), lookup by id, update, and cascading delete, including the not-found case.
  */
 class PropertyServiceTest {
 
@@ -96,6 +96,43 @@ class PropertyServiceTest {
 
         assertThat(response.latitude()).isNull();
         assertThat(response.longitude()).isNull();
+    }
+
+    @Test
+    void updatesNameAddressAndCoordinatesWhileKeepingIdAndIcon() {
+        repository.save(new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building", 50.94, 6.88));
+
+        var response = service.update("1", new CreatePropertyRequest(
+                "Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", 50.97, 6.95));
+
+        assertThat(response.id()).isEqualTo("1");
+        assertThat(response.name()).isEqualTo("Wohnanlage Nordpark");
+        assertThat(response.address()).isEqualTo("Nordparkstr. 3, 50733 Köln");
+        assertThat(response.icon()).isEqualTo("pi-building");
+        assertThat(response.latitude()).isEqualTo(50.97);
+        assertThat(response.longitude()).isEqualTo(6.95);
+    }
+
+    @Test
+    void updatingAPropertyPropagatesTheNewNameAndAddressToItsAppointmentsOnly() {
+        repository.save(new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        appointmentRepository.save(createAppointment("appointment-1", "1"));
+        appointmentRepository.save(createAppointment("appointment-2", "other-property"));
+
+        service.update("1", new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", null, null));
+
+        Appointment updated = appointmentRepository.findById("appointment-1").orElseThrow();
+        assertThat(updated.propertyName()).isEqualTo("Wohnanlage Nordpark");
+        assertThat(updated.propertyAddress()).isEqualTo("Nordparkstr. 3, 50733 Köln");
+
+        Appointment unrelated = appointmentRepository.findById("appointment-2").orElseThrow();
+        assertThat(unrelated.propertyName()).isEqualTo("Wohnanlage Sonnenhof");
+    }
+
+    @Test
+    void throwsWhenUpdatingAnUnknownProperty() {
+        assertThatThrownBy(() -> service.update("unknown", new CreatePropertyRequest("Name", "Address", null, null)))
+                .isInstanceOf(PropertyNotFoundException.class);
     }
 
     @Test

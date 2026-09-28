@@ -12,7 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * Business logic for creating, looking up and deleting properties.
+ * Business logic for creating, looking up, updating and deleting properties.
  */
 @Service
 public class PropertyService {
@@ -56,6 +56,21 @@ public class PropertyService {
                 request.latitude(),
                 request.longitude());
         return toResponse(repository.save(property));
+    }
+
+    /**
+     * Updates the name, address and coordinates of the property with the given id, keeping its id and icon, and propagates the new name/address to every appointment referencing it.
+     */
+    public PropertyResponse update(String id, CreatePropertyRequest request) {
+        Property existing = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
+        Property updated = new Property(
+                existing.id(), request.name(), request.address(), existing.icon(),
+                request.latitude(), request.longitude());
+        Property saved = repository.save(updated);
+        appointmentRepository.findByPropertyId(saved.id())
+                .forEach(appointment -> appointmentRepository.save(
+                        appointment.withPropertyDetails(saved.name(), saved.address())));
+        return toResponse(saved);
     }
 
     /**

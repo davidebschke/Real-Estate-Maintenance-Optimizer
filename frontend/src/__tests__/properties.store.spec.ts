@@ -25,6 +25,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.fetchProperties).mockReset()
   vi.mocked(propertyService.createProperty).mockReset()
+  vi.mocked(propertyService.updateProperty).mockReset()
   vi.mocked(propertyService.deleteProperty).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
 })
@@ -153,6 +154,69 @@ describe('usePropertiesStore', () => {
     await staleFetch
 
     expect(store.properties.map((property) => property.id)).toEqual(['2'])
+  })
+
+  it('opens and closes the edit dialog', () => {
+    const store = usePropertiesStore()
+    const property = createProperty()
+
+    store.openEditDialog(property)
+    expect(store.editingProperty).toEqual(property)
+    expect(store.isFormDialogOpen).toBe(true)
+
+    store.closeEditDialog()
+    expect(store.editingProperty).toBeNull()
+    expect(store.isFormDialogOpen).toBe(false)
+  })
+
+  it('closes both the create and edit dialog when the shared form dialog is closed', () => {
+    const store = usePropertiesStore()
+    store.openCreateDialog()
+    store.openEditDialog(createProperty())
+
+    store.isFormDialogOpen = false
+
+    expect(store.isCreateDialogOpen).toBe(false)
+    expect(store.editingProperty).toBeNull()
+  })
+
+  it('updates a property, replaces it in the list and re-sorts by name', async () => {
+    vi.mocked(propertyService.updateProperty).mockResolvedValue(
+      createProperty({ id: '1', name: 'Aachener Hof' }),
+    )
+    const store = usePropertiesStore()
+    store.properties = [
+      createProperty({ id: '1', name: 'Wohnanlage Sonnenhof' }),
+      createProperty({ id: '2', name: 'Beispielhof' }),
+    ]
+
+    const result = await store.updateProperty('1', {
+      name: 'Aachener Hof',
+      address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+      latitude: 50.94,
+      longitude: 6.88,
+    })
+
+    expect(result).toBe(true)
+    expect(store.properties.map((property) => property.name)).toEqual(['Aachener Hof', 'Beispielhof'])
+    expect(store.hasUpdateError).toBe(false)
+  })
+
+  it('records an update error when the backend request fails', async () => {
+    vi.mocked(propertyService.updateProperty).mockRejectedValue(new Error('network error'))
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' })]
+
+    const result = await store.updateProperty('1', {
+      name: 'Aachener Hof',
+      address: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+      latitude: null,
+      longitude: null,
+    })
+
+    expect(result).toBe(false)
+    expect(store.properties).toEqual([createProperty({ id: '1' })])
+    expect(store.hasUpdateError).toBe(true)
   })
 
   it('deletes a property, removes it from the list and refreshes the appointments', async () => {
