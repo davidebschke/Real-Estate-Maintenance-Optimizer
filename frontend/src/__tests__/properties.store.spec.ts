@@ -179,4 +179,17 @@ describe('usePropertiesStore', () => {
     expect(store.properties).toEqual([createProperty({ id: '1' })])
     expect(store.hasDeleteError).toBe(true)
   })
+
+  it('still reports a successful delete when only the post-delete appointments refresh fails', async () => {
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)
+    vi.mocked(appointmentService.fetchAppointments).mockRejectedValue(new Error('network error'))
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' })]
+
+    const result = await store.deleteProperty('1')
+
+    expect(result).toBe(true)
+    expect(store.properties).toEqual([])
+    expect(store.hasDeleteError).toBe(false)
+  })
 })

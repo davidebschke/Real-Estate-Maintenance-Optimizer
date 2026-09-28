@@ -42,18 +42,27 @@ export const usePropertiesStore = defineStore('properties', () => {
     }
   }
 
-  /** Deletes a property and every appointment referencing it, recording whether the request failed. */
+  /** Deletes a property and every appointment referencing it, recording whether the delete request itself failed; a failure to refresh the appointments store afterwards does not count as a delete failure. */
   async function deleteProperty(id: string): Promise<boolean> {
     try {
       await propertyService.deleteProperty(id)
-      latestChangeToken++
-      properties.value = properties.value.filter((property) => property.id !== id)
-      hasDeleteError.value = false
-      await useAppointmentsStore().fetchAppointments()
-      return true
     } catch {
       hasDeleteError.value = true
       return false
+    }
+    latestChangeToken++
+    properties.value = properties.value.filter((property) => property.id !== id)
+    hasDeleteError.value = false
+    await refreshAppointmentsAfterDelete()
+    return true
+  }
+
+  /** Re-fetches the appointments store after a cascading delete, swallowing a failure since the deletion itself already succeeded. */
+  async function refreshAppointmentsAfterDelete() {
+    try {
+      await useAppointmentsStore().fetchAppointments()
+    } catch {
+      return
     }
   }
 
