@@ -1,0 +1,93 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: oracle-cloud-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Package backend
+        working-directory: backend
+        run: mvn --batch-mode --no-transfer-progress -DskipTests package
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Set up SSH access
+        env:
+          ORACLE_SSH_PRIVATE_KEY: ${{ secrets.ORACLE_SSH_PRIVATE_KEY }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$ORACLE_SSH_PRIVATE_KEY" > ~/.ssh/oracle_deploy_key
+          chmod 600 ~/.ssh/oracle_deploy_key
+          ssh-keyscan -p "$ORACLE_SSH_PORT" -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy frontend build
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
+          ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
+          ORACLE_FRONTEND_DEPLOY_PATH: ${{ secrets.ORACLE_FRONTEND_DEPLOY_PATH }}
+        run: |
+          rsync -avz --delete -e "ssh -i ~/.ssh/oracle_deploy_key -p $ORACLE_SSH_PORT" \
+            frontend/dist/ "$ORACLE_SSH_USER@$ORACLE_HOST:$ORACLE_FRONTEND_DEPLOY_PATH/"
+
+      - name: Deploy backend jar
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
+          ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
+          ORACLE_BACKEND_DEPLOY_PATH: ${{ secrets.ORACLE_BACKEND_DEPLOY_PATH }}
+        run: |
+          scp -i ~/.ssh/oracle_deploy_key -P "$ORACLE_SSH_PORT" \
+            backend/target/remo-backend.jar "$ORACLE_SSH_USER@$ORACLE_HOST:$ORACLE_BACKEND_DEPLOY_PATH/remo-backend.jar"
+
+      - name: Restart backend service
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_SSH_PORT: ${{ secrets.ORACLE_SSH_PORT || '22' }}
+          ORACLE_SSH_USER: ${{ secrets.ORACLE_SSH_USER }}
+          ORACLE_BACKEND_SERVICE_NAME: ${{ secrets.ORACLE_BACKEND_SERVICE_NAME }}
+        run: |
+          ssh -i ~/.ssh/oracle_deploy_key -p "$ORACLE_SSH_PORT" "$ORACLE_SSH_USER@$ORACLE_HOST" \
+            "sudo systemctl restart $ORACLE_BACKEND_SERVICE_NAME"
+
+      - name: Remove temporary SSH key
+        if: always()
+        run: rm -f ~/.ssh/oracle_deploy_key
