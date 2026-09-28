@@ -2,6 +2,7 @@
 
 [![Backend Tests](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/backend-tests.yml)
 [![Frontend Tests](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml)
+[![Deploy to Oracle Cloud](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/deploy-oracle-cloud.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/deploy-oracle-cloud.yml)
 
 - [Real-Estate-Maintenance-Optimizer](#real-estate-maintenance-optimizer)
   - [English](#english)
