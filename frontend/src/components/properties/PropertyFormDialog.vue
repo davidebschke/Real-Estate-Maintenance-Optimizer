@@ -199,6 +199,12 @@ function scheduleGeocode() {
     return
   }
 
+  // the address still matches the property being edited unchanged, so its already-seeded, stored coordinates must not be overwritten by a redundant free-text re-geocode
+  if (store.editingProperty && combinedAddress.value === store.editingProperty.address) {
+    isGeocoding.value = false
+    return
+  }
+
   isGeocoding.value = true
   geocodeTimeout = setTimeout(async () => {
     geocodedPosition.value = await geocodeAddress(combinedAddress.value)

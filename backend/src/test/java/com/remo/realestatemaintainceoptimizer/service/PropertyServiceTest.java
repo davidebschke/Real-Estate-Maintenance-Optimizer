@@ -114,6 +114,22 @@ class PropertyServiceTest {
     }
 
     @Test
+    void updatingAPropertyPropagatesTheNewNameAndAddressToItsAppointmentsOnly() {
+        repository.save(new Property("1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        appointmentRepository.save(createAppointment("appointment-1", "1"));
+        appointmentRepository.save(createAppointment("appointment-2", "other-property"));
+
+        service.update("1", new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", null, null));
+
+        Appointment updated = appointmentRepository.findById("appointment-1").orElseThrow();
+        assertThat(updated.propertyName()).isEqualTo("Wohnanlage Nordpark");
+        assertThat(updated.propertyAddress()).isEqualTo("Nordparkstr. 3, 50733 Köln");
+
+        Appointment unrelated = appointmentRepository.findById("appointment-2").orElseThrow();
+        assertThat(unrelated.propertyName()).isEqualTo("Wohnanlage Sonnenhof");
+    }
+
+    @Test
     void throwsWhenUpdatingAnUnknownProperty() {
         assertThatThrownBy(() -> service.update("unknown", new CreatePropertyRequest("Name", "Address", null, null)))
                 .isInstanceOf(PropertyNotFoundException.class);

@@ -59,14 +59,18 @@ public class PropertyService {
     }
 
     /**
-     * Updates the name, address and coordinates of the property with the given id, keeping its id and icon.
+     * Updates the name, address and coordinates of the property with the given id, keeping its id and icon, and propagates the new name/address to every appointment referencing it.
      */
     public PropertyResponse update(String id, CreatePropertyRequest request) {
         Property existing = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
         Property updated = new Property(
                 existing.id(), request.name(), request.address(), existing.icon(),
                 request.latitude(), request.longitude());
-        return toResponse(repository.save(updated));
+        Property saved = repository.save(updated);
+        appointmentRepository.findByPropertyId(saved.id())
+                .forEach(appointment -> appointmentRepository.save(
+                        appointment.withPropertyDetails(saved.name(), saved.address())));
+        return toResponse(saved);
     }
 
     /**

@@ -51,6 +51,15 @@ public record Appointment(
                 appendedHistory(historyEntry), newActualEnd);
     }
 
+    /**
+     * Returns a copy of this appointment with its denormalized property name and address updated to match an edited property.
+     */
+    public Appointment withPropertyDetails(String newPropertyName, String newPropertyAddress) {
+        return new Appointment(
+                id, seriesId, title, propertyId, newPropertyName, newPropertyAddress, description,
+                start, end, locked, recurring, recurrenceIntervalMonths, materials, history, actualEnd);
+    }
+
     private List<HistoryEntry> appendedHistory(HistoryEntry historyEntry) {
         return Stream.concat(history.stream(), Stream.of(historyEntry)).toList();
     }

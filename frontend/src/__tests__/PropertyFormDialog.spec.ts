@@ -594,6 +594,28 @@ describe('PropertyFormDialog', () => {
     expect(buttonLabels).not.toContain('Objekt anlegen')
   })
 
+  it('does not re-geocode the unchanged address when opening the edit dialog, keeping the property\'s own stored coordinates', async () => {
+    const existing = createExistingProperty({ latitude: 50.94, longitude: 6.88 })
+    await mountDialogForEdit(existing)
+    await vi.advanceTimersByTimeAsync(500)
+    await flushPromises()
+
+    expect(geocodingService.geocodeAddress).not.toHaveBeenCalled()
+    expect(bodyField('.property-form-dialog__map-empty').exists()).toBe(false)
+  })
+
+  it('resumes geocoding once the user actually changes the address being edited', async () => {
+    vi.mocked(geocodingService.geocodeAddress).mockResolvedValue({ lat: 50.97, lng: 6.95 })
+    const existing = createExistingProperty({ latitude: 50.94, longitude: 6.88 })
+    await mountDialogForEdit(existing)
+
+    await bodyField('#property-house-number').setValue('999')
+    await vi.advanceTimersByTimeAsync(500)
+    await flushPromises()
+
+    expect(geocodingService.geocodeAddress).toHaveBeenCalledWith('Aachener Str. 999, 50933 Köln')
+  })
+
   it('updates the property being edited instead of creating a new one, and does not flag its own name or address as a duplicate', async () => {
     const existing = createExistingProperty({
       name: 'Wohnanlage Sonnenhof',
