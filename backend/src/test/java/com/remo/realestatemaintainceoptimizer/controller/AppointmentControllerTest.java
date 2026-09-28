@@ -9,34 +9,38 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.nio.file.Path;
+import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
+import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Verifies the full appointment REST API against an isolated, temporary storage directory.
+ * Verifies the full appointment REST API against a throwaway PostgreSQL database, emptied and seeded with one property before each test.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestcontainersConfiguration.class)
 class AppointmentControllerTest {
-
-    @TempDir
-    static Path storageDirectory;
-
-    @DynamicPropertySource
-    static void overrideStorageDirectory(DynamicPropertyRegistry registry) {
-        registry.add("remo.storage.directory", storageDirectory::toString);
-    }
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private PropertyRepository propertyRepository;
+
+    @BeforeEach
+    void seedProperty() {
+        propertyRepository.deleteAllInBatch();
+        propertyRepository.save(new Property(
+                "property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+    }
 
     @Test
     void createdAppointmentIsThenListedAndReadable() throws Exception {
@@ -44,8 +48,6 @@ class AppointmentControllerTest {
                 {
                   "title": "Kellerreinigung Q3",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512, 50933 Köln-Braunsenfeld",
                   "description": "Was ist zu tun?",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,
@@ -72,7 +74,53 @@ class AppointmentControllerTest {
 
         mockMvc.perform(get("/api/appointments/{id}", id))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.propertyName", equalTo("Wohnanlage Sonnenhof")));
+                .andExpect(jsonPath("$.propertyName", equalTo("Wohnanlage Sonnenhof")))
+                .andExpect(jsonPath("$.propertyAddress", equalTo("Aachener Str. 512, 50933 Köln-Braunsenfeld")))
+                .andExpect(jsonPath("$.materials[0]", equalTo("Kehrmaschine")));
+    }
+
+    @Test
+    void creatingForAnUnknownPropertyReturnsNotFound() throws Exception {
+        String requestBody = """
+                {
+                  "title": "Kellerreinigung Q3",
+                  "propertyId": "unknown-property",
+                  "description": "",
+                  "start": "2026-08-11T13:00:00",
+                  "durationMinutes": 120,
+                  "locked": false,
+                  "recurring": false,
+                  "materials": []
+                }
+                """;
+
+        mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void creatingWithABlankMaterialIsRejected() throws Exception {
+        String requestBody = """
+                {
+                  "title": "Kellerreinigung Q3",
+                  "propertyId": "property-1",
+                  "description": "",
+                  "start": "2026-08-11T13:00:00",
+                  "durationMinutes": 120,
+                  "locked": false,
+                  "recurring": false,
+                  "materials": ["Kehrmaschine", " "]
+                }
+                """;
+
+        mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -81,8 +129,6 @@ class AppointmentControllerTest {
                 {
                   "title": "",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,
@@ -109,8 +155,6 @@ class AppointmentControllerTest {
                 {
                   "title": "TÜV-Termin",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T09:00:00",
                   "durationMinutes": 60,
@@ -140,8 +184,6 @@ class AppointmentControllerTest {
                 {
                   "title": "Kellerreinigung Q3",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,
@@ -173,8 +215,6 @@ class AppointmentControllerTest {
                 {
                   "title": "Kellerreinigung Q3",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,
@@ -205,8 +245,6 @@ class AppointmentControllerTest {
                 {
                   "title": "Kellerreinigung Q3",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,
@@ -234,8 +272,6 @@ class AppointmentControllerTest {
                 {
                   "title": "Kellerreinigung Q3",
                   "propertyId": "property-1",
-                  "propertyName": "Wohnanlage Sonnenhof",
-                  "propertyAddress": "Aachener Str. 512",
                   "description": "",
                   "start": "2026-08-11T13:00:00",
                   "durationMinutes": 120,

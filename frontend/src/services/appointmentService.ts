@@ -31,8 +31,6 @@ export interface AppointmentResponseDto {
 export interface CreateAppointmentPayload {
   title: string
   propertyId: string
-  propertyName: string
-  propertyAddress: string
   description: string
   start: Date
   durationMinutes: number

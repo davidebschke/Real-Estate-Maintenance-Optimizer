@@ -5,14 +5,25 @@ spring:
     basename: locales/messages
     encoding: UTF-8
     fallback-to-system-locale: false
+  datasource:
+    # Local defaults match docker-compose.yml; production (Supabase) overrides them via SPRING_DATASOURCE_URL/USERNAME/PASSWORD
+    url: jdbc:postgresql://localhost:5432/remo
+    username: remo
+    password: remo
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by Flyway (src/main/resources/db/migration); Hibernate only checks it matches the entities
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: remo
+        default_batch_fetch_size: 50
+  flyway:
+    # Dedicated schema instead of "public", which Supabase exposes through its auto-generated Data API
+    schemas: remo
 
 remo:
   frontend:
     # Origin allowed to call the backend REST API (Vite dev server default port)
     base-url: http://localhost:5173
-  storage:
-    # Folder (relative to the working directory) holding appointments as JSON files until a database replaces it
-    directory: ExampleTerms
-    properties:
-      # Folder (relative to the working directory) holding properties as JSON files until a database replaces it
-      directory: ExampleObjects

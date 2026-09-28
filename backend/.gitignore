@@ -1,2 +1,4 @@
 /target
+.env
+# Former JSON-file storage, kept ignored so leftover local appointment data from older checkouts is never committed
 /ExampleTerms

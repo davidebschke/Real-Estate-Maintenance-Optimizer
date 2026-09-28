@@ -77,8 +77,6 @@ describe('appointmentService', () => {
     await createAppointment({
       title: 'Kellerreinigung Q3',
       propertyId: 'property-1',
-      propertyName: 'Wohnanlage Sonnenhof',
-      propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
       description: 'Was ist zu tun?',
       start: new Date(2026, 7, 11, 13, 0),
       durationMinutes: 120,

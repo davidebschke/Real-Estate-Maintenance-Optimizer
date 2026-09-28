@@ -3,42 +3,47 @@ package com.remo.realestatemaintainceoptimizer.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.remo.realestatemaintainceoptimizer.config.StorageProperties;
+import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
+import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
-import com.remo.realestatemaintainceoptimizer.repository.AppointmentFileRepository;
-import java.nio.file.Path;
+import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import tools.jackson.databind.ObjectMapper;
 
 /**
- * Verifies appointment creation (including recurrence), rescheduling, and single-vs-series deletion.
+ * Verifies appointment creation (including recurrence), rescheduling, and single-vs-series deletion against a real PostgreSQL database.
  */
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
 class AppointmentServiceTest {
 
-    @TempDir
-    private Path storageDirectory;
-
+    @Autowired
     private AppointmentService service;
+
+    @Autowired
+    private AppointmentRepository repository;
+
+    @Autowired
+    private PropertyRepository propertyRepository;
 
     @BeforeEach
     void setUp() {
-        AppointmentFileRepository repository =
-                new AppointmentFileRepository(new StorageProperties(storageDirectory.toString()), new ObjectMapper());
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("locales/messages");
-        messageSource.setDefaultEncoding("UTF-8");
-        service = new AppointmentService(repository, messageSource);
+        propertyRepository.deleteAllInBatch();
+        propertyRepository.save(new Property(
+                "property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
         LocaleContextHolder.setLocale(Locale.ENGLISH);
     }
 
@@ -50,6 +55,46 @@ class AppointmentServiceTest {
         assertThat(response.seriesId()).isNull();
         assertThat(response.history()).hasSize(1);
         assertThat(service.listAll()).hasSize(1);
+    }
+
+    @Test
+    void createdAppointmentTakesNameAndAddressFromItsProperty() {
+        AppointmentResponse response = service.create(createRequest(false, null));
+
+        assertThat(response.propertyId()).isEqualTo("property-1");
+        assertThat(response.propertyName()).isEqualTo("Wohnanlage Sonnenhof");
+        assertThat(response.propertyAddress()).isEqualTo("Aachener Str. 512, 50933 Köln-Braunsenfeld");
+        assertThat(response.materials()).containsExactly("Kehrmaschine", "Müllsäcke 10x");
+    }
+
+    @Test
+    void creatingAnAppointmentForAnUnknownPropertyIsRejected() {
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "unknown-property", "", LocalDateTime.of(2026, 8, 11, 13, 0),
+                120, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(request)).isInstanceOf(PropertyNotFoundException.class);
+        assertThat(repository.count()).isZero();
+    }
+
+    @Test
+    void readingAnAppointmentBackReturnsTheSameDataAsItsCreation() {
+        AppointmentResponse created = service.create(createRequest(false, null));
+
+        assertThat(service.getById(created.id())).isEqualTo(created);
+    }
+
+    @Test
+    void subMicrosecondStartTimesAreTruncatedToTheStoredPrecisionOnCreateAndMove() {
+        LocalDateTime startWithNanos = LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_789);
+        AppointmentResponse created = service.create(new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "property-1", "", startWithNanos, 120, false, false, null, List.of()));
+
+        AppointmentResponse moved = service.move(created.id(), new MoveAppointmentRequest(startWithNanos.plusDays(1), 60));
+
+        assertThat(created.start()).isEqualTo(LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_000));
+        assertThat(moved.start()).isEqualTo(LocalDateTime.of(2026, 8, 12, 13, 0, 0, 123_456_000));
+        assertThat(service.getById(created.id())).isEqualTo(moved);
     }
 
     @Test
@@ -78,12 +123,13 @@ class AppointmentServiceTest {
 
         assertThat(moved.start()).isEqualTo(newStart);
         assertThat(moved.history()).hasSize(2);
+        assertThat(service.getById(created.id()).start()).isEqualTo(newStart);
     }
 
     @Test
     void movingALockedAppointmentIsRejected() {
         CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
-                "TÜV-Termin", "property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "Pflichttermin",
+                "TÜV-Termin", "property-1", "Pflichttermin",
                 LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of());
         AppointmentResponse created = service.create(lockedRequest);
 
@@ -122,6 +168,7 @@ class AppointmentServiceTest {
         assertThat(reopened.completed()).isFalse();
         assertThat(reopened.actualEnd()).isNull();
         assertThat(reopened.history()).hasSize(3);
+        assertThat(service.getById(created.id()).completed()).isFalse();
     }
 
     @Test
@@ -154,8 +201,6 @@ class AppointmentServiceTest {
         return new CreateAppointmentRequest(
                 "Kellerreinigung Q3",
                 "property-1",
-                "Wohnanlage Sonnenhof",
-                "Aachener Str. 512, 50933 Köln-Braunsenfeld",
                 "Was ist zu tun?",
                 LocalDateTime.of(2026, 8, 11, 13, 0),
                 120,

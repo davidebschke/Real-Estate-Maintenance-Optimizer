@@ -61,6 +61,21 @@ jobs:
   e2e:
     name: Run frontend e2e tests (Playwright)
     runs-on: ubuntu-latest
+    services:
+      # Matches the backend's local spring.datasource defaults (see backend/docker-compose.yml), so no extra env is needed
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: remo
+          POSTGRES_USER: remo
+          POSTGRES_PASSWORD: remo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U remo -d remo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

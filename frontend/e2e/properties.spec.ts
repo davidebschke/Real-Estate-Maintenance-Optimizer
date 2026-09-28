@@ -1,9 +1,10 @@
-import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { test, expect, type Page } from '@playwright/test'
-
-const propertyStorageDirectory = join(fileURLToPath(import.meta.url), '..', '..', '..', 'backend', 'ExampleObjects')
+import {
+  TEST_PROPERTY_ADDRESS,
+  createTestProperty,
+  deleteTestProperty,
+  type TestProperty,
+} from './support/testProperty.js'
 
 /** Opens the pinned create dialog, fills in the given fields and submits it. */
 async function createProperty(
@@ -37,13 +38,18 @@ async function createProperty(
   return (await response.json()) as { id: string; address: string }
 }
 
-/** Removes the JSON file the file-backed repository persisted for the given property, so tests don't leave data behind. */
-async function deletePropertyFile(id: string) {
-  await rm(join(propertyStorageDirectory, `${id}.json`), { force: true })
-}
-
 test.describe('properties', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
+
+  let property: TestProperty
+
+  test.beforeEach(async ({ request }) => {
+    property = await createTestProperty(request)
+  })
+
+  test.afterEach(async ({ request }) => {
+    await deleteTestProperty(request, property.id)
+  })
 
   test('shows a pinned card with a plus icon at the start of the property list', async ({
     page,
@@ -70,7 +76,7 @@ test.describe('properties', () => {
     try {
       await expect(page.getByRole('heading', { name })).toBeVisible()
     } finally {
-      await deletePropertyFile(id)
+      await deleteTestProperty(page.request, id)
     }
   })
 
@@ -92,7 +98,7 @@ test.describe('properties', () => {
     try {
       expect(address).toBe('Aachener Str. 512a, 50933 Köln')
     } finally {
-      await deletePropertyFile(id)
+      await deleteTestProperty(page.request, id)
     }
   })
 
@@ -102,7 +108,7 @@ test.describe('properties', () => {
     await page.goto('/properties')
 
     await page.locator('.property-create-card').click()
-    await page.getByLabel('Name').fill('Wohnanlage Sonnenhof')
+    await page.getByLabel('Name').fill(property.name)
     await page.getByLabel('Straße').fill('Ganz andere Str.')
     await page.getByLabel('Hausnummer').fill('99')
     await page.getByLabel('Postleitzahl').fill('12345')
@@ -121,10 +127,10 @@ test.describe('properties', () => {
 
     await page.locator('.property-create-card').click()
     await page.getByLabel('Name').fill('Ganz anderer Name')
-    await page.getByLabel('Straße').fill('Aachener Str.')
-    await page.getByLabel('Hausnummer').fill('512')
-    await page.getByLabel('Postleitzahl').fill('50933')
-    await page.getByLabel('Ort').fill('Köln-Braunsenfeld')
+    await page.getByLabel('Straße').fill(TEST_PROPERTY_ADDRESS.street)
+    await page.getByLabel('Hausnummer').fill(TEST_PROPERTY_ADDRESS.houseNumber)
+    await page.getByLabel('Postleitzahl').fill(TEST_PROPERTY_ADDRESS.postalCode)
+    await page.getByLabel('Ort').fill(TEST_PROPERTY_ADDRESS.city)
 
     await expect(page.getByText('Ein Objekt mit dieser Adresse existiert bereits.')).toBeVisible()
     await expect(page.getByLabel('Straße')).toHaveClass(/p-invalid/)

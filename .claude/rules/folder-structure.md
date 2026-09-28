@@ -40,26 +40,27 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts)
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts), support/testProperty.ts creates/deletes a per-test property via the API
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, StorageProperties, PropertyStorageProperties, RestClientConfig)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig)
 │   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
 │   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme)
-│   │   ├── repository/             # persistence (e.g. AppointmentFileRepository, PropertyFileRepository — JSON-file-backed, see backend readme)
-│   │   ├── entity/                  # domain records (e.g. Appointment, HistoryEntry, Property with latitude/longitude)
+│   │   ├── repository/             # persistence via Spring Data JPA (e.g. AppointmentRepository, PropertyRepository, see backend readme)
+│   │   ├── entity/                  # JPA entities (e.g. Appointment, HistoryEntry as @Embeddable record, Property with latitude/longitude)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
 │   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, CreatePropertyRequest, GeocodingResponse, AddressValidationResponse, AddressValidationStatus)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
-│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.storage.directory, remo.storage.properties.directory)
+│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, local spring.datasource defaults, JPA/Flyway settings)
+│   │   ├── db/migration/           # Flyway migrations (V<n>__*.sql) owning the PostgreSQL schema "remo", applied on startup
 │   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (fallback bundle, English), messages_de.properties, messages_en.properties
-│   ├── ExampleTerms/                # gitignored, created at runtime: appointments persisted as one JSON file each (see backend readme)
-│   ├── ExampleObjects/              # checked in (unlike ExampleTerms/), seeded with one JSON file per property since there is no create endpoint yet (see backend readme)
-│   ├── src/test/java/...          # JUnit tests
+│   ├── docker-compose.yml           # local PostgreSQL 17 for development, matching the application.yml datasource defaults
+│   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* environment variables
+│   ├── src/test/java/...          # JUnit tests (TestcontainersConfiguration provides the PostgreSQL test database)
 │   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)
@@ -84,8 +85,8 @@ Real-Estate-Maintenance-Optimizer/
 com.remo.realestatemaintainceoptimizer
 ├── controller/     # REST endpoints
 ├── service/        # business logic
-├── repository/     # persistence (Spring Data JPA once a database backs it; currently JSON-file repositories for appointments and properties)
-├── entity/         # domain model (JPA entities once a database backs them; currently plain records for appointments and properties)
+├── repository/     # persistence (Spring Data JPA repositories backed by PostgreSQL)
+├── entity/         # domain model (JPA entities)
 ├── dto/            # data transfer objects
 ├── exception/      # domain exceptions mapped to HTTP responses
 ├── security/       # JWT / Spring Security configuration

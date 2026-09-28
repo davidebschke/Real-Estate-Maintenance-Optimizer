@@ -108,8 +108,6 @@ describe('AppointmentFormDialog', () => {
       expect.objectContaining({
         title: 'Kellerreinigung Q3',
         propertyId: '1',
-        propertyName: 'Wohnanlage Sonnenhof',
-        propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
         locked: false,
         recurring: false,
         recurrenceIntervalMonths: null,
