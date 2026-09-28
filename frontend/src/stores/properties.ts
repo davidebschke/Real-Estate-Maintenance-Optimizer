@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
 import { useAppointmentsStore } from '@/stores/appointments'
@@ -9,8 +9,10 @@ export const usePropertiesStore = defineStore('properties', () => {
   const properties = ref<Property[]>([])
   const hasLoadError = ref(false)
   const hasCreateError = ref(false)
+  const hasUpdateError = ref(false)
   const hasDeleteError = ref(false)
   const isCreateDialogOpen = ref(false)
+  const editingProperty = ref<Property | null>(null)
   /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
   let latestChangeToken = 0
 
@@ -38,6 +40,22 @@ export const usePropertiesStore = defineStore('properties', () => {
       return true
     } catch {
       hasCreateError.value = true
+      return false
+    }
+  }
+
+  /** Updates a property and replaces it in the store, re-sorting by name, recording whether the request failed. */
+  async function updateProperty(id: string, payload: CreatePropertyPayload): Promise<boolean> {
+    try {
+      const updated = await propertyService.updateProperty(id, payload)
+      latestChangeToken++
+      properties.value = properties.value
+        .map((property) => (property.id === id ? updated : property))
+        .sort((a, b) => a.name.localeCompare(b.name))
+      hasUpdateError.value = false
+      return true
+    } catch {
+      hasUpdateError.value = true
       return false
     }
   }
@@ -76,16 +94,42 @@ export const usePropertiesStore = defineStore('properties', () => {
     isCreateDialogOpen.value = false
   }
 
+  /** Opens the property form pre-filled for editing the given property. */
+  function openEditDialog(property: Property) {
+    editingProperty.value = property
+  }
+
+  /** Closes the property edit form. */
+  function closeEditDialog() {
+    editingProperty.value = null
+  }
+
+  /** Whether the shared property form dialog (create or edit) should be visible; closing it also resets both modes. */
+  const isFormDialogOpen = computed({
+    get: () => isCreateDialogOpen.value || editingProperty.value !== null,
+    set: (value: boolean) => {
+      if (value) return
+      closeCreateDialog()
+      closeEditDialog()
+    },
+  })
+
   return {
     properties,
     hasLoadError,
     hasCreateError,
+    hasUpdateError,
     hasDeleteError,
     isCreateDialogOpen,
+    editingProperty,
+    isFormDialogOpen,
     fetchProperties,
     createProperty,
+    updateProperty,
     deleteProperty,
     openCreateDialog,
     closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
   }
 })

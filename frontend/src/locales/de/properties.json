@@ -11,6 +11,7 @@
       "completedAppointments": "Erledigte Aufträge",
       "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin",
+      "editButton": "Bearbeiten",
       "deleteButton": "Löschen",
       "deleteConfirm": {
         "header": "Objekt löschen",
@@ -48,6 +49,11 @@
       "error": "Das Objekt konnte nicht angelegt werden.",
       "submit": "Objekt anlegen",
       "cancel": "Abbrechen"
+    },
+    "edit": {
+      "title": "Objekt bearbeiten",
+      "submit": "Speichern",
+      "error": "Das Objekt konnte nicht aktualisiert werden."
     }
   }
 }

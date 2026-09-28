@@ -30,6 +30,7 @@ vi.mock('@/services/geocodingService')
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.createProperty).mockReset()
+  vi.mocked(propertyService.updateProperty).mockReset()
   vi.mocked(geocodingService.geocodeAddress).mockReset()
   vi.mocked(geocodingService.validateAddress).mockReset()
   vi.mocked(geocodingService.validateAddress).mockResolvedValue({
@@ -69,6 +70,22 @@ function bodyField(selector: string): DOMWrapper<Element> {
 }
 
 type DialogWrapper = Awaited<ReturnType<typeof mountDialog>>
+
+/** Mounts the dialog already in edit mode for the given property: the component only pre-fills its fields on the closed-to-open transition, as it does in the app when `openEditDialog` is called while the dialog is closed. */
+async function mountDialogForEdit(property: Property): Promise<DialogWrapper> {
+  usePropertiesStore().openEditDialog(property)
+  const wrapper = mount(PropertyFormDialog, {
+    props: { visible: false },
+    global: {
+      plugins: [i18n, PrimeVue],
+      stubs: { PropertyLocationPreviewMap: true },
+    },
+    attachTo: document.body,
+  })
+  await wrapper.setProps({ visible: true })
+  await flushPromises()
+  return wrapper
+}
 
 /** Finds the submit button among every rendered PrimeVue Button by its label. */
 function submitButton(wrapper: DialogWrapper) {
@@ -558,6 +575,66 @@ describe('PropertyFormDialog', () => {
     await flushPromises()
 
     expect(propertyService.createProperty).not.toHaveBeenCalled()
+  })
+
+  it('pre-fills every field from the property being edited', async () => {
+    const wrapper = await mountDialogForEdit(
+      createExistingProperty({ name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512a, 50933 Köln' }),
+    )
+
+    expect(bodyField('#property-name').element.getAttribute('value')).toBe('Wohnanlage Sonnenhof')
+    expect(bodyField('#property-street').element.getAttribute('value')).toBe('Aachener Str.')
+    expect(bodyField('#property-house-number').element.getAttribute('value')).toBe('512')
+    expect(bodyField('#property-address-supplement').element.getAttribute('value')).toBe('a')
+    expect(bodyField('#property-postal-code').element.getAttribute('value')).toBe('50933')
+    expect(bodyField('#property-city').element.getAttribute('value')).toBe('Köln')
+    expect(bodyField('.p-dialog-title').text()).toBe('Objekt bearbeiten')
+    const buttonLabels = wrapper.findAllComponents(Button).map((button) => button.text())
+    expect(buttonLabels).toContain('Speichern')
+    expect(buttonLabels).not.toContain('Objekt anlegen')
+  })
+
+  it('updates the property being edited instead of creating a new one, and does not flag its own name or address as a duplicate', async () => {
+    const existing = createExistingProperty({
+      name: 'Wohnanlage Sonnenhof',
+      address: 'Aachener Str. 512, 50933 Köln',
+    })
+    usePropertiesStore().properties = [existing]
+    vi.mocked(propertyService.updateProperty).mockResolvedValue({
+      ...existing,
+      address: 'Aachener Str. 512, 50933 Köln',
+    })
+    const wrapper = await mountDialogForEdit(existing)
+
+    expect(bodyField('#property-name').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+
+    const saveButton = wrapper.findAllComponents(Button).find((button) => button.text() === 'Speichern')!
+    await saveButton.trigger('click')
+    await flushPromises()
+
+    expect(propertyService.updateProperty).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ name: 'Wohnanlage Sonnenhof', address: 'Aachener Str. 512, 50933 Köln' }),
+    )
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
+  it('shows an update-specific error and keeps the dialog open when updating fails', async () => {
+    vi.mocked(propertyService.updateProperty).mockRejectedValue(new Error('network error'))
+    const wrapper = await mountDialogForEdit(createExistingProperty())
+
+    const saveButton = wrapper.findAllComponents(Button).find((button) => button.text() === 'Speichern')!
+    await saveButton.trigger('click')
+    await flushPromises()
+
+    expect(bodyField('.property-form-dialog__error').text()).toBe(
+      'Das Objekt konnte nicht aktualisiert werden.',
+    )
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents).toBeUndefined()
   })
 
   it('resets every field when reopened', async () => {

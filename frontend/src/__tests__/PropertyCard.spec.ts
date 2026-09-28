@@ -124,6 +124,23 @@ describe('PropertyCard', () => {
     expect(wrapper.emitted('open-appointment')).toEqual([['42']])
   })
 
+  it('emits the property when the edit button is clicked', async () => {
+    const property = createProperty()
+    const wrapper = mount(PropertyCard, {
+      props: {
+        property,
+        openCount: 0,
+        completedCount: 0,
+        nextAppointment: null,
+      },
+      global: globalMountOptions,
+    })
+
+    await wrapper.find('.property-card__edit').trigger('click')
+
+    expect(wrapper.emitted('edit-property')).toEqual([[property]])
+  })
+
   it('emits the property when the delete button is clicked', async () => {
     const property = createProperty()
     const wrapper = mount(PropertyCard, {

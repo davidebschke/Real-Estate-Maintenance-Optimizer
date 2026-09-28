@@ -47,6 +47,7 @@ function handleDeleteProperty(property: Property) {
       :property="property"
       v-bind="getSummaryFor(property.id)"
       @open-appointment="appointmentsStore.openDetail"
+      @edit-property="propertiesStore.openEditDialog"
       @delete-property="handleDeleteProperty"
     />
   </div>

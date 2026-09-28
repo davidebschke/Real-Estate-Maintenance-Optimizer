@@ -11,13 +11,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
- * Exposes property create, read and delete lookups to the frontend.
+ * Exposes property create, read, update and delete lookups to the frontend.
  */
 @RestController
 @RequestMapping("/api/properties")
@@ -56,6 +57,14 @@ public class PropertyController {
                 .buildAndExpand(created.id())
                 .toUri();
         return ResponseEntity.created(location).body(created);
+    }
+
+    /**
+     * Updates the name, address and coordinates of the property with the given id.
+     */
+    @PutMapping("/{id}")
+    public PropertyResponse updateProperty(@PathVariable String id, @Valid @RequestBody CreatePropertyRequest request) {
+        return propertyService.update(id, request);
     }
 
     /**

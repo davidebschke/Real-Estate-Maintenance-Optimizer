@@ -12,6 +12,7 @@ import {
   type AddressValidationResult,
   type GeocodedPosition,
 } from '@/services/geocodingService'
+import { parsePropertyAddress } from '@/utils/propertyAddressParsing'
 
 const NAME_MAX_LENGTH = 50
 const STREET_MAX_LENGTH = 100
@@ -41,6 +42,9 @@ const form = reactive({
 const geocodedPosition = ref<GeocodedPosition | null>(null)
 const isGeocoding = ref(false)
 let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
+
+/** Whether the dialog is currently editing an existing property rather than creating a new one. */
+const isEditMode = computed(() => store.editingProperty !== null)
 
 const addressValidation = ref<AddressValidationResult | null>(null)
 const isValidatingAddress = ref(false)
@@ -111,11 +115,16 @@ const combinedAddress = computed(() =>
   `${streetAndHouseNumber.value}, ${form.postalCode.trim()} ${form.city.trim()}`.trim(),
 )
 
+/** Every property other than the one currently being edited, i.e. the set a duplicate name/address is checked against. */
+const otherProperties = computed(() =>
+  store.properties.filter((property) => property.id !== store.editingProperty?.id),
+)
+
 /** Whether the entered name matches an already-existing property's name, ignoring case and surrounding whitespace. */
 const isDuplicateName = computed(() => {
   const name = form.name.trim().toLowerCase()
   if (name.length === 0) return false
-  return store.properties.some((property) => property.name.trim().toLowerCase() === name)
+  return otherProperties.value.some((property) => property.name.trim().toLowerCase() === name)
 })
 
 /** Whether the fully entered address matches an already-existing property's address, ignoring case and surrounding whitespace. */
@@ -124,7 +133,7 @@ const isDuplicateAddress = computed(() => {
     return false
   }
   const address = combinedAddress.value.toLowerCase()
-  return store.properties.some((property) => property.address.trim().toLowerCase() === address)
+  return otherProperties.value.some((property) => property.address.trim().toLowerCase() === address)
 })
 
 watch(visible, (isVisible) => {
@@ -145,15 +154,34 @@ watch(
   () => scheduleGeocode(),
 )
 
+/** Fills every field from the property being edited, falling back to blank fields if its address cannot be parsed. */
+function fillFormFromEditingProperty(property: NonNullable<typeof store.editingProperty>) {
+  const parsedAddress = parsePropertyAddress(property.address)
+  form.name = property.name
+  form.street = parsedAddress?.street ?? ''
+  form.houseNumber = parsedAddress?.houseNumber ?? ''
+  form.addressSupplement = parsedAddress?.addressSupplement ?? ''
+  form.postalCode = parsedAddress?.postalCode ?? ''
+  form.city = parsedAddress?.city ?? ''
+  geocodedPosition.value =
+    property.latitude !== null && property.longitude !== null
+      ? { lat: property.latitude, lng: property.longitude }
+      : null
+}
+
 /** Resets every field and the location preview to its default, called each time the dialog is opened. */
 function resetForm() {
-  form.name = ''
-  form.street = ''
-  form.houseNumber = ''
-  form.addressSupplement = ''
-  form.postalCode = ''
-  form.city = ''
-  geocodedPosition.value = null
+  if (store.editingProperty) {
+    fillFormFromEditingProperty(store.editingProperty)
+  } else {
+    form.name = ''
+    form.street = ''
+    form.houseNumber = ''
+    form.addressSupplement = ''
+    form.postalCode = ''
+    form.city = ''
+    geocodedPosition.value = null
+  }
   isGeocoding.value = false
   addressValidation.value = null
   isValidatingAddress.value = false
@@ -202,14 +230,18 @@ async function submit() {
 
   if (!isValid.value) return
 
-  const created = await store.createProperty({
+  const payload = {
     name: form.name,
     address: combinedAddress.value,
     latitude: result.latitude ?? geocodedPosition.value?.lat ?? null,
     longitude: result.longitude ?? geocodedPosition.value?.lng ?? null,
-  })
+  }
 
-  if (created) visible.value = false
+  const succeeded = store.editingProperty
+    ? await store.updateProperty(store.editingProperty.id, payload)
+    : await store.createProperty(payload)
+
+  if (succeeded) visible.value = false
 }
 
 /** Applies the last validation's suggested address to the form without any further manual input. */
@@ -233,7 +265,7 @@ function cancel() {
   <Dialog
     v-model:visible="visible"
     modal
-    :header="t('properties.create.title')"
+    :header="isEditMode ? t('properties.edit.title') : t('properties.create.title')"
     class="property-form-dialog"
   >
     <div class="property-form-dialog__field">
@@ -352,13 +384,13 @@ function cancel() {
       <PropertyLocationPreviewMap v-else :position="geocodedPosition" />
     </div>
 
-    <p v-if="store.hasCreateError" class="property-form-dialog__error">
-      {{ t('properties.create.error') }}
+    <p v-if="isEditMode ? store.hasUpdateError : store.hasCreateError" class="property-form-dialog__error">
+      {{ isEditMode ? t('properties.edit.error') : t('properties.create.error') }}
     </p>
 
     <div class="property-form-dialog__actions">
       <Button
-        :label="t('properties.create.submit')"
+        :label="isEditMode ? t('properties.edit.submit') : t('properties.create.submit')"
         :disabled="!isValid || isValidatingAddress"
         @click="submit"
       />
