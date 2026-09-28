@@ -7,25 +7,30 @@ import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
+import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
-import com.remo.realestatemaintainceoptimizer.repository.AppointmentFileRepository;
+import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Business logic for creating, reading, rescheduling and deleting appointments, including recurring series.
  */
 @Service
+@Transactional
 public class AppointmentService {
 
     static final String SCOPE_SERIES = "series";
@@ -34,20 +39,23 @@ public class AppointmentService {
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final AppointmentFileRepository repository;
+    private final AppointmentRepository repository;
+    private final PropertyRepository propertyRepository;
     private final MessageSource messageSource;
 
-    public AppointmentService(AppointmentFileRepository repository, MessageSource messageSource) {
+    public AppointmentService(
+            AppointmentRepository repository, PropertyRepository propertyRepository, MessageSource messageSource) {
         this.repository = repository;
+        this.propertyRepository = propertyRepository;
         this.messageSource = messageSource;
     }
 
     /**
      * Returns every appointment, sorted by start time.
      */
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> listAll() {
-        return repository.findAll().stream()
-                .sorted(Comparator.comparing(Appointment::start))
+        return repository.findAllByOrderByStartAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -55,18 +63,21 @@ public class AppointmentService {
     /**
      * Returns the appointment with the given id.
      */
+    @Transactional(readOnly = true)
     public AppointmentResponse getById(String id) {
         return toResponse(loadOrThrow(id));
     }
 
     /**
-     * Creates a new appointment, materializing a bounded horizon of future occurrences when recurring.
+     * Creates a new appointment for an existing property, materializing a bounded horizon of future occurrences when recurring.
      */
     public AppointmentResponse create(CreateAppointmentRequest request) {
         if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
             throw new InvalidRecurrenceException("recurrenceIntervalRequired");
         }
 
+        Property property = propertyRepository.findById(request.propertyId())
+                .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
         List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
         String description = request.description() != null ? request.description() : "";
@@ -83,9 +94,7 @@ public class AppointmentService {
                     UUID.randomUUID().toString(),
                     seriesId,
                     request.title(),
-                    request.propertyId(),
-                    request.propertyName(),
-                    request.propertyAddress(),
+                    property,
                     description,
                     occurrenceStart,
                     occurrenceEnd,
@@ -93,12 +102,12 @@ public class AppointmentService {
                     request.recurring(),
                     request.recurrenceIntervalMonths(),
                     materials,
-                    List.of(new HistoryEntry(Instant.now(), HistoryEventType.CREATED, List.of())),
+                    List.of(new HistoryEntry(currentInstant(), HistoryEventType.CREATED, List.of())),
                     null);
 
-            repository.save(occurrence);
+            Appointment savedOccurrence = repository.save(occurrence);
             if (occurrenceIndex == 0) {
-                firstOccurrence = occurrence;
+                firstOccurrence = savedOccurrence;
             }
         }
 
@@ -117,13 +126,12 @@ public class AppointmentService {
         LocalDateTime newStart = request.start();
         LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
         HistoryEntry moveEntry = new HistoryEntry(
-                Instant.now(),
+                currentInstant(),
                 HistoryEventType.MOVED,
                 List.of(formatRange(appointment.start(), appointment.end()), formatRange(newStart, newEnd)));
 
-        Appointment moved = appointment.withSchedule(newStart, newEnd, moveEntry);
-        repository.save(moved);
-        return toResponse(moved);
+        appointment.reschedule(newStart, newEnd, moveEntry);
+        return toResponse(appointment);
     }
 
     /**
@@ -131,13 +139,13 @@ public class AppointmentService {
      */
     public AppointmentResponse complete(String id, LocalDateTime actualEnd) {
         Appointment appointment = loadOrThrow(id);
-        LocalDateTime resolvedActualEnd = actualEnd != null ? actualEnd : LocalDateTime.now();
+        LocalDateTime resolvedActualEnd =
+                (actualEnd != null ? actualEnd : LocalDateTime.now()).truncatedTo(ChronoUnit.MICROS);
         HistoryEntry completedEntry = new HistoryEntry(
-                Instant.now(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(resolvedActualEnd)));
+                currentInstant(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(resolvedActualEnd)));
 
-        Appointment completed = appointment.withActualEnd(resolvedActualEnd, completedEntry);
-        repository.save(completed);
-        return toResponse(completed);
+        appointment.changeActualEnd(resolvedActualEnd, completedEntry);
+        return toResponse(appointment);
     }
 
     /**
@@ -145,11 +153,10 @@ public class AppointmentService {
      */
     public AppointmentResponse reopen(String id) {
         Appointment appointment = loadOrThrow(id);
-        HistoryEntry reopenedEntry = new HistoryEntry(Instant.now(), HistoryEventType.REOPENED, List.of());
+        HistoryEntry reopenedEntry = new HistoryEntry(currentInstant(), HistoryEventType.REOPENED, List.of());
 
-        Appointment reopened = appointment.withActualEnd(null, reopenedEntry);
-        repository.save(reopened);
-        return toResponse(reopened);
+        appointment.changeActualEnd(null, reopenedEntry);
+        return toResponse(appointment);
     }
 
     /**
@@ -158,7 +165,7 @@ public class AppointmentService {
     public void delete(String id, String scope) {
         Appointment appointment = loadOrThrow(id);
         if (!SCOPE_SERIES.equalsIgnoreCase(scope)) {
-            repository.deleteById(id);
+            repository.delete(appointment);
             return;
         }
 
@@ -168,7 +175,7 @@ public class AppointmentService {
 
         repository.findBySeriesId(appointment.seriesId()).stream()
                 .filter(candidate -> !candidate.start().isBefore(appointment.start()))
-                .forEach(candidate -> repository.deleteById(candidate.id()));
+                .forEach(repository::delete);
     }
 
     private Appointment loadOrThrow(String id) {
@@ -185,9 +192,9 @@ public class AppointmentService {
                 appointment.id(),
                 appointment.seriesId(),
                 appointment.title(),
-                appointment.propertyId(),
-                appointment.propertyName(),
-                appointment.propertyAddress(),
+                appointment.property().id(),
+                appointment.property().name(),
+                appointment.property().address(),
                 appointment.description(),
                 appointment.start(),
                 appointment.end(),
@@ -208,6 +215,10 @@ public class AppointmentService {
             case REOPENED -> "appointment.history.reopened";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
+    }
+
+    private Instant currentInstant() {
+        return Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 
     private String formatRange(LocalDateTime start, LocalDateTime end) {

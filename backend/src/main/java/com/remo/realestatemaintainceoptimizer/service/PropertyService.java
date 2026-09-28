@@ -4,35 +4,33 @@ import com.remo.realestatemaintainceoptimizer.dto.CreatePropertyRequest;
 import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
-import com.remo.realestatemaintainceoptimizer.repository.AppointmentFileRepository;
-import com.remo.realestatemaintainceoptimizer.repository.PropertyFileRepository;
-import java.util.Comparator;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Business logic for creating, looking up, updating and deleting properties.
  */
 @Service
+@Transactional
 public class PropertyService {
 
     static final String DEFAULT_ICON = "pi-building";
 
-    private final PropertyFileRepository repository;
-    private final AppointmentFileRepository appointmentRepository;
+    private final PropertyRepository repository;
 
-    public PropertyService(PropertyFileRepository repository, AppointmentFileRepository appointmentRepository) {
+    public PropertyService(PropertyRepository repository) {
         this.repository = repository;
-        this.appointmentRepository = appointmentRepository;
     }
 
     /**
      * Returns every property, sorted by name.
      */
+    @Transactional(readOnly = true)
     public List<PropertyResponse> listAll() {
-        return repository.findAll().stream()
-                .sorted(Comparator.comparing(Property::name))
+        return repository.findAllByOrderByNameAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -40,6 +38,7 @@ public class PropertyService {
     /**
      * Returns the property with the given id.
      */
+    @Transactional(readOnly = true)
     public PropertyResponse getById(String id) {
         return toResponse(repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id)));
     }
@@ -59,28 +58,20 @@ public class PropertyService {
     }
 
     /**
-     * Updates the name, address and coordinates of the property with the given id, keeping its id and icon, and propagates the new name/address to every appointment referencing it.
+     * Updates the name, address and coordinates of the property with the given id, keeping its id and icon; appointments reference it and therefore reflect the change automatically.
      */
     public PropertyResponse update(String id, CreatePropertyRequest request) {
-        Property existing = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
-        Property updated = new Property(
-                existing.id(), request.name(), request.address(), existing.icon(),
-                request.latitude(), request.longitude());
-        Property saved = repository.save(updated);
-        appointmentRepository.findByPropertyId(saved.id())
-                .forEach(appointment -> appointmentRepository.save(
-                        appointment.withPropertyDetails(saved.name(), saved.address())));
-        return toResponse(saved);
+        Property property = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
+        property.updateDetails(request.name(), request.address(), request.latitude(), request.longitude());
+        return toResponse(property);
     }
 
     /**
-     * Deletes the property with the given id along with every appointment referencing it.
+     * Deletes the property with the given id along with every appointment referencing it, cascaded by the database.
      */
     public void delete(String id) {
         Property property = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
-        appointmentRepository.findByPropertyId(property.id())
-                .forEach(appointment -> appointmentRepository.deleteById(appointment.id()));
-        repository.deleteById(property.id());
+        repository.delete(property);
     }
 
     private PropertyResponse toResponse(Property property) {

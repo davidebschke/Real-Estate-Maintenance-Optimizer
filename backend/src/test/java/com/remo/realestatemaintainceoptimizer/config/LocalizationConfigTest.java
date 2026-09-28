@@ -3,12 +3,14 @@ package com.remo.realestatemaintainceoptimizer.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.servlet.LocaleResolver;
 
@@ -16,6 +18,7 @@ import org.springframework.web.servlet.LocaleResolver;
  * Verifies that dynamic backend messages resolve for German and English and fall back to English in case of doubt.
  */
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 class LocalizationConfigTest {
 
     @Autowired

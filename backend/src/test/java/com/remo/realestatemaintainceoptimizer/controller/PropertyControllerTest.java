@@ -10,76 +10,49 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.remo.realestatemaintainceoptimizer.config.PropertyStorageProperties;
-import com.remo.realestatemaintainceoptimizer.config.StorageProperties;
+import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
-import com.remo.realestatemaintainceoptimizer.repository.AppointmentFileRepository;
-import com.remo.realestatemaintainceoptimizer.repository.PropertyFileRepository;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
 
 /**
- * Verifies the property create, read, update and delete REST API against an isolated, temporary storage directory.
+ * Verifies the property create, read, update and delete REST API against a throwaway PostgreSQL database, emptied and seeded with one property before each test.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(TestcontainersConfiguration.class)
 class PropertyControllerTest {
-
-    @TempDir
-    static Path storageDirectory;
-
-    @TempDir
-    static Path appointmentStorageDirectory;
-
-    @DynamicPropertySource
-    static void overrideStorageDirectory(DynamicPropertyRegistry registry) {
-        registry.add("remo.storage.properties.directory", storageDirectory::toString);
-        registry.add("remo.storage.directory", appointmentStorageDirectory::toString);
-    }
 
     @Autowired
     private MockMvc mockMvc;
 
-    private AppointmentFileRepository appointmentRepository;
+    @Autowired
+    private PropertyRepository propertyRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    private Property seededProperty;
 
     @BeforeEach
-    void seedProperty() throws IOException {
-        try (var files = Files.list(storageDirectory)) {
-            for (Path file : files.toList()) {
-                Files.delete(file);
-            }
-        }
-        try (var files = Files.list(appointmentStorageDirectory)) {
-            for (Path file : files.toList()) {
-                Files.delete(file);
-            }
-        }
-
-        PropertyFileRepository repository =
-                new PropertyFileRepository(new PropertyStorageProperties(storageDirectory.toString()), new ObjectMapper());
-        repository.save(new Property(
+    void seedProperty() {
+        propertyRepository.deleteAllInBatch();
+        seededProperty = propertyRepository.save(new Property(
                 "1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building", 50.94, 6.88));
-
-        appointmentRepository =
-                new AppointmentFileRepository(new StorageProperties(appointmentStorageDirectory.toString()), new ObjectMapper());
     }
 
     @Test
@@ -191,7 +164,7 @@ class PropertyControllerTest {
 
     @Test
     void deletingAPropertyRemovesItAndItsAppointments() throws Exception {
-        appointmentRepository.save(createAppointment("appointment-1", "1"));
+        appointmentRepository.save(createAppointment("appointment-1", seededProperty));
 
         mockMvc.perform(delete("/api/properties/{id}", "1")).andExpect(status().isNoContent());
 
@@ -204,15 +177,13 @@ class PropertyControllerTest {
         mockMvc.perform(delete("/api/properties/{id}", "unknown-id")).andExpect(status().isNotFound());
     }
 
-    private Appointment createAppointment(String id, String propertyId) {
+    private Appointment createAppointment(String id, Property property) {
         LocalDateTime start = LocalDateTime.of(2026, 8, 11, 13, 0);
         return new Appointment(
                 id,
                 null,
                 "Kellerreinigung Q3",
-                propertyId,
-                "Wohnanlage Sonnenhof",
-                "Aachener Str. 512, 50933 Köln-Braunsenfeld",
+                property,
                 "Was ist zu tun?",
                 start,
                 start.plusHours(2),
