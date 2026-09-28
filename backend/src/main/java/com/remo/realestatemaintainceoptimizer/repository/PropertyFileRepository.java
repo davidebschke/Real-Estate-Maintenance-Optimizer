@@ -81,6 +81,20 @@ public class PropertyFileRepository {
         }
     }
 
+    /**
+     * Deletes the property file with the given id, if it exists.
+     */
+    public void deleteById(String id) {
+        writeLock.lock();
+        try {
+            Files.deleteIfExists(fileFor(id));
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Failed to delete property " + id, exception);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
     private Optional<Property> readFile(Path file) {
         try {
             return Optional.of(objectMapper.readValue(file.toFile(), Property.class));

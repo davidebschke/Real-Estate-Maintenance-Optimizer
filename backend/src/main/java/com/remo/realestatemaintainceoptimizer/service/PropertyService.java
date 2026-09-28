@@ -4,6 +4,7 @@ import com.remo.realestatemaintainceoptimizer.dto.CreatePropertyRequest;
 import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.AppointmentFileRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyFileRepository;
 import java.util.Comparator;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * Business logic for creating and looking up properties.
+ * Business logic for creating, looking up and deleting properties.
  */
 @Service
 public class PropertyService {
@@ -19,9 +20,11 @@ public class PropertyService {
     static final String DEFAULT_ICON = "pi-building";
 
     private final PropertyFileRepository repository;
+    private final AppointmentFileRepository appointmentRepository;
 
-    public PropertyService(PropertyFileRepository repository) {
+    public PropertyService(PropertyFileRepository repository, AppointmentFileRepository appointmentRepository) {
         this.repository = repository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     /**
@@ -53,6 +56,16 @@ public class PropertyService {
                 request.latitude(),
                 request.longitude());
         return toResponse(repository.save(property));
+    }
+
+    /**
+     * Deletes the property with the given id along with every appointment referencing it.
+     */
+    public void delete(String id) {
+        Property property = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
+        appointmentRepository.findByPropertyId(property.id())
+                .forEach(appointment -> appointmentRepository.deleteById(appointment.id()));
+        repository.deleteById(property.id());
     }
 
     private PropertyResponse toResponse(Property property) {

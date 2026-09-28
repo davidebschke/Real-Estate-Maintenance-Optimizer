@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { useConfirm } from 'primevue/useconfirm'
 import { i18n } from '@/i18n'
 import PropertyList from '@/components/properties/PropertyList.vue'
 import { usePropertiesStore } from '@/stores/properties'
@@ -12,6 +13,9 @@ import type { Appointment } from '@/types/appointment'
 
 vi.mock('@/services/propertyService')
 vi.mock('@/services/appointmentService')
+vi.mock('primevue/useconfirm')
+
+const globalMountOptions = { plugins: [i18n], directives: { tooltip: {} } }
 
 /** Builds a sample property for tests, with overridable fields. */
 function createProperty(overrides: Partial<Property> = {}): Property {
@@ -57,6 +61,9 @@ beforeEach(() => {
   vi.setSystemTime(new Date(2026, 7, 10, 9, 0))
   vi.mocked(propertyService.fetchProperties).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
+  vi.mocked(useConfirm).mockReturnValue({
+    require: (options: { accept?: () => void }) => options.accept?.(),
+  } as never)
 })
 
 afterEach(() => {
@@ -66,7 +73,7 @@ afterEach(() => {
 describe('PropertyList', () => {
   it('shows an empty-state message when there are no properties', async () => {
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
-    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
 
     expect(wrapper.find('.property-list__empty').exists()).toBe(true)
@@ -74,7 +81,7 @@ describe('PropertyList', () => {
 
   it('shows an error message when loading properties fails', async () => {
     vi.mocked(propertyService.fetchProperties).mockRejectedValue(new Error('network error'))
-    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
 
     expect(wrapper.find('.property-list__error').exists()).toBe(true)
@@ -90,7 +97,7 @@ describe('PropertyList', () => {
       createAppointment({ id: '10', propertyId: '1', completed: true }),
     ])
 
-    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
 
     const cards = wrapper.findAll('.property-card')
@@ -104,7 +111,7 @@ describe('PropertyList', () => {
       createAppointment({ id: '10', propertyId: '1', completed: false }),
     ])
 
-    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
     const appointmentsStore = useAppointmentsStore()
 
@@ -115,12 +122,39 @@ describe('PropertyList', () => {
 
   it('opens the property creation dialog when the pinned create card is clicked', async () => {
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
-    const wrapper = mount(PropertyList, { global: { plugins: [i18n] } })
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
     const propertiesStore = usePropertiesStore()
 
     await wrapper.find('.property-create-card').trigger('click')
 
     expect(propertiesStore.isCreateDialogOpen).toBe(true)
+  })
+
+  it('deletes a property after confirmation and refreshes the appointments', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+    vi.mocked(appointmentService.fetchAppointments).mockClear()
+
+    await wrapper.find('.property-card__delete').trigger('click')
+    await flushPromises()
+
+    expect(propertyService.deleteProperty).toHaveBeenCalledWith('1')
+    expect(appointmentService.fetchAppointments).toHaveBeenCalled()
+    expect(wrapper.findAll('.property-card')).toHaveLength(0)
+  })
+
+  it('shows an error message when deleting a property fails', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    vi.mocked(propertyService.deleteProperty).mockRejectedValue(new Error('network error'))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    await wrapper.find('.property-card__delete').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.property-list__error').exists()).toBe(true)
   })
 })

@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePropertiesStore } from '@/stores/properties'
 import * as propertyService from '@/services/propertyService'
+import * as appointmentService from '@/services/appointmentService'
 import type { Property } from '@/types/property'
 
 vi.mock('@/services/propertyService')
+vi.mock('@/services/appointmentService')
 
 /** Builds a sample property for tests, with overridable fields. */
 function createProperty(overrides: Partial<Property> = {}): Property {
@@ -23,6 +25,8 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(propertyService.fetchProperties).mockReset()
   vi.mocked(propertyService.createProperty).mockReset()
+  vi.mocked(propertyService.deleteProperty).mockReset()
+  vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
 })
 
 describe('usePropertiesStore', () => {
@@ -149,5 +153,30 @@ describe('usePropertiesStore', () => {
     await staleFetch
 
     expect(store.properties.map((property) => property.id)).toEqual(['2'])
+  })
+
+  it('deletes a property, removes it from the list and refreshes the appointments', async () => {
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' }), createProperty({ id: '2', name: 'Aachener Hof' })]
+
+    const result = await store.deleteProperty('1')
+
+    expect(result).toBe(true)
+    expect(store.properties.map((property) => property.id)).toEqual(['2'])
+    expect(store.hasDeleteError).toBe(false)
+    expect(appointmentService.fetchAppointments).toHaveBeenCalled()
+  })
+
+  it('records a delete error and keeps the property when the backend request fails', async () => {
+    vi.mocked(propertyService.deleteProperty).mockRejectedValue(new Error('network error'))
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' })]
+
+    const result = await store.deleteProperty('1')
+
+    expect(result).toBe(false)
+    expect(store.properties).toEqual([createProperty({ id: '1' })])
+    expect(store.hasDeleteError).toBe(true)
   })
 })

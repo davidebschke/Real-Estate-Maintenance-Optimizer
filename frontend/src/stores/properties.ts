@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
+import { useAppointmentsStore } from '@/stores/appointments'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -8,6 +9,7 @@ export const usePropertiesStore = defineStore('properties', () => {
   const properties = ref<Property[]>([])
   const hasLoadError = ref(false)
   const hasCreateError = ref(false)
+  const hasDeleteError = ref(false)
   const isCreateDialogOpen = ref(false)
   /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
   let latestChangeToken = 0
@@ -40,6 +42,21 @@ export const usePropertiesStore = defineStore('properties', () => {
     }
   }
 
+  /** Deletes a property and every appointment referencing it, recording whether the request failed. */
+  async function deleteProperty(id: string): Promise<boolean> {
+    try {
+      await propertyService.deleteProperty(id)
+      latestChangeToken++
+      properties.value = properties.value.filter((property) => property.id !== id)
+      hasDeleteError.value = false
+      await useAppointmentsStore().fetchAppointments()
+      return true
+    } catch {
+      hasDeleteError.value = true
+      return false
+    }
+  }
+
   /** Opens the property creation form. */
   function openCreateDialog() {
     isCreateDialogOpen.value = true
@@ -54,9 +71,11 @@ export const usePropertiesStore = defineStore('properties', () => {
     properties,
     hasLoadError,
     hasCreateError,
+    hasDeleteError,
     isCreateDialogOpen,
     fetchProperties,
     createProperty,
+    deleteProperty,
     openCreateDialog,
     closeCreateDialog,
   }

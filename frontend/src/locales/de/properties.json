@@ -3,13 +3,21 @@
     "list": {
       "heading": "Objekte",
       "empty": "Es sind noch keine Objekte hinterlegt.",
-      "loadError": "Die Objekte konnten nicht geladen werden."
+      "loadError": "Die Objekte konnten nicht geladen werden.",
+      "deleteError": "Das Objekt konnte nicht gelöscht werden."
     },
     "card": {
       "openAppointments": "Offene Aufträge",
       "completedAppointments": "Erledigte Aufträge",
       "nextAppointment": "Nächster Termin: {title}",
-      "noNextAppointment": "Kein anstehender Termin"
+      "noNextAppointment": "Kein anstehender Termin",
+      "deleteButton": "Löschen",
+      "deleteConfirm": {
+        "header": "Objekt löschen",
+        "message": "Soll das Objekt „{name}“ wirklich gelöscht werden? Dabei werden auch alle zugehörigen Termine gelöscht.",
+        "confirm": "Löschen",
+        "cancel": "Abbrechen"
+      }
     },
     "create": {
       "cardLabel": "Neues Objekt anlegen",

@@ -17,3 +17,8 @@ export async function createProperty(payload: CreatePropertyPayload): Promise<Pr
   const { data } = await axios.post<PropertyResponseDto>(`${apiBaseUrl}/api/properties`, payload)
   return data
 }
+
+/** Deletes the property with the given id along with every appointment referencing it. */
+export async function deleteProperty(id: string): Promise<void> {
+  await axios.delete(`${apiBaseUrl}/api/properties/${id}`)
+}
