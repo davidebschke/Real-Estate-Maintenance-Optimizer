@@ -107,12 +107,12 @@
   color: var(--remo-calendar-muted-text-color, #8b8f96);
   cursor: pointer;
   display: flex;
-  font-size: 1.1rem;
-  height: 2.25rem;
+  font-size: 2.2rem;
+  height: 3.5rem;
   justify-content: center;
   position: absolute;
   right: 0.75rem;
-  width: 2.25rem;
+  width: 3.5rem;
 }
 
 .property-card__delete:hover {
