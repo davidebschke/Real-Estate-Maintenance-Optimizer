@@ -7,16 +7,44 @@ import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { i18n } from '@/i18n'
 import AppointmentFormDialog from '@/components/appointments/AppointmentFormDialog.vue'
+import { useAppointmentsStore } from '@/stores/appointments'
 import { useAuthStore } from '@/stores/auth'
 import * as appointmentService from '@/services/appointmentService'
 import * as propertyService from '@/services/propertyService'
+import type { Appointment } from '@/types/appointment'
 
 vi.mock('@/services/appointmentService')
 vi.mock('@/services/propertyService')
 
+/** Builds a sample existing appointment for edit-mode tests, with overridable fields. */
+function createExistingAppointment(overrides: Partial<Appointment> = {}): Appointment {
+  return {
+    id: '1',
+    seriesId: null,
+    title: 'Kellerreinigung Q3',
+    propertyId: '1',
+    propertyName: 'Wohnanlage Sonnenhof',
+    propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
+    description: 'Was ist zu tun?',
+    category: 'maintenance',
+    start: new Date(2026, 7, 11, 13, 0),
+    end: new Date(2026, 7, 11, 15, 0),
+    locked: false,
+    recurring: false,
+    recurrenceIntervalMonths: null,
+    materials: [],
+    history: [],
+    travelDistanceKm: 0,
+    actualEnd: null,
+    completed: false,
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(appointmentService.createAppointment).mockReset()
+  vi.mocked(appointmentService.updateAppointment).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
   vi.mocked(propertyService.fetchProperties).mockResolvedValue([
     {
@@ -42,6 +70,19 @@ async function mountDialog() {
   return wrapper
 }
 
+/** Mounts the dialog already in edit mode for the given appointment: the component only pre-fills its fields on the closed-to-open transition, as it does in the app when `openEditDialog` is called while the dialog is closed. */
+async function mountDialogForEdit(appointment: Appointment) {
+  useAppointmentsStore().openEditDialog(appointment)
+  const wrapper = mount(AppointmentFormDialog, {
+    props: { visible: false },
+    global: { plugins: [i18n, PrimeVue] },
+    attachTo: document.body,
+  })
+  await wrapper.setProps({ visible: true })
+  await flushPromises()
+  return wrapper
+}
+
 /** Finds an element inside the Dialog's teleported content by CSS selector. */
 function bodyField(selector: string): DOMWrapper<Element> {
   return new DOMWrapper(document.body.querySelector(selector) as Element)
@@ -52,6 +93,11 @@ type DialogWrapper = Awaited<ReturnType<typeof mountDialog>>
 /** Finds the submit button among every rendered PrimeVue Button by its label. */
 function submitButton(wrapper: DialogWrapper) {
   return wrapper.findAllComponents(Button).find((button) => button.text() === 'Termin anlegen')!
+}
+
+/** Finds the edit-mode save button among every rendered PrimeVue Button by its label. */
+function saveButton(wrapper: DialogWrapper) {
+  return wrapper.findAllComponents(Button).find((button) => button.text() === 'Speichern')!
 }
 
 /** Fills in the fields required for the form to be valid: title, property, day and time. */
@@ -137,6 +183,96 @@ describe('AppointmentFormDialog', () => {
     expect(document.body.textContent).toContain('bereits alle 3 zusätzlichen Termine angelegt')
     expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
     expect(appointmentService.createAppointment).not.toHaveBeenCalled()
+  })
+
+  it('pre-fills every field from the appointment being edited', async () => {
+    const appointment = createExistingAppointment({
+      title: 'Fensterreinigung',
+      description: 'Vorhandene Beschreibung',
+      locked: true,
+      recurring: true,
+      recurrenceIntervalMonths: 3,
+      materials: ['Fensterwischer'],
+    })
+
+    const wrapper = await mountDialogForEdit(appointment)
+
+    expect(bodyField('#appointment-title').element.getAttribute('value')).toBe('Fensterreinigung')
+    expect((bodyField('#appointment-description').element as HTMLTextAreaElement).value).toBe(
+      'Vorhandene Beschreibung',
+    )
+
+    const selects = wrapper.findAllComponents(Select)
+    expect(selects[0]!.props('modelValue')).toBe('1')
+    expect(selects[1]!.props('modelValue')).toBe('2026-08-11')
+    expect(selects[2]!.props('modelValue')).toBe('13:00')
+    expect(selects[3]!.props('modelValue')).toBe(120)
+    expect(selects[4]!.props('modelValue')).toBe(3)
+
+    const toggles = wrapper.findAllComponents(ToggleSwitch)
+    expect(toggles[0]!.props('modelValue')).toBe(true)
+    expect(toggles[1]!.props('modelValue')).toBe(true)
+
+    expect(document.body.textContent).toContain('Fensterwischer')
+    expect(bodyField('.p-dialog-title').text()).toBe('Termin bearbeiten')
+    const buttonLabels = wrapper.findAllComponents(Button).map((button) => button.text())
+    expect(buttonLabels).toContain('Speichern')
+    expect(buttonLabels).not.toContain('Termin anlegen')
+  })
+
+  it("adds the edited appointment's own start day as a selectable option when it falls outside the generated upcoming-day list", async () => {
+    const pastAppointment = createExistingAppointment({
+      start: new Date(2020, 0, 5, 9, 0),
+      end: new Date(2020, 0, 5, 10, 0),
+    })
+
+    const wrapper = await mountDialogForEdit(pastAppointment)
+
+    const daySelect = wrapper.findAllComponents(Select)[1]!
+    const dayOptionValues = (daySelect.props('options') as Array<{ value: string }>).map(
+      (option) => option.value,
+    )
+    expect(dayOptionValues).toContain('2020-01-05')
+    expect(daySelect.props('modelValue')).toBe('2020-01-05')
+  })
+
+  it('updates the appointment being edited instead of creating a new one', async () => {
+    const existing = createExistingAppointment()
+    vi.mocked(appointmentService.updateAppointment).mockResolvedValue(existing)
+    const wrapper = await mountDialogForEdit(existing)
+
+    await saveButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(appointmentService.updateAppointment).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ title: 'Kellerreinigung Q3', propertyId: '1' }),
+    )
+    expect(appointmentService.createAppointment).not.toHaveBeenCalled()
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
+  it('shows an update-specific error and keeps the dialog open when updating fails', async () => {
+    vi.mocked(appointmentService.updateAppointment).mockRejectedValue(new Error('network error'))
+    const wrapper = await mountDialogForEdit(createExistingAppointment())
+
+    await saveButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(bodyField('.appointment-form-dialog__error').text()).toBe(
+      'Der Termin konnte nicht aktualisiert werden.',
+    )
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents).toBeUndefined()
+  })
+
+  it('still lets a demo account without remaining creations edit an existing appointment', async () => {
+    logInDemoAccount(0)
+    const wrapper = await mountDialogForEdit(createExistingAppointment())
+
+    expect(saveButton(wrapper).attributes('disabled')).toBeUndefined()
+    expect(document.body.textContent).not.toContain('zusätzlichen Termine')
   })
 })
 

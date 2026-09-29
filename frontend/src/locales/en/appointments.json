@@ -45,8 +45,14 @@
       "submit": "Create appointment",
       "cancel": "Cancel"
     },
+    "edit": {
+      "title": "Edit appointment",
+      "submit": "Save",
+      "error": "The appointment could not be updated."
+    },
     "detail": {
       "back": "‹ Back",
+      "editButton": "Edit appointment",
       "lockedBadge": "not movable",
       "recurringBadge": "Standing order · every {months} months",
       "completedBadge": "Completed · {time}",

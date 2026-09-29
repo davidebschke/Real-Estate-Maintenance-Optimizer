@@ -130,6 +130,34 @@ public class Appointment {
         history.add(historyEntry);
     }
 
+    /**
+     * Updates this appointment's title, property, schedule, locked/recurring state, description and materials, and appends the given history entry.
+     */
+    public void updateDetails(
+            String newTitle,
+            Property newProperty,
+            String newDescription,
+            LocalDateTime newStart,
+            LocalDateTime newEnd,
+            boolean newLocked,
+            boolean newRecurring,
+            Integer newRecurrenceIntervalMonths,
+            String newSeriesId,
+            List<String> newMaterials,
+            HistoryEntry historyEntry) {
+        this.title = newTitle;
+        this.property = newProperty;
+        this.description = newDescription;
+        this.start = newStart;
+        this.end = newEnd;
+        this.locked = newLocked;
+        this.recurring = newRecurring;
+        this.recurrenceIntervalMonths = newRecurrenceIntervalMonths;
+        this.seriesId = newSeriesId;
+        this.materials = new ArrayList<>(newMaterials);
+        history.add(historyEntry);
+    }
+
     public String id() {
         return id;
     }

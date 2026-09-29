@@ -8,6 +8,7 @@ import {
   fetchAppointments,
   moveAppointment,
   reopenAppointment,
+  updateAppointment,
 } from '@/services/appointmentService'
 import type { AppointmentResponseDto } from '@/services/appointmentService'
 
@@ -39,6 +40,7 @@ function createDto(overrides: Partial<AppointmentResponseDto> = {}): Appointment
 afterEach(() => {
   vi.mocked(axios.get).mockReset()
   vi.mocked(axios.post).mockReset()
+  vi.mocked(axios.put).mockReset()
   vi.mocked(axios.patch).mockReset()
   vi.mocked(axios.delete).mockReset()
 })
@@ -90,6 +92,28 @@ describe('appointmentService', () => {
       expect.stringContaining('/api/appointments'),
       expect.objectContaining({ start: '2026-08-11T13:00:00' }),
     )
+  })
+
+  it('updates an appointment, sending the start as a local date-time string', async () => {
+    vi.mocked(axios.put).mockResolvedValue({ data: createDto({ title: 'Fensterreinigung' }) })
+
+    const appointment = await updateAppointment('1', {
+      title: 'Fensterreinigung',
+      propertyId: 'property-1',
+      description: 'Neue Beschreibung',
+      start: new Date(2026, 7, 11, 13, 0),
+      durationMinutes: 90,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: ['Fensterwischer'],
+    })
+
+    expect(axios.put).toHaveBeenCalledWith(
+      expect.stringContaining('/api/appointments/1'),
+      expect.objectContaining({ start: '2026-08-11T13:00:00', title: 'Fensterreinigung' }),
+    )
+    expect(appointment.title).toBe('Fensterreinigung')
   })
 
   it('moves an appointment to a new start and duration', async () => {

@@ -84,6 +84,8 @@ class AppointmentServiceTest {
                 .isInstanceOf(AppointmentNotFoundException.class);
         assertThatThrownBy(() -> service.move(otherOwner.id(), created.id(), moveRequest))
                 .isInstanceOf(AppointmentNotFoundException.class);
+        assertThatThrownBy(() -> service.update(otherOwner.id(), created.id(), updateRequest(created, "property-1")))
+                .isInstanceOf(AppointmentNotFoundException.class);
         assertThatThrownBy(() -> service.complete(otherOwner.id(), created.id(), null))
                 .isInstanceOf(AppointmentNotFoundException.class);
         assertThatThrownBy(() -> service.reopen(otherOwner.id(), created.id()))
@@ -211,6 +213,111 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void updatingAnAppointmentChangesTitlePropertyScheduleDescriptionAndMaterials() {
+        propertyRepository.save(new Property("property-2", owner.id(), "Nebengebäude", "Nebenstr. 2", "pi-building"));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        LocalDateTime newStart = created.start().plusDays(2);
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-2", "Neue Beschreibung", newStart, 90, false, false, null, List.of("Fensterwischer"));
+
+        AppointmentResponse updated = service.update(owner.id(), created.id(), request);
+
+        assertThat(updated.title()).isEqualTo("Fensterreinigung");
+        assertThat(updated.propertyId()).isEqualTo("property-2");
+        assertThat(updated.description()).isEqualTo("Neue Beschreibung");
+        assertThat(updated.start()).isEqualTo(newStart);
+        assertThat(updated.end()).isEqualTo(newStart.plusMinutes(90));
+        assertThat(updated.materials()).containsExactly("Fensterwischer");
+        assertThat(updated.history()).hasSize(2);
+        assertThat(service.getById(owner.id(), created.id())).isEqualTo(updated);
+    }
+
+    @Test
+    void updatingAnAppointmentForAnUnknownPropertyIsRejected() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+
+        assertThatThrownBy(() -> service.update(owner.id(), created.id(), updateRequest(created, "unknown-property")))
+                .isInstanceOf(PropertyNotFoundException.class);
+        assertThat(service.getById(owner.id(), created.id())).isEqualTo(created);
+    }
+
+    @Test
+    void updatingAnUnknownAppointmentIsRejected() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+
+        assertThatThrownBy(() -> service.update(owner.id(), "unknown-appointment", updateRequest(created, "property-1")))
+                .isInstanceOf(AppointmentNotFoundException.class);
+    }
+
+    @Test
+    void updatingALockedAppointmentWithoutChangingItsScheduleIsAllowed() {
+        CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin",
+                LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of());
+        AppointmentResponse created = service.create(owner.id(), lockedRequest);
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                "TÜV-Termin (aktualisiert)", "property-1", "Pflichttermin", created.start(), 60, true, false, null, List.of());
+
+        AppointmentResponse updated = service.update(owner.id(), created.id(), request);
+
+        assertThat(updated.title()).isEqualTo("TÜV-Termin (aktualisiert)");
+        assertThat(updated.start()).isEqualTo(created.start());
+    }
+
+    @Test
+    void updatingALockedAppointmentsScheduleIsRejected() {
+        CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin",
+                LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of());
+        AppointmentResponse created = service.create(owner.id(), lockedRequest);
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin", created.start().plusDays(1), 60, true, false, null, List.of());
+
+        assertThatThrownBy(() -> service.update(owner.id(), created.id(), request)).isInstanceOf(AppointmentLockedException.class);
+    }
+
+    @Test
+    void updatingAnAppointmentCanUnlockItAndThenChangeItsSchedule() {
+        CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin",
+                LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of());
+        AppointmentResponse created = service.create(owner.id(), lockedRequest);
+        LocalDateTime newStart = created.start().plusDays(1);
+        CreateAppointmentRequest unlockRequest = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin", created.start(), 60, false, false, null, List.of());
+        service.update(owner.id(), created.id(), unlockRequest);
+
+        CreateAppointmentRequest rescheduleRequest = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "Pflichttermin", newStart, 60, false, false, null, List.of());
+        AppointmentResponse updated = service.update(owner.id(), created.id(), rescheduleRequest);
+
+        assertThat(updated.locked()).isFalse();
+        assertThat(updated.start()).isEqualTo(newStart);
+    }
+
+    @Test
+    void updatingANonRecurringAppointmentToRecurringAssignsItANewSeriesId() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                created.title(), "property-1", created.description(), created.start(), 60, false, true, 3, List.of());
+
+        AppointmentResponse updated = service.update(owner.id(), created.id(), request);
+
+        assertThat(updated.recurring()).isTrue();
+        assertThat(updated.seriesId()).isNotNull();
+        assertThat(updated.recurrenceIntervalMonths()).isEqualTo(3);
+    }
+
+    @Test
+    void togglingRecurringOnWithoutARecurrenceIntervalIsRejected() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                created.title(), "property-1", created.description(), created.start(), 60, false, true, null, List.of());
+
+        assertThatThrownBy(() -> service.update(owner.id(), created.id(), request)).isInstanceOf(InvalidRecurrenceException.class);
+    }
+
+    @Test
     void completingAnAppointmentWithoutAnExplicitActualEndFallsBackToNow() {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
 
@@ -272,6 +379,11 @@ class AppointmentServiceTest {
 
     private CreateAppointmentRequest createRequest(boolean recurring, Integer recurrenceIntervalMonths) {
         return createRequestFor("property-1", recurring, recurrenceIntervalMonths);
+    }
+
+    private CreateAppointmentRequest updateRequest(AppointmentResponse appointment, String propertyId) {
+        return new CreateAppointmentRequest(
+                appointment.title(), propertyId, appointment.description(), appointment.start(), 60, false, false, null, List.of());
     }
 
     private CreateAppointmentRequest createRequestFor(String propertyId, boolean recurring, Integer recurrenceIntervalMonths) {

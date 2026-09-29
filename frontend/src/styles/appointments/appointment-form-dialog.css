@@ -98,6 +98,12 @@
   max-width: 12rem;
 }
 
+.appointment-form-dialog__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .appointment-form-dialog__actions {
   align-items: center;
   display: flex;

@@ -45,8 +45,14 @@
       "submit": "Termin anlegen",
       "cancel": "Abbrechen"
     },
+    "edit": {
+      "title": "Termin bearbeiten",
+      "submit": "Speichern",
+      "error": "Der Termin konnte nicht aktualisiert werden."
+    },
     "detail": {
       "back": "‹ Zurück",
+      "editButton": "Termin bearbeiten",
       "lockedBadge": "unverschiebbar",
       "recurringBadge": "Dauerauftrag · alle {months} Monate",
       "completedBadge": "Erledigt · {time} Uhr",

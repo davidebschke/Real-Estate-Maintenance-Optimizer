@@ -19,8 +19,11 @@ import {
   DURATION_OPTIONS,
   RECURRENCE_INTERVAL_OPTIONS,
   combineDayAndTime,
+  formatDayOption,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
+  toIsoDate,
+  toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
 
 const TITLE_MAX_LENGTH = 50
@@ -34,8 +37,22 @@ const store = useAppointmentsStore()
 const propertiesStore = usePropertiesStore()
 const { isExhausted: isQuotaExhausted } = useDemoQuota('appointments')
 
+/** Whether the dialog is currently editing an existing appointment rather than creating a new one. */
+const isEditMode = computed(() => store.editingAppointment !== null)
+
+/** Whether a demo account already used up its appointment creations, which blocks creating but never editing. */
+const isBlockedByQuota = computed(() => !isEditMode.value && isQuotaExhausted.value)
+
 const timeOptions = generateTimeSlotOptions()
-const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value))
+const dayOptions = computed(() => {
+  const upcomingOptions = generateUpcomingDayOptions(new Date(), currentLocale.value)
+  const editingStart = store.editingAppointment?.start
+  if (!editingStart) return upcomingOptions
+
+  const editingDayValue = toIsoDate(editingStart)
+  if (upcomingOptions.some((option) => option.value === editingDayValue)) return upcomingOptions
+  return [formatDayOption(editingStart, currentLocale.value), ...upcomingOptions]
+})
 const durationOptions = computed(() =>
   DURATION_OPTIONS.map((option) => ({
     ...option,
@@ -77,8 +94,27 @@ watch(visible, (isVisible) => {
   if (isVisible) resetForm()
 })
 
-/** Resets every field to its default, called each time the dialog is opened. */
+/** Fills every field from the appointment being edited. */
+function fillFormFromEditingAppointment(appointment: NonNullable<typeof store.editingAppointment>) {
+  form.title = appointment.title
+  form.propertyId = appointment.propertyId
+  form.description = appointment.description
+  form.day = toIsoDate(appointment.start)
+  form.time = toTimeString(appointment.start)
+  form.durationMinutes = Math.round((appointment.end.getTime() - appointment.start.getTime()) / 60000)
+  form.locked = appointment.locked
+  form.recurring = appointment.recurring
+  form.recurrenceIntervalMonths = appointment.recurrenceIntervalMonths
+  form.materials = [...appointment.materials]
+}
+
+/** Resets every field to its default, or fills them from the appointment being edited, called each time the dialog is opened. */
 function resetForm() {
+  if (store.editingAppointment) {
+    fillFormFromEditingAppointment(store.editingAppointment)
+    return
+  }
+
   form.title = ''
   form.propertyId = null
   form.description = ''
@@ -91,14 +127,14 @@ function resetForm() {
   form.materials = []
 }
 
-/** Creates the appointment from the current form state, then closes the dialog. */
+/** Creates or updates the appointment from the current form state, then closes the dialog on success. */
 async function submit() {
-  if (!isValid.value || isQuotaExhausted.value || form.propertyId === null) return
+  if (!isValid.value || isBlockedByQuota.value || form.propertyId === null) return
 
   const property = propertiesStore.properties.find((candidate) => candidate.id === form.propertyId)
   if (!property) return
 
-  await store.createAppointment({
+  const payload = {
     title: form.title,
     propertyId: property.id,
     description: form.description,
@@ -108,8 +144,15 @@ async function submit() {
     recurring: form.recurring,
     recurrenceIntervalMonths: form.recurring ? form.recurrenceIntervalMonths : null,
     materials: form.materials,
-  })
+  }
 
+  if (store.editingAppointment) {
+    const succeeded = await store.updateAppointment(store.editingAppointment.id, payload)
+    if (succeeded) visible.value = false
+    return
+  }
+
+  await store.createAppointment(payload)
   visible.value = false
 }
 
@@ -123,7 +166,7 @@ function cancel() {
   <Dialog
     v-model:visible="visible"
     modal
-    :header="t('appointments.form.title')"
+    :header="isEditMode ? t('appointments.edit.title') : t('appointments.form.title')"
     class="appointment-form-dialog"
   >
     <div class="appointment-form-dialog__grid">
@@ -208,14 +251,18 @@ function cancel() {
 
     <AppointmentMaterialInput v-model="form.materials" />
 
-    <AppointmentAiSuggestionBanner />
+    <AppointmentAiSuggestionBanner v-if="!isEditMode" />
 
-    <DemoQuotaHint resource="appointments" />
+    <p v-if="isEditMode && store.hasUpdateError" class="appointment-form-dialog__error">
+      {{ t('appointments.edit.error') }}
+    </p>
+
+    <DemoQuotaHint v-if="!isEditMode" resource="appointments" />
 
     <div class="appointment-form-dialog__actions">
       <Button
-        :label="t('appointments.form.submit')"
-        :disabled="!isValid || isQuotaExhausted"
+        :label="isEditMode ? t('appointments.edit.submit') : t('appointments.form.submit')"
+        :disabled="!isValid || isBlockedByQuota"
         @click="submit"
       />
       <button type="button" class="appointment-form-dialog__cancel" @click="cancel">

@@ -147,6 +147,47 @@ public class AppointmentService {
     }
 
     /**
+     * Updates an appointment's title, property, schedule, locked/recurring state, description and materials, rejecting a schedule change on a locked appointment.
+     */
+    public AppointmentResponse update(String ownerId, String id, CreateAppointmentRequest request) {
+        if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
+            throw new InvalidRecurrenceException("recurrenceIntervalRequired");
+        }
+
+        Appointment appointment = loadOrThrow(ownerId, id);
+        Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
+                .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
+
+        LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
+        boolean scheduleChanged = !newStart.equals(appointment.start()) || !newEnd.equals(appointment.end());
+        if (scheduleChanged && appointment.locked()) {
+            throw new AppointmentLockedException(id);
+        }
+
+        String seriesId = request.recurring()
+                ? (appointment.seriesId() != null ? appointment.seriesId() : UUID.randomUUID().toString())
+                : appointment.seriesId();
+        List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
+        String description = request.description() != null ? request.description() : "";
+        HistoryEntry editEntry = new HistoryEntry(currentInstant(), HistoryEventType.EDITED, List.of());
+
+        appointment.updateDetails(
+                request.title(),
+                property,
+                description,
+                newStart,
+                newEnd,
+                request.locked(),
+                request.recurring(),
+                request.recurrenceIntervalMonths(),
+                seriesId,
+                materials,
+                editEntry);
+        return toResponse(appointment);
+    }
+
+    /**
      * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null.
      */
     public AppointmentResponse complete(String ownerId, String id, LocalDateTime actualEnd) {
@@ -225,6 +266,7 @@ public class AppointmentService {
             case MOVED -> "appointment.history.moved";
             case COMPLETED -> "appointment.history.completed";
             case REOPENED -> "appointment.history.reopened";
+            case EDITED -> "appointment.history.edited";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
     }

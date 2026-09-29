@@ -101,6 +101,12 @@ function close() {
   visible.value = false
 }
 
+/** Opens the shared appointment form dialog in edit mode, pre-filled with this appointment's current details. */
+function edit() {
+  if (!appointment.value) return
+  store.openEditDialog(appointment.value)
+}
+
 /** Switches the completion action into edit mode, pre-filled with the current date and time. */
 function startCompleting() {
   const now = new Date()
@@ -254,6 +260,13 @@ function requestDelete() {
       </section>
 
       <div class="appointment-detail-drawer__actions">
+        <Button
+          class="appointment-detail-drawer__edit"
+          :label="t('appointments.detail.editButton')"
+          severity="secondary"
+          size="small"
+          @click="edit"
+        />
         <template v-if="!appointment.completed">
           <Button
             v-if="!isCompleting"
