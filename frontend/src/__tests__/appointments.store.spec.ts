@@ -130,6 +130,15 @@ describe('useAppointmentsStore', () => {
     expect(store.appointments).toEqual([createAppointment()])
   })
 
+  it('clears a stale update error when opening the edit dialog for a (possibly different) appointment', () => {
+    const store = useAppointmentsStore()
+    store.hasUpdateError = true
+
+    store.openEditDialog(createAppointment({ id: '2' }))
+
+    expect(store.hasUpdateError).toBe(false)
+  })
+
   it('opens and closes the edit dialog, and reflects both dialog modes through isFormDialogOpen', () => {
     const appointment = createAppointment()
     const store = useAppointmentsStore()

@@ -85,8 +85,9 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     isCreateDialogOpen.value = false
   }
 
-  /** Opens the appointment form pre-filled for editing the given appointment. */
+  /** Opens the appointment form pre-filled for editing the given appointment, clearing a previous update error so it never carries over to a different appointment. */
   function openEditDialog(appointment: Appointment) {
+    hasUpdateError.value = false
     editingAppointment.value = appointment
   }
 

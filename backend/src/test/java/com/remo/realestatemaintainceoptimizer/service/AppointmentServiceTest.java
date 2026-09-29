@@ -296,16 +296,36 @@ class AppointmentServiceTest {
     }
 
     @Test
-    void updatingANonRecurringAppointmentToRecurringAssignsItANewSeriesId() {
+    void updatingANonRecurringAppointmentToRecurringAssignsItANewSeriesIdAndMaterializesTheRemainingOccurrences() {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
         CreateAppointmentRequest request = new CreateAppointmentRequest(
                 created.title(), "property-1", created.description(), created.start(), 60, false, true, 3, List.of());
 
         AppointmentResponse updated = service.update(owner.id(), created.id(), request);
+        List<AppointmentResponse> all = service.listAll(owner.id());
 
         assertThat(updated.recurring()).isTrue();
         assertThat(updated.seriesId()).isNotNull();
         assertThat(updated.recurrenceIntervalMonths()).isEqualTo(3);
+        assertThat(all).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES);
+        assertThat(all).allMatch(response -> updated.seriesId().equals(response.seriesId()));
+        assertThat(all.get(1).start()).isEqualTo(updated.start().plusMonths(3));
+    }
+
+    @Test
+    void updatingARecurringAppointmentToNonRecurringDetachesItFromItsSeriesWithoutTouchingSiblings() {
+        AppointmentResponse firstOccurrence = service.create(owner.id(), createRequest(true, 3));
+        AppointmentResponse secondOccurrence = service.listAll(owner.id()).get(1);
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                secondOccurrence.title(), "property-1", secondOccurrence.description(),
+                secondOccurrence.start(), 60, false, false, null, List.of());
+
+        AppointmentResponse detached = service.update(owner.id(), secondOccurrence.id(), request);
+        service.delete(owner.id(), firstOccurrence.id(), "series");
+
+        assertThat(detached.recurring()).isFalse();
+        assertThat(detached.seriesId()).isNull();
+        assertThat(service.listAll(owner.id())).containsExactly(detached);
     }
 
     @Test

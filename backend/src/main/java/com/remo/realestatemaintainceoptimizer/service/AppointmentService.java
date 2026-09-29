@@ -91,8 +91,8 @@ public class AppointmentService {
                 .orElseThrow(() -> new AccountNotFoundException(ownerId))
                 .consumeAppointmentCreation();
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
-        List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
-        String description = request.description() != null ? request.description() : "";
+        List<String> materials = normalizeMaterials(request.materials());
+        String description = normalizeDescription(request.description());
         int occurrenceCount = request.recurring() ? RECURRENCE_HORIZON_OCCURRENCES : 1;
 
         Appointment firstOccurrence = null;
@@ -147,7 +147,7 @@ public class AppointmentService {
     }
 
     /**
-     * Updates an appointment's title, property, schedule, locked/recurring state, description and materials, rejecting a schedule change on a locked appointment.
+     * Updates an appointment's title, property, schedule, locked/recurring state, description and materials, rejecting a schedule change on a locked appointment; turning "recurring" on for a not-yet-recurring appointment additionally materializes the same horizon of future occurrences a newly created recurring appointment would get.
      */
     public AppointmentResponse update(String ownerId, String id, CreateAppointmentRequest request) {
         if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
@@ -165,11 +165,10 @@ public class AppointmentService {
             throw new AppointmentLockedException(id);
         }
 
-        String seriesId = request.recurring()
-                ? (appointment.seriesId() != null ? appointment.seriesId() : UUID.randomUUID().toString())
-                : appointment.seriesId();
-        List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
-        String description = request.description() != null ? request.description() : "";
+        boolean startsNewSeries = request.recurring() && !appointment.recurring();
+        String seriesId = request.recurring() ? (startsNewSeries ? UUID.randomUUID().toString() : appointment.seriesId()) : null;
+        List<String> materials = normalizeMaterials(request.materials());
+        String description = normalizeDescription(request.description());
         HistoryEntry editEntry = new HistoryEntry(currentInstant(), HistoryEventType.EDITED, List.of());
 
         appointment.updateDetails(
@@ -184,7 +183,48 @@ public class AppointmentService {
                 seriesId,
                 materials,
                 editEntry);
+
+        if (startsNewSeries) {
+            materializeFutureOccurrences(
+                    seriesId, request.title(), property, description, newStart, request.durationMinutes(),
+                    request.locked(), request.recurrenceIntervalMonths(), materials);
+        }
+
         return toResponse(appointment);
+    }
+
+    /**
+     * Creates the occurrences following the given first occurrence's start, sharing its seriesId, mirroring the horizon a newly created recurring appointment materializes.
+     */
+    private void materializeFutureOccurrences(
+            String seriesId,
+            String title,
+            Property property,
+            String description,
+            LocalDateTime firstStart,
+            int durationMinutes,
+            boolean locked,
+            int recurrenceIntervalMonths,
+            List<String> materials) {
+        for (int occurrenceIndex = 1; occurrenceIndex < RECURRENCE_HORIZON_OCCURRENCES; occurrenceIndex++) {
+            LocalDateTime occurrenceStart = firstStart.plusMonths((long) recurrenceIntervalMonths * occurrenceIndex);
+            LocalDateTime occurrenceEnd = occurrenceStart.plusMinutes(durationMinutes);
+
+            repository.save(new Appointment(
+                    UUID.randomUUID().toString(),
+                    seriesId,
+                    title,
+                    property,
+                    description,
+                    occurrenceStart,
+                    occurrenceEnd,
+                    locked,
+                    true,
+                    recurrenceIntervalMonths,
+                    materials,
+                    List.of(new HistoryEntry(currentInstant(), HistoryEventType.CREATED, List.of())),
+                    null));
+        }
     }
 
     /**
@@ -229,6 +269,14 @@ public class AppointmentService {
         repository.findBySeriesIdAndPropertyOwnerId(appointment.seriesId(), ownerId).stream()
                 .filter(candidate -> !candidate.start().isBefore(appointment.start()))
                 .forEach(repository::delete);
+    }
+
+    private static List<String> normalizeMaterials(List<String> materials) {
+        return materials != null ? List.copyOf(materials) : List.of();
+    }
+
+    private static String normalizeDescription(String description) {
+        return description != null ? description : "";
     }
 
     private Appointment loadOrThrow(String ownerId, String id) {

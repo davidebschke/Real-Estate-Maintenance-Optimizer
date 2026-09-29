@@ -101,10 +101,11 @@ function close() {
   visible.value = false
 }
 
-/** Opens the shared appointment form dialog in edit mode, pre-filled with this appointment's current details. */
+/** Opens the shared appointment form dialog in edit mode, pre-filled with this appointment's current details, and closes this detail view. */
 function edit() {
   if (!appointment.value) return
   store.openEditDialog(appointment.value)
+  close()
 }
 
 /** Switches the completion action into edit mode, pre-filled with the current date and time. */
