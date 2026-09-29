@@ -288,4 +288,32 @@ describe('usePropertiesStore', () => {
     expect(store.hasCreateError).toBe(false)
     expect(store.isFormDialogOpen).toBe(false)
   })
+
+  it('does not add a property to the list when its creation is answered only after an account change', async () => {
+    let resolveCreate: (property: Property) => void = () => {}
+    vi.mocked(propertyService.createProperty).mockReturnValue(new Promise((resolve) => (resolveCreate = resolve)))
+    const store = usePropertiesStore()
+    const pendingCreate = store.createProperty({ name: 'Objekt', address: 'Str. 1', latitude: null, longitude: null })
+
+    store.reset()
+    resolveCreate(createProperty({ id: 'from-previous-account' }))
+
+    expect(await pendingCreate).toBe(false)
+    expect(store.properties).toEqual([])
+  })
+
+  it('ignores an update or delete answered only after an account change', async () => {
+    vi.mocked(propertyService.updateProperty).mockResolvedValue(createProperty({ name: 'Umbenannt' }))
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue()
+    const store = usePropertiesStore()
+    const pendingUpdate = store.updateProperty('1', { name: 'Umbenannt', address: 'Str. 1', latitude: null, longitude: null })
+    const pendingDelete = store.deleteProperty('1')
+
+    store.reset()
+    store.properties = [createProperty()]
+
+    expect(await pendingUpdate).toBe(false)
+    expect(await pendingDelete).toBe(false)
+    expect(store.properties).toEqual([createProperty()])
+  })
 })

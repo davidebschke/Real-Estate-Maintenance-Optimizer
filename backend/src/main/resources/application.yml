@@ -45,7 +45,7 @@ remo:
     cookie-secure: ${REMO_AUTH_COOKIE_SECURE:true}
     # Sets the password of the "debschke" account on startup while it has none yet; never logged or stored in plain text
     initial-user-password: ${REMO_AUTH_INITIAL_USER_PASSWORD:}
-    max-failed-logins-per-username: 5
+    max-failed-logins-per-username-and-client: 5
     max-failed-logins-per-client: 20
     failed-login-window: 15m
     max-demo-accounts-per-client: ${REMO_AUTH_MAX_DEMO_ACCOUNTS_PER_CLIENT:10}

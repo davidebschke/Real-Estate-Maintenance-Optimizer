@@ -25,28 +25,32 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SlidingWindowRateLimiter failedLoginsPerUsername;
+    private final SlidingWindowRateLimiter failedLoginsPerUsernameAndClient;
     private final SlidingWindowRateLimiter failedLoginsPerClient;
     private final String unmatchableHash;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthProperties authProperties) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.failedLoginsPerUsername = new SlidingWindowRateLimiter(
-                authProperties.maxFailedLoginsPerUsername(), authProperties.failedLoginWindow(), Clock.systemUTC());
+        this.failedLoginsPerUsernameAndClient = new SlidingWindowRateLimiter(
+                authProperties.maxFailedLoginsPerUsernameAndClient(), authProperties.failedLoginWindow(), Clock.systemUTC());
         this.failedLoginsPerClient = new SlidingWindowRateLimiter(
                 authProperties.maxFailedLoginsPerClient(), authProperties.failedLoginWindow(), Clock.systemUTC());
         this.unmatchableHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     /**
-     * Returns the account matching the given credentials, rejecting too many recent failures per username or client
-     * address and taking the same time whether or not the username exists.
+     * Returns the account matching the given credentials, taking the same time whether or not the username exists.
+     * Every attempt is reserved against the limits before the password is checked, so parallel guesses cannot slip
+     * through; the per-username limit is keyed by client address too, so nobody can lock another client out of an account.
      */
     @Transactional(readOnly = true)
     public User authenticate(String username, String password, String clientAddress) {
         String normalizedUsername = User.normalizeUsername(username);
-        if (failedLoginsPerUsername.isExhausted(normalizedUsername) || failedLoginsPerClient.isExhausted(clientAddress)) {
+        String usernameAtClient = normalizedUsername + "@" + clientAddress;
+        boolean usernameAttemptAllowed = failedLoginsPerUsernameAndClient.tryAcquire(usernameAtClient);
+        boolean clientAttemptAllowed = failedLoginsPerClient.tryAcquire(clientAddress);
+        if (!usernameAttemptAllowed || !clientAttemptAllowed) {
             throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_LOGIN_ATTEMPTS);
         }
 
@@ -56,12 +60,11 @@ public class AuthService {
         boolean passwordMatches = passwordEncoder.matches(password, storedHash != null ? storedHash : unmatchableHash);
 
         if (storedHash == null || !passwordMatches) {
-            failedLoginsPerUsername.recordAttempt(normalizedUsername);
-            failedLoginsPerClient.recordAttempt(clientAddress);
             throw new InvalidCredentialsException();
         }
 
-        failedLoginsPerUsername.reset(normalizedUsername);
+        failedLoginsPerUsernameAndClient.reset(usernameAtClient);
+        failedLoginsPerClient.releaseLatest(clientAddress);
         return account.get();
     }
 

@@ -29,7 +29,7 @@ class AuthPropertiesTest {
 
     @Test
     void bindsTheRateLimits() {
-        assertThat(authProperties.maxFailedLoginsPerUsername()).isEqualTo(5);
+        assertThat(authProperties.maxFailedLoginsPerUsernameAndClient()).isEqualTo(5);
         assertThat(authProperties.maxFailedLoginsPerClient()).isEqualTo(20);
         assertThat(authProperties.failedLoginWindow()).isEqualTo(Duration.ofMinutes(15));
         assertThat(authProperties.maxDemoAccountsPerClient()).isEqualTo(10);

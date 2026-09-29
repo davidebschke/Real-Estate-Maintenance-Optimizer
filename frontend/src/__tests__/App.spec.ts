@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, expect } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { createMemoryHistory, createRouter } from 'vue-router'
+import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import DemoAccountBanner from '@/components/auth/DemoAccountBanner.vue'
@@ -46,13 +46,15 @@ describe('App', () => {
   it('shows nothing of the app shell on the login screen', async () => {
     const wrapper = await mountAppAt('/login')
 
+    expect(wrapper.findComponent(RouterView).exists()).toBe(true)
     expect(wrapper.findComponent(AppHeader).exists()).toBe(false)
     expect(wrapper.findComponent(AppFooter).exists()).toBe(false)
   })
 
-  it('shows nothing of the app shell without a session, even outside the login screen', async () => {
+  it('renders neither the app shell nor the protected page without a session until the guard redirected', async () => {
     const wrapper = await mountAppAt('/calendar')
 
     expect(wrapper.findComponent(AppHeader).exists()).toBe(false)
+    expect(wrapper.findComponent(RouterView).exists()).toBe(false)
   })
 })

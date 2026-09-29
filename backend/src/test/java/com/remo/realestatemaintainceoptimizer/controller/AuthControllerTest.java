@@ -102,11 +102,12 @@ class AuthControllerTest {
 
     @Test
     void tooManyFailedLoginsReturnALocalizedTooManyRequests() throws Exception {
+        String clientAddress = TestAccounts.uniqueClientAddress();
         for (int attempt = 0; attempt < 5; attempt++) {
-            login(account.username(), "wrong password").andExpect(status().isUnauthorized());
+            login(account.username(), "wrong password", "en", clientAddress).andExpect(status().isUnauthorized());
         }
 
-        login(account.username(), PASSWORD, "en")
+        login(account.username(), PASSWORD, "en", clientAddress)
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.message", equalTo(
                         "Too many failed login attempts. Please try again in a few minutes.")));
@@ -197,12 +198,16 @@ class AuthControllerTest {
         return login(username, password, "en");
     }
 
-    private ResultActions login(String username, String password, String language)
+    private ResultActions login(String username, String password, String language) throws Exception {
+        return login(username, password, language, TestAccounts.uniqueClientAddress());
+    }
+
+    private ResultActions login(String username, String password, String language, String clientAddress)
             throws Exception {
         String requestBody = "{\"username\": \"" + username + "\", \"password\": \"" + password + "\"}";
         return mockMvc.perform(post("/api/auth/login")
                 .with(TestAccounts.withCsrfToken())
-                .with(TestAccounts.fromClient(TestAccounts.uniqueClientAddress()))
+                .with(TestAccounts.fromClient(clientAddress))
                 .header("Accept-Language", language)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));

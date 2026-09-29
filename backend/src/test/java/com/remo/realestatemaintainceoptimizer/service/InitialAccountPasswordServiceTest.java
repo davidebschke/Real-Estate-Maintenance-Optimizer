@@ -73,6 +73,25 @@ class InitialAccountPasswordServiceTest {
     }
 
     @Test
+    void ignoresAPasswordLongerThanBcryptSupportsInsteadOfFailingTheStartup() {
+        String tooLongPassword = "ä".repeat(37);
+
+        boolean applied = service.applyInitialPassword(InitialAccountPasswordService.INITIAL_USERNAME, tooLongPassword);
+
+        assertThat(applied).isFalse();
+        assertThat(loadInitialAccount().passwordHash()).isNull();
+    }
+
+    @Test
+    void acceptsAPasswordOfExactlyTheMaximumBcryptLength() {
+        String maximumLengthPassword = "a".repeat(InitialAccountPasswordService.MAX_PASSWORD_BYTES);
+
+        assertThat(service.applyInitialPassword(InitialAccountPasswordService.INITIAL_USERNAME, maximumLengthPassword))
+                .isTrue();
+        assertThat(passwordEncoder.matches(maximumLengthPassword, loadInitialAccount().passwordHash())).isTrue();
+    }
+
+    @Test
     void ignoresAnUnknownAccount() {
         assertThat(service.applyInitialPassword("unknown", PASSWORD)).isFalse();
     }

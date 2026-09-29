@@ -13,6 +13,10 @@ import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededExcepti
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * Verifies password verification, brute-force limits per username and per client, account lookup and logout against a real PostgreSQL database.
+ * Verifies password verification, brute-force limits per username and client and per client (also under parallel attempts), account lookup and logout against a real PostgreSQL database.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -96,16 +100,57 @@ class AuthServiceTest {
     }
 
     @Test
-    void locksAUsernameAfterTooManyFailedAttemptsEvenForTheCorrectPasswordAndFromOtherClients() {
+    void locksAUsernameForAClientAfterTooManyFailedAttemptsEvenForTheCorrectPassword() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
         for (int attempt = 0; attempt < 5; attempt++) {
-            String clientAddress = TestAccounts.uniqueClientAddress();
             assertThatThrownBy(() -> service.authenticate(account.username(), "wrong", clientAddress))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
 
-        assertThatThrownBy(() -> service.authenticate(account.username(), PASSWORD, TestAccounts.uniqueClientAddress()))
+        assertThatThrownBy(() -> service.authenticate(account.username(), PASSWORD, clientAddress))
                 .isInstanceOf(RateLimitExceededException.class)
                 .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_TOO_MANY_LOGIN_ATTEMPTS);
+    }
+
+    @Test
+    void anAttackerLockingAUsernameFromTheirClientCannotLockOutTheOwnerOnAnotherClient() {
+        String attackerAddress = TestAccounts.uniqueClientAddress();
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThatThrownBy(() -> service.authenticate(account.username(), "wrong", attackerAddress))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        assertThat(service.authenticate(account.username(), PASSWORD, TestAccounts.uniqueClientAddress()).id())
+                .isEqualTo(account.id());
+    }
+
+    @Test
+    void parallelWrongPasswordsCannotExceedTheLimitWhileTheirHashesAreStillBeingChecked() throws InterruptedException {
+        String clientAddress = TestAccounts.uniqueClientAddress();
+        int parallelAttempts = 15;
+        AtomicInteger checkedPasswords = new AtomicInteger();
+        AtomicInteger rateLimitedAttempts = new AtomicInteger();
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(parallelAttempts)) {
+            for (int attempt = 0; attempt < parallelAttempts; attempt++) {
+                executor.submit(() -> {
+                    start.await();
+                    try {
+                        service.authenticate(account.username(), "wrong", clientAddress);
+                    } catch (InvalidCredentialsException exception) {
+                        checkedPasswords.incrementAndGet();
+                    } catch (RateLimitExceededException exception) {
+                        rateLimitedAttempts.incrementAndGet();
+                    }
+                    return null;
+                });
+            }
+            start.countDown();
+        }
+
+        assertThat(checkedPasswords.get()).isEqualTo(5);
+        assertThat(rateLimitedAttempts.get()).isEqualTo(parallelAttempts - 5);
     }
 
     @Test
@@ -125,20 +170,35 @@ class AuthServiceTest {
 
     @Test
     void aSuccessfulLoginResetsTheFailedAttemptsOfItsUsername() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
         for (int attempt = 0; attempt < 4; attempt++) {
-            String clientAddress = TestAccounts.uniqueClientAddress();
             assertThatThrownBy(() -> service.authenticate(account.username(), "wrong", clientAddress))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
-        service.authenticate(account.username(), PASSWORD, TestAccounts.uniqueClientAddress());
+        service.authenticate(account.username(), PASSWORD, clientAddress);
 
         for (int attempt = 0; attempt < 4; attempt++) {
-            String clientAddress = TestAccounts.uniqueClientAddress();
             assertThatThrownBy(() -> service.authenticate(account.username(), "wrong", clientAddress))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
-        assertThat(service.authenticate(account.username(), PASSWORD, TestAccounts.uniqueClientAddress()).id())
-                .isEqualTo(account.id());
+        assertThat(service.authenticate(account.username(), PASSWORD, clientAddress).id()).isEqualTo(account.id());
+    }
+
+    @Test
+    void aSuccessfulLoginDoesNotCountAgainstTheLimitOfItsClient() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
+        for (int attempt = 0; attempt < 19; attempt++) {
+            String username = "unknown-" + attempt;
+            assertThatThrownBy(() -> service.authenticate(username, "wrong", clientAddress))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        service.authenticate(account.username(), PASSWORD, clientAddress);
+
+        assertThatThrownBy(() -> service.authenticate("unknown-last", "wrong", clientAddress))
+                .isInstanceOf(InvalidCredentialsException.class);
+        assertThatThrownBy(() -> service.authenticate(account.username(), PASSWORD, clientAddress))
+                .isInstanceOf(RateLimitExceededException.class);
     }
 
     @Test

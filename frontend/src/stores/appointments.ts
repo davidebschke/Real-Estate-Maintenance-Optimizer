@@ -14,10 +14,15 @@ export const useAppointmentsStore = defineStore('appointments', () => {
   const appointments = ref<Appointment[]>([])
   const isCreateDialogOpen = ref(false)
   const activeDetailAppointmentId = ref<string | null>(null)
+  /** Bumped by every fetch and by reset(), so a response that arrives after a newer fetch or an account change is discarded. */
+  let latestFetchToken = 0
 
-  /** Loads every appointment from the backend. */
+  /** Loads every appointment from the backend, ignoring the result if a newer fetch or an account change happened meanwhile. */
   async function fetchAppointments() {
-    appointments.value = await appointmentService.fetchAppointments()
+    const requestToken = ++latestFetchToken
+    const fetched = await appointmentService.fetchAppointments()
+    if (requestToken !== latestFetchToken) return
+    appointments.value = fetched
   }
 
   /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit. */
@@ -77,6 +82,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
 
   /** Forgets every appointment and closes every overlay, e.g. when the logged-in account changes. */
   function reset() {
+    latestFetchToken++
     appointments.value = []
     isCreateDialogOpen.value = false
     activeDetailAppointmentId.value = null

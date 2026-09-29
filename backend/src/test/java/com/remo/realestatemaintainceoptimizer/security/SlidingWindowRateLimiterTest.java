@@ -7,10 +7,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifies counting per key, the sliding expiry of old attempts, resetting, and the bounded number of tracked keys.
+ * Verifies counting per key, the sliding expiry of old attempts, resetting and releasing, atomicity under concurrency, and the bounded number of tracked keys.
  */
 class SlidingWindowRateLimiterTest {
 
@@ -71,15 +75,65 @@ class SlidingWindowRateLimiterTest {
     }
 
     @Test
-    void evictsExpiredKeysOnceTooManyKeysAreTracked() {
-        for (int index = 0; index < SlidingWindowRateLimiter.MAX_TRACKED_KEYS; index++) {
+    void releaseLatestGivesBackOnlyTheMostRecentAttempt() {
+        limiter.recordAttempt("key");
+        limiter.recordAttempt("key");
+        limiter.recordAttempt("key");
+
+        limiter.releaseLatest("key");
+
+        assertThat(limiter.isExhausted("key")).isFalse();
+        assertThat(limiter.tryAcquire("key")).isTrue();
+        assertThat(limiter.isExhausted("key")).isTrue();
+    }
+
+    @Test
+    void releasingTheLastAttemptForgetsTheKeyAndReleasingAnUnknownKeyDoesNothing() {
+        limiter.recordAttempt("key");
+
+        limiter.releaseLatest("key");
+        limiter.releaseLatest("unknown");
+
+        assertThat(limiter.trackedKeyCount()).isZero();
+    }
+
+    @Test
+    void neverTracksMoreThanTheMaximumNumberOfKeysAndEvictsTheLeastRecentlyUsedOne() {
+        limiter.recordAttempt("key-0");
+        for (int index = 1; index < SlidingWindowRateLimiter.MAX_TRACKED_KEYS; index++) {
             limiter.recordAttempt("key-" + index);
         }
-        clock.advance(Duration.ofMinutes(16));
+        limiter.recordAttempt("key-0");
 
-        limiter.recordAttempt("fresh-key");
+        limiter.recordAttempt("one-key-too-many");
 
-        assertThat(limiter.trackedKeyCount()).isEqualTo(1);
+        assertThat(limiter.trackedKeyCount()).isEqualTo(SlidingWindowRateLimiter.MAX_TRACKED_KEYS);
+        limiter.recordAttempt("key-0");
+        assertThat(limiter.isExhausted("key-0")).isTrue();
+        limiter.recordAttempt("key-1");
+        limiter.recordAttempt("key-1");
+        assertThat(limiter.isExhausted("key-1")).isFalse();
+    }
+
+    @Test
+    void concurrentTryAcquireCallsNeverTogetherExceedTheLimit() throws InterruptedException {
+        AtomicInteger allowed = new AtomicInteger();
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(16)) {
+            for (int attempt = 0; attempt < 100; attempt++) {
+                executor.submit(() -> {
+                    start.await();
+                    if (limiter.tryAcquire("key")) {
+                        allowed.incrementAndGet();
+                    }
+                    return null;
+                });
+            }
+            start.countDown();
+        }
+
+        assertThat(allowed.get()).isEqualTo(3);
     }
 
     private static final class AdjustableClock extends Clock {

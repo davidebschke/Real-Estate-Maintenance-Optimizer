@@ -24,6 +24,12 @@ public interface UserRepository extends JpaRepository<User, String> {
     long countByDemoAccountTrue();
 
     /**
+     * Blocks until the current transaction holds the PostgreSQL advisory lock with the given key, released automatically at commit or rollback.
+     */
+    @Query(value = "SELECT COUNT(*) FROM pg_advisory_xact_lock(:lockKey)", nativeQuery = true)
+    long acquireTransactionLock(@Param("lockKey") long lockKey);
+
+    /**
      * Deletes every demo account that expired at or before the given instant, cascading to its data in the database.
      */
     @Modifying

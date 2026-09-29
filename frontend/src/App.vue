@@ -18,7 +18,7 @@ const appointmentsStore = useAppointmentsStore()
 const propertiesStore = usePropertiesStore()
 const authStore = useAuthStore()
 
-/** Whether the full app shell is shown; the login screen and anything before a session renders on its own instead. */
+/** Whether the full app shell is shown; the login screen renders on its own instead, and a protected page without session renders nothing until the guard redirected to the login screen. */
 const showsAppShell = computed(() => authStore.isAuthenticated && route.meta.layout !== 'auth')
 
 /** Whether the detail drawer is open, derived from which appointment (if any) is active. */
@@ -48,7 +48,7 @@ const isDetailVisible = computed({
     <ConfirmDialog />
     <Toast />
   </div>
-  <RouterView v-else />
+  <RouterView v-else-if="route.meta.public" />
 </template>
 
 <style scoped src="@/styles/app.css"></style>

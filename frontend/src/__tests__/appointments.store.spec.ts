@@ -186,4 +186,32 @@ describe('useAppointmentsStore', () => {
     expect(store.isCreateDialogOpen).toBe(false)
     expect(store.activeDetailAppointmentId).toBeNull()
   })
+
+  it('discards a fetch that is answered only after an account change', async () => {
+    let resolveFetch: (appointments: Appointment[]) => void = () => {}
+    vi.mocked(appointmentService.fetchAppointments).mockReturnValue(new Promise((resolve) => (resolveFetch = resolve)))
+    const store = useAppointmentsStore()
+    const pendingFetch = store.fetchAppointments()
+
+    store.reset()
+    resolveFetch([createAppointment({ id: 'from-previous-account' })])
+    await pendingFetch
+
+    expect(store.appointments).toEqual([])
+  })
+
+  it('keeps only the result of the latest of two overlapping fetches', async () => {
+    let resolveFirst: (appointments: Appointment[]) => void = () => {}
+    vi.mocked(appointmentService.fetchAppointments)
+      .mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)))
+      .mockResolvedValueOnce([createAppointment({ id: 'latest' })])
+    const store = useAppointmentsStore()
+    const firstFetch = store.fetchAppointments()
+    await store.fetchAppointments()
+
+    resolveFirst([createAppointment({ id: 'outdated' })])
+    await firstFetch
+
+    expect(store.appointments.map((appointment) => appointment.id)).toEqual(['latest'])
+  })
 })

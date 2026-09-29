@@ -2,6 +2,10 @@ package com.remo.realestatemaintainceoptimizer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
 
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
@@ -12,15 +16,21 @@ import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 /**
- * Verifies demo account creation (expiry, creation limits, example data), its per-client and global limits, and the removal of expired demo accounts.
+ * Verifies demo account creation (expiry, creation limits, example data), its per-client and global limits also under concurrency, and the removal of expired demo accounts.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -37,6 +47,9 @@ class DemoAccountServiceTest {
 
     @Autowired
     private AppointmentRepository appointmentRepository;
+
+    @MockitoSpyBean
+    private DemoDataSeeder demoDataSeeder;
 
     @BeforeEach
     void clearDatabase() {
@@ -102,6 +115,46 @@ class DemoAccountServiceTest {
         assertThatThrownBy(() -> service.createDemoAccount(TestAccounts.uniqueClientAddress()))
                 .isInstanceOf(RateLimitExceededException.class)
                 .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_DEMO_CAPACITY_REACHED);
+    }
+
+    @Test
+    void concurrentCreationsNeverTogetherExceedTheGlobalCapacity() throws InterruptedException {
+        IntStream.range(0, 99).forEach(index ->
+                TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 3, 3));
+        int parallelCreations = 6;
+        AtomicInteger created = new AtomicInteger();
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(parallelCreations)) {
+            for (int index = 0; index < parallelCreations; index++) {
+                executor.submit(() -> {
+                    start.await();
+                    try {
+                        service.createDemoAccount(TestAccounts.uniqueClientAddress());
+                        created.incrementAndGet();
+                    } catch (RateLimitExceededException exception) {
+                        return null;
+                    }
+                    return null;
+                });
+            }
+            start.countDown();
+        }
+
+        assertThat(created.get()).isEqualTo(1);
+        assertThat(userRepository.countByDemoAccountTrue()).isEqualTo(100);
+    }
+
+    @Test
+    void aFailedCreationDoesNotUseUpOneOfTheClientsCreations() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
+        doThrow(new IllegalStateException("seeding failed")).when(demoDataSeeder).seed(anyString(), any(LocalDate.class));
+        IntStream.range(0, 10).forEach(index -> assertThatThrownBy(() -> service.createDemoAccount(clientAddress))
+                .isInstanceOf(IllegalStateException.class));
+        doCallRealMethod().when(demoDataSeeder).seed(anyString(), any(LocalDate.class));
+
+        assertThat(service.createDemoAccount(clientAddress).demoAccount()).isTrue();
+        assertThat(userRepository.countByDemoAccountTrue()).isEqualTo(1);
     }
 
     @Test

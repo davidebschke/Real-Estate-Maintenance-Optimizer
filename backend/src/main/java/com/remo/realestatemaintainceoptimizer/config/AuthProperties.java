@@ -13,7 +13,7 @@ public record AuthProperties(
         @DefaultValue("8h") Duration sessionDuration,
         @DefaultValue("true") boolean cookieSecure,
         String initialUserPassword,
-        @DefaultValue("5") int maxFailedLoginsPerUsername,
+        @DefaultValue("5") int maxFailedLoginsPerUsernameAndClient,
         @DefaultValue("20") int maxFailedLoginsPerClient,
         @DefaultValue("15m") Duration failedLoginWindow,
         @DefaultValue("10") int maxDemoAccountsPerClient,

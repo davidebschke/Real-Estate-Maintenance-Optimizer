@@ -27,6 +27,8 @@ public class DemoAccountService {
     static final int DEMO_PROPERTY_CREATIONS = 3;
     static final int DEMO_APPOINTMENT_CREATIONS = 3;
 
+    static final long DEMO_ACCOUNT_CREATION_LOCK_KEY = 0x72656D6F64656D6FL;
+
     private static final int USERNAME_RANDOM_BYTES = 8;
 
     private final UserRepository userRepository;
@@ -46,9 +48,11 @@ public class DemoAccountService {
 
     /**
      * Creates a demo account that expires after one session and may create only a few more properties and
-     * appointments, rejecting it when too many demo accounts exist or this client created too many recently.
+     * appointments, rejecting it when too many demo accounts exist or this client created too many recently; creations
+     * are serialized by a database lock so concurrent requests cannot exceed the global limit together.
      */
     public User createDemoAccount(String clientAddress) {
+        userRepository.acquireTransactionLock(DEMO_ACCOUNT_CREATION_LOCK_KEY);
         if (userRepository.countByDemoAccountTrue() >= authProperties.maxActiveDemoAccounts()) {
             throw new RateLimitExceededException(RateLimitExceededException.REASON_DEMO_CAPACITY_REACHED);
         }
@@ -56,19 +60,24 @@ public class DemoAccountService {
             throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_DEMO_ACCOUNTS);
         }
 
-        Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
-        User account = userRepository.save(new User(
-                UUID.randomUUID().toString(),
-                DEMO_USERNAME_PREFIX + randomSuffix(),
-                null,
-                DEMO_DISPLAY_NAME,
-                true,
-                createdAt,
-                createdAt.plus(authProperties.sessionDuration()),
-                DEMO_PROPERTY_CREATIONS,
-                DEMO_APPOINTMENT_CREATIONS));
-        demoDataSeeder.seed(account.id(), LocalDate.now());
-        return account;
+        try {
+            Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+            User account = userRepository.save(new User(
+                    UUID.randomUUID().toString(),
+                    DEMO_USERNAME_PREFIX + randomSuffix(),
+                    null,
+                    DEMO_DISPLAY_NAME,
+                    true,
+                    createdAt,
+                    createdAt.plus(authProperties.sessionDuration()),
+                    DEMO_PROPERTY_CREATIONS,
+                    DEMO_APPOINTMENT_CREATIONS));
+            demoDataSeeder.seed(account.id(), LocalDate.now());
+            return account;
+        } catch (RuntimeException exception) {
+            creationsPerClient.releaseLatest(clientAddress);
+            throw exception;
+        }
     }
 
     /**

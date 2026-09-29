@@ -5,11 +5,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Counts attempts per key within a sliding time window, e.g. failed logins per username or demo accounts per client address.
+ * Counts attempts per key within a sliding time window, e.g. failed logins per client address, tracking at most
+ * {@value #MAX_TRACKED_KEYS} keys by evicting the least recently used one.
  */
 public class SlidingWindowRateLimiter {
 
@@ -18,7 +19,12 @@ public class SlidingWindowRateLimiter {
     private final int maxAttempts;
     private final Duration window;
     private final Clock clock;
-    private final Map<String, Deque<Instant>> attemptsByKey = new HashMap<>();
+    private final Map<String, Deque<Instant>> attemptsByKey = new LinkedHashMap<>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Deque<Instant>> eldest) {
+            return size() > MAX_TRACKED_KEYS;
+        }
+    };
 
     public SlidingWindowRateLimiter(int maxAttempts, Duration window, Clock clock) {
         this.maxAttempts = maxAttempts;
@@ -46,14 +52,12 @@ public class SlidingWindowRateLimiter {
      * Records one attempt for the given key.
      */
     public synchronized void recordAttempt(String key) {
-        if (attemptsByKey.size() >= MAX_TRACKED_KEYS) {
-            evictExpired();
-        }
         attemptsByKey.computeIfAbsent(key, ignored -> new ArrayDeque<>()).addLast(clock.instant());
     }
 
     /**
-     * Records one attempt for the given key unless it is already exhausted, returning whether the attempt was allowed.
+     * Atomically records one attempt for the given key unless it is already exhausted, returning whether the attempt
+     * was allowed, so concurrent callers can never together exceed the limit.
      */
     public synchronized boolean tryAcquire(String key) {
         if (isExhausted(key)) {
@@ -61,6 +65,20 @@ public class SlidingWindowRateLimiter {
         }
         recordAttempt(key);
         return true;
+    }
+
+    /**
+     * Gives back the most recently recorded attempt of the given key, e.g. one reserved by {@link #tryAcquire} for an operation that then succeeded or failed for an unrelated reason.
+     */
+    public synchronized void releaseLatest(String key) {
+        Deque<Instant> attempts = attemptsByKey.get(key);
+        if (attempts == null) {
+            return;
+        }
+        attempts.pollLast();
+        if (attempts.isEmpty()) {
+            attemptsByKey.remove(key);
+        }
     }
 
     /**
@@ -75,11 +93,6 @@ public class SlidingWindowRateLimiter {
      */
     public synchronized int trackedKeyCount() {
         return attemptsByKey.size();
-    }
-
-    private void evictExpired() {
-        attemptsByKey.values().forEach(this::removeExpired);
-        attemptsByKey.values().removeIf(Deque::isEmpty);
     }
 
     private void removeExpired(Deque<Instant> attempts) {
