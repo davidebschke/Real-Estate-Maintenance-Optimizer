@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { useAuthStore } from '@/stores/auth'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -30,18 +31,19 @@ export const usePropertiesStore = defineStore('properties', () => {
     }
   }
 
-  /** Creates a new property and inserts it into the store in name order, recording whether the request failed. */
+  /** Creates a new property and inserts it into the store in name order, recording whether the request failed and, for a demo account, refreshing its remaining creation limit. */
   async function createProperty(payload: CreatePropertyPayload): Promise<boolean> {
     try {
       const created = await propertyService.createProperty(payload)
       latestChangeToken++
       properties.value = [...properties.value, created].sort((a, b) => a.name.localeCompare(b.name))
       hasCreateError.value = false
-      return true
     } catch {
       hasCreateError.value = true
       return false
     }
+    await useAuthStore().refreshDemoQuota()
+    return true
   }
 
   /** Updates a property and replaces it in the store, re-sorting by name, recording whether the request failed. */
@@ -104,6 +106,18 @@ export const usePropertiesStore = defineStore('properties', () => {
     editingProperty.value = null
   }
 
+  /** Forgets every property, error flag and open form, and ignores any still in-flight fetch, e.g. when the logged-in account changes. */
+  function reset() {
+    latestChangeToken++
+    properties.value = []
+    hasLoadError.value = false
+    hasCreateError.value = false
+    hasUpdateError.value = false
+    hasDeleteError.value = false
+    isCreateDialogOpen.value = false
+    editingProperty.value = null
+  }
+
   /** Whether the shared property form dialog (create or edit) should be visible; closing it also resets both modes. */
   const isFormDialogOpen = computed({
     get: () => isCreateDialogOpen.value || editingProperty.value !== null,
@@ -131,5 +145,6 @@ export const usePropertiesStore = defineStore('properties', () => {
     closeCreateDialog,
     openEditDialog,
     closeEditDialog,
+    reset,
   }
 })

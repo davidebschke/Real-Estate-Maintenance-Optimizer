@@ -1,10 +1,48 @@
-import { afterEach, describe, it, expect } from 'vitest'
-import { DOMWrapper, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import PrimeVue from 'primevue/config'
 import { i18n } from '@/i18n'
+import { routes } from '@/router'
 import UserAccountDropdown from '@/components/layout/UserAccountDropdown.vue'
+import { useAuthStore } from '@/stores/auth'
+import * as authService from '@/services/authService'
+import type { CurrentUser } from '@/types/auth'
+
+vi.mock('@/services/authService')
 
 let wrapper: ReturnType<typeof mount> | undefined
+
+/** Logs in the given account directly in the store. */
+function logInAs(overrides: Partial<CurrentUser> = {}) {
+  useAuthStore().currentUser = {
+    username: 'debschke',
+    displayName: 'David Ebschke',
+    demoAccount: false,
+    expiresAt: null,
+    remainingPropertyCreations: null,
+    remainingAppointmentCreations: null,
+    ...overrides,
+  }
+}
+
+/** Mounts the dropdown with a router positioned on the overview page. */
+async function mountDropdown() {
+  const router = createRouter({ history: createMemoryHistory(), routes })
+  await router.push('/')
+  wrapper = mount(UserAccountDropdown, {
+    global: { plugins: [i18n, PrimeVue, router] },
+    attachTo: document.body,
+  })
+  return { wrapper, router }
+}
+
+beforeEach(() => {
+  setActivePinia(createPinia())
+  vi.mocked(authService.logout).mockReset().mockResolvedValue()
+  i18n.global.locale.value = 'de'
+})
 
 afterEach(() => {
   wrapper?.unmount()
@@ -12,39 +50,60 @@ afterEach(() => {
 })
 
 describe('UserAccountDropdown', () => {
-  it('shows the default active account on the trigger', () => {
-    wrapper = mount(UserAccountDropdown, {
-      global: { plugins: [i18n, PrimeVue] },
-    })
+  it('shows the name and initials of the logged-in account on the trigger', async () => {
+    logInAs()
 
-    expect(wrapper.find('.user-account-dropdown__trigger').text()).toContain('Marco Keller')
+    const { wrapper } = await mountDropdown()
+
+    const trigger = wrapper.find('.user-account-dropdown__trigger')
+    expect(trigger.text()).toContain('David Ebschke')
+    expect(trigger.text()).toContain('DE')
+    expect(trigger.text()).toContain('Angemeldet als debschke')
   })
 
-  it('opens the popover with the account switcher when the trigger is clicked', async () => {
-    wrapper = mount(UserAccountDropdown, {
-      global: { plugins: [i18n, PrimeVue] },
-      attachTo: document.body,
-    })
+  it('shows a demo account under its localized name together with the end of its session', async () => {
+    logInAs({ displayName: 'Demo', demoAccount: true, expiresAt: new Date(2026, 8, 29, 16, 30) })
+
+    const { wrapper } = await mountDropdown()
+
+    expect(wrapper.find('.user-account-dropdown__trigger').text()).toContain('Demo-Account')
+    expect(wrapper.find('.user-account-dropdown__trigger').text()).toContain('endet 16:30 Uhr')
+  })
+
+  it('no longer offers switching to example accounts', async () => {
+    logInAs()
+    const { wrapper } = await mountDropdown()
 
     await wrapper.find('.user-account-dropdown__trigger').trigger('click')
 
-    expect(document.body.textContent).toContain('m.keller@rmo-koeln.de')
-    expect(document.body.textContent).toContain('Anna Braun')
-    expect(document.body.textContent).toContain('Thomas Wagner')
+    expect(document.body.textContent).not.toContain('Marco Keller')
+    expect(document.body.querySelector('.user-account-dropdown__account-option')).toBeNull()
+    expect(document.body.textContent).toContain('Abmelden')
   })
 
-  it('switches the active account when another account is selected', async () => {
-    wrapper = mount(UserAccountDropdown, {
-      global: { plugins: [i18n, PrimeVue] },
-      attachTo: document.body,
-    })
-
+  it('logs out and returns to the login screen', async () => {
+    logInAs()
+    const { wrapper, router } = await mountDropdown()
     await wrapper.find('.user-account-dropdown__trigger').trigger('click')
-    const options = [...document.body.querySelectorAll('.user-account-dropdown__account-option')]
-    const annaOption = options.find((option) => option.textContent?.includes('Anna Braun'))
 
-    await new DOMWrapper(annaOption as Element).trigger('click')
+    await new DOMWrapper(document.body.querySelector('.user-account-dropdown__logout') as Element).trigger('click')
+    await flushPromises()
 
-    expect(wrapper.find('.user-account-dropdown__trigger').text()).toContain('Anna Braun')
+    expect(authService.logout).toHaveBeenCalledOnce()
+    expect(useAuthStore().isAuthenticated).toBe(false)
+    expect(router.currentRoute.value.name).toBe('login')
+  })
+
+  it('still returns to the login screen when the logout request fails', async () => {
+    vi.mocked(authService.logout).mockRejectedValue(new Error('offline'))
+    logInAs()
+    const { wrapper, router } = await mountDropdown()
+    await wrapper.find('.user-account-dropdown__trigger').trigger('click')
+
+    await new DOMWrapper(document.body.querySelector('.user-account-dropdown__logout') as Element).trigger('click')
+    await flushPromises()
+
+    expect(useAuthStore().isAuthenticated).toBe(false)
+    expect(router.currentRoute.value.name).toBe('login')
   })
 })

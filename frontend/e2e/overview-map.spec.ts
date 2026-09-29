@@ -5,6 +5,7 @@ import {
   deleteTestProperty,
   type TestProperty,
 } from './support/testProperty.js'
+import { csrfHeaders } from './support/apiSession.js'
 
 /** Opens the creation form, fills in the given title and property, and submits it. */
 async function createAppointment(page: Page, options: { title: string; property: string }) {
@@ -28,6 +29,7 @@ async function createAppointment(page: Page, options: { title: string; property:
 async function deleteAppointment(page: Page, id: string) {
   await page.request.delete(`${BACKEND_BASE_URL}/api/appointments/${id}`, {
     params: { scope: 'single' },
+    headers: await csrfHeaders(page.request),
   })
 }
 

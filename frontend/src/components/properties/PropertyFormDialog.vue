@@ -5,7 +5,9 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
+import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { usePropertiesStore } from '@/stores/properties'
+import { useDemoQuota } from '@/composables/useDemoQuota'
 import {
   geocodeAddress,
   validateAddress,
@@ -45,6 +47,11 @@ let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
 
 /** Whether the dialog is currently editing an existing property rather than creating a new one. */
 const isEditMode = computed(() => store.editingProperty !== null)
+
+const { isExhausted: isCreationQuotaExhausted } = useDemoQuota('properties')
+
+/** Whether a demo account already used up its property creations, which blocks creating but never editing. */
+const isBlockedByQuota = computed(() => !isEditMode.value && isCreationQuotaExhausted.value)
 
 const addressValidation = ref<AddressValidationResult | null>(null)
 const isValidatingAddress = ref(false)
@@ -219,7 +226,7 @@ function isStaleValidationResponse(requestId: number) {
 
 /** Creates the property from the current form state, then closes the dialog on success. */
 async function submit() {
-  if (!isValid.value || isValidatingAddress.value) return
+  if (!isValid.value || isValidatingAddress.value || isBlockedByQuota.value) return
 
   const requestId = (validationRequestId += 1)
   isValidatingAddress.value = true
@@ -394,10 +401,12 @@ function cancel() {
       {{ isEditMode ? t('properties.edit.error') : t('properties.create.error') }}
     </p>
 
+    <DemoQuotaHint v-if="!isEditMode" resource="properties" />
+
     <div class="property-form-dialog__actions">
       <Button
         :label="isEditMode ? t('properties.edit.submit') : t('properties.create.submit')"
-        :disabled="!isValid || isValidatingAddress"
+        :disabled="!isValid || isValidatingAddress || isBlockedByQuota"
         @click="submit"
       />
       <button type="button" class="property-form-dialog__cancel" @click="cancel">

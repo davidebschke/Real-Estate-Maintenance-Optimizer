@@ -4,11 +4,13 @@ import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.CompleteAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
+import com.remo.realestatemaintainceoptimizer.security.AuthenticatedUser;
 import com.remo.realestatemaintainceoptimizer.service.AppointmentService;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 /**
- * Exposes appointment create, read, move and delete operations to the frontend.
+ * Exposes the logged-in account's appointment create, read, move and delete operations to the frontend.
  */
 @RestController
 @RequestMapping("/api/appointments")
@@ -37,24 +39,25 @@ public class AppointmentController {
      * Returns every appointment, sorted by start time.
      */
     @GetMapping
-    public List<AppointmentResponse> listAppointments() {
-        return appointmentService.listAll();
+    public List<AppointmentResponse> listAppointments(@AuthenticationPrincipal AuthenticatedUser user) {
+        return appointmentService.listAll(user.id());
     }
 
     /**
      * Returns the appointment with the given id.
      */
     @GetMapping("/{id}")
-    public AppointmentResponse getAppointment(@PathVariable String id) {
-        return appointmentService.getById(id);
+    public AppointmentResponse getAppointment(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String id) {
+        return appointmentService.getById(user.id(), id);
     }
 
     /**
      * Creates a new appointment, returning the first (or only) occurrence.
      */
     @PostMapping
-    public ResponseEntity<AppointmentResponse> createAppointment(@Valid @RequestBody CreateAppointmentRequest request) {
-        AppointmentResponse created = appointmentService.create(request);
+    public ResponseEntity<AppointmentResponse> createAppointment(
+            @AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody CreateAppointmentRequest request) {
+        AppointmentResponse created = appointmentService.create(user.id(), request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -66,8 +69,11 @@ public class AppointmentController {
      * Reschedules an unlocked appointment.
      */
     @PatchMapping("/{id}/schedule")
-    public AppointmentResponse moveAppointment(@PathVariable String id, @Valid @RequestBody MoveAppointmentRequest request) {
-        return appointmentService.move(id, request);
+    public AppointmentResponse moveAppointment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable String id,
+            @Valid @RequestBody MoveAppointmentRequest request) {
+        return appointmentService.move(user.id(), id, request);
     }
 
     /**
@@ -75,24 +81,29 @@ public class AppointmentController {
      */
     @PatchMapping("/{id}/complete")
     public AppointmentResponse completeAppointment(
-            @PathVariable String id, @RequestBody(required = false) CompleteAppointmentRequest request) {
-        return appointmentService.complete(id, request != null ? request.actualEnd() : null);
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable String id,
+            @RequestBody(required = false) CompleteAppointmentRequest request) {
+        return appointmentService.complete(user.id(), id, request != null ? request.actualEnd() : null);
     }
 
     /**
      * Reverts a completed appointment back to its not-yet-completed state.
      */
     @PatchMapping("/{id}/reopen")
-    public AppointmentResponse reopenAppointment(@PathVariable String id) {
-        return appointmentService.reopen(id);
+    public AppointmentResponse reopenAppointment(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String id) {
+        return appointmentService.reopen(user.id(), id);
     }
 
     /**
      * Deletes an appointment; {@code scope=series} also deletes every not-yet-past occurrence of its recurring series.
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAppointment(@PathVariable String id, @RequestParam(defaultValue = "single") String scope) {
-        appointmentService.delete(id, scope);
+    public ResponseEntity<Void> deleteAppointment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable String id,
+            @RequestParam(defaultValue = "single") String scope) {
+        appointmentService.delete(user.id(), id, scope);
         return ResponseEntity.noContent().build();
     }
 }

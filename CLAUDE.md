@@ -45,7 +45,7 @@ All persistent data lives in a single relational database:
 
 | Area                                          | Technology  | Hosting                                   |
 |-----------------------------------------------|-------------|-------------------------------------------|
-| Appointments & Objects (later also User/Auth) | PostgreSQL  | Supabase (project "RemoDB"); locally via `backend/docker-compose.yml` |
+| Appointments, Objects & User/Auth             | PostgreSQL  | Supabase (project "RemoDB"); locally via `backend/docker-compose.yml` |
 
 - **PostgreSQL** is accessed via Spring Data JPA, with the schema (`remo`) managed by Flyway migrations.
 
@@ -65,6 +65,7 @@ The detailed, current implementation status (which controllers/services/componen
 - `GET /api/version` (`VersionController`) reports the application version from `pom.xml`.
 - Cross-origin access from the frontend dev server is allowed via `CorsConfig`, origin configured through `remo.frontend.base-url`.
 - German/English translation for dynamic (server-generated) text via Spring's `MessageSource` (`backend/src/main/resources/locales/`, `LocalizationConfig`).
+- **Authentication (Spring Security + JJWT):** `AuthController` (`/api/auth/login|demo-account|logout|me`) issues an HS256 session JWT in an HttpOnly, `SameSite=Strict` cookie; every endpoint except `GET /api/version` and login/demo/logout requires it, state-changing requests also need the CSRF double-submit token. Every property (and through it every appointment) belongs to one account (`properties.owner_id`); another account's ids answer `404`. The productive account `debschke` ("David Ebschke") is created by migration `V2`, its password comes only from `REMO_AUTH_INITIAL_USER_PASSWORD` (stored as BCrypt hash); a one-click, session-only demo account gets 5 properties/30 appointments and may create 3 more of each — see `backend/readme_backend_en.md`, section "Authentication & Account Binding".
 - **Appointments (create/read/move/delete/complete):** fully implemented via `AppointmentController`/`AppointmentService`, including recurrence materialization, locking, and a completed status (`PATCH .../complete` accepts an optional explicit `actualEnd`, falling back to now when omitted; `PATCH .../reopen` reverts it).
   - **Storage:** PostgreSQL via Spring Data JPA (`AppointmentRepository`/`PropertyRepository`), schema managed by Flyway; see `backend/readme_backend_en.md`, section "Persistence".
 - **Properties (create/read/update/delete):** `PropertyController`/`PropertyService` expose `GET /api/properties`, `GET /api/properties/{id}`, `POST /api/properties`, `PUT /api/properties/{id}` (updates name/address/coordinates, keeping id and icon) and `DELETE /api/properties/{id}` (cascades to every appointment referencing that property) for the same objects selectable when creating an appointment, including optional `latitude`/`longitude`; a created property always gets the default icon `pi-building` (no icon field in the create form). Appointments reference their property by foreign key (no copied name/address), so edits show up immediately and deleting a property cascades in the database.
@@ -72,6 +73,7 @@ The detailed, current implementation status (which controllers/services/componen
 
 ### 3.2 Frontend
 
+- **Login screen:** before anything else is shown, the global router guard (`router/authGuard.ts`, `stores/auth.ts`) sends visitors without session to `LoginView` (login or one-click demo account, green success state, then redirect to the requested page); the header's `UserAccountDropdown` shows the logged-in account's name and logs out; demo accounts see `DemoAccountBanner`/`DemoQuotaHint` for their limits.
 - **Layout & navigation:** header/footer and the four main routed views implemented; `OverviewView` renders the daily appointment overview, `StatisticsView` currently renders only a placeholder, `CalendarView` renders the calendar, `PropertiesView` renders the property list.
 - **Daily appointment overview (read-only, today only):** `OverviewView` lists only today's appointments (via `stores/appointments.ts` and the `useTodaysAppointments` composable), sorted from the next upcoming to the last one of the day, each as a numbered `DailyAppointmentCard` (time, title, property, materials, distance/duration); clicking one opens the shared `AppointmentDetailDrawer`. Ends with the existing `AppointmentAiSuggestionBanner`, shown purely for decoration.
 - **Daily appointment map (read-only, today only):** `AppointmentMapCard` renders a Leaflet map to the left of the daily appointment list, showing today's appointments as numbered, connected markers; each marker prefers its property's stored coordinates, falling back to the backend's `GET /api/geocode` proxy (`services/geocodingService.ts`) only when those are missing. Auto-fits its zoom to all markers while still allowing manual zoom.
@@ -79,7 +81,7 @@ The detailed, current implementation status (which controllers/services/componen
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events.
 - **Appointments (create/read/move/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time. Rescheduling also works by dragging an event onto a new day/time cell in the calendar's day/week view (`useAppointmentDragAndDrop`, Pointer Events based so mouse and touch both work), in addition to the manual form.
 - **i18n (static UI text):** German/English via `vue-i18n`, German as the active default locale, English as `fallbackLocale`.
-- **Not yet implemented:** account management (non-functional placeholder only). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
+- **Not yet implemented:** account management beyond login/logout (profile/vehicle/notification menu entries are placeholders). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
 
 ### 3.3 Version Tracking
 
@@ -110,8 +112,8 @@ Backlog (native Android/iOS app, voice/audio appointment capture) is tracked in 
 
 ## 7. Build & Run
 
-Backend: `docker compose up -d` (local PostgreSQL) then `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`); `mvn test` needs a running Docker daemon (Testcontainers).
-Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright) for tests.
+Backend: `docker compose up -d` (local PostgreSQL) then `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`) with `REMO_AUTH_JWT_SECRET` set (plus `REMO_AUTH_INITIAL_USER_PASSWORD` and `REMO_AUTH_COOKIE_SECURE=false` locally, e.g. in `backend/.env`, see `backend/.env.example`); `mvn test` needs a running Docker daemon (Testcontainers).
+Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright, needs the backend and `E2E_PASSWORD`) for tests.
 
 ## 8. Tests
 

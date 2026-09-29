@@ -1,0 +1,71 @@
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.login-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.login-form__field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.login-form .p-inputtext {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-color: var(--remo-calendar-border-color, #3a3f47);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  width: 100%;
+}
+
+.login-form .p-inputtext::placeholder {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}
+
+/* PrimeVue injects its own `.p-invalid` border color after this stylesheet, so the class pair is needed to win */
+.login-form .p-inputtext.p-invalid {
+  border-color: #f87171;
+}
+
+.login-form .p-password {
+  width: 100%;
+}
+
+.login-form .p-password .p-password-toggle-mask-icon {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}
+
+.login-form__error {
+  background-color: color-mix(in srgb, #ef4444 12%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 45%, transparent);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+}
+
+.login-form .login-form__submit.p-button {
+  background-color: var(--remo-calendar-accent-color, #3b82f6);
+  border-color: var(--remo-calendar-accent-color, #3b82f6);
+  font-weight: 600;
+  justify-content: center;
+  padding-block: 0.75rem;
+  transition:
+    background-color 0.25s ease-in-out,
+    border-color 0.25s ease-in-out;
+  width: 100%;
+}
+
+/* the disabled look must not dim the green success state, which stays visible until the app opens */
+.login-form .login-form__submit.p-button.login-form__submit--success,
+.login-form .login-form__submit.p-button.login-form__submit--success:disabled {
+  background-color: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+  opacity: 1;
+}

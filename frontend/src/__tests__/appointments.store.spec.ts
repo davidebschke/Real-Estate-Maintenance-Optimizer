@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { useAuthStore } from '@/stores/auth'
 import * as appointmentService from '@/services/appointmentService'
 import type { Appointment } from '@/types/appointment'
 
@@ -149,6 +150,40 @@ describe('useAppointmentsStore', () => {
     expect(store.activeDetailAppointmentId).toBe('1')
 
     store.closeDetail()
+    expect(store.activeDetailAppointmentId).toBeNull()
+  })
+
+  it('refreshes the remaining creation limit of a demo account after creating an appointment', async () => {
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue(createAppointment())
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([createAppointment()])
+    const refreshDemoQuota = vi.spyOn(useAuthStore(), 'refreshDemoQuota').mockResolvedValue()
+    const store = useAppointmentsStore()
+
+    await store.createAppointment({
+      title: 'Kellerreinigung Q3',
+      propertyId: 'property-1',
+      description: '',
+      start: new Date(2026, 7, 11, 13, 0),
+      durationMinutes: 120,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: [],
+    })
+
+    expect(refreshDemoQuota).toHaveBeenCalledOnce()
+  })
+
+  it('forgets every appointment and closes every overlay on reset', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment()]
+    store.openCreateDialog()
+    store.openDetail('1')
+
+    store.reset()
+
+    expect(store.appointments).toEqual([])
+    expect(store.isCreateDialogOpen).toBe(false)
     expect(store.activeDetailAppointmentId).toBeNull()
   })
 })

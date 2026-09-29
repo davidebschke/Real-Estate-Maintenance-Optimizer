@@ -10,13 +10,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import com.remo.realestatemaintainceoptimizer.security.JwtService;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,21 +28,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Verifies the property create, read, update and delete REST API against a throwaway PostgreSQL database, emptied and seeded with one property before each test.
+ * Verifies the property create, read, update and delete REST API, including account isolation and demo limits, against a throwaway PostgreSQL database seeded with one account and property before each test.
  */
 @SpringBootTest
-@AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class PropertyControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebApplicationContext context;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private PropertyRepository propertyRepository;
@@ -46,13 +55,62 @@ class PropertyControllerTest {
     @Autowired
     private AppointmentRepository appointmentRepository;
 
+    private MockMvc mockMvc;
+
+    private MockMvc otherAccountMockMvc;
+
     private Property seededProperty;
 
     @BeforeEach
     void seedProperty() {
-        propertyRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+        User owner = TestAccounts.saveRegularAccount(userRepository);
+        mockMvc = TestAccounts.mockMvcAs(context, jwtService, owner);
+        otherAccountMockMvc = TestAccounts.mockMvcAs(context, jwtService, TestAccounts.saveRegularAccount(userRepository));
         seededProperty = propertyRepository.save(new Property(
-                "1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building", 50.94, 6.88));
+                "1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building", 50.94, 6.88));
+    }
+
+    @Test
+    void anotherAccountNeitherListsNorReadsNorChangesTheProperty() throws Exception {
+        String requestBody = """
+                {
+                  "name": "Gekapert",
+                  "address": "Kaperstr. 1, 50733 Köln"
+                }
+                """;
+
+        otherAccountMockMvc.perform(get("/api/properties"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+        otherAccountMockMvc.perform(get("/api/properties/{id}", "1")).andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(put("/api/properties/{id}", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(delete("/api/properties/{id}", "1")).andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/properties/{id}", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", equalTo("Wohnanlage Sonnenhof")));
+    }
+
+    @Test
+    void aDemoAccountBeyondItsCreationLimitGetsALocalizedForbidden() throws Exception {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0);
+        String requestBody = """
+                {
+                  "name": "Wohnanlage Nordpark",
+                  "address": "Nordparkstr. 3, 50733 Köln"
+                }
+                """;
+
+        TestAccounts.mockMvcAs(context, jwtService, demo).perform(post("/api/properties")
+                        .header("Accept-Language", "de")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("Ein Demo-Account kann höchstens 3 zusätzliche Objekte anlegen.")));
     }
 
     @Test

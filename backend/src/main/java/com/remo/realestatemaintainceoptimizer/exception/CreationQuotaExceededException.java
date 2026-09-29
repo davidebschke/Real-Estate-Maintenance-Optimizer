@@ -1,0 +1,21 @@
+package com.remo.realestatemaintainceoptimizer.exception;
+
+/**
+ * Thrown when an account with a creation limit (a demo account) tries to create more of a resource than it may.
+ */
+public class CreationQuotaExceededException extends RuntimeException {
+
+    public static final String RESOURCE_PROPERTY = "property";
+    public static final String RESOURCE_APPOINTMENT = "appointment";
+
+    private final String resource;
+
+    public CreationQuotaExceededException(String resource) {
+        super("The creation limit for " + resource + " is exhausted");
+        this.resource = resource;
+    }
+
+    public String resource() {
+        return resource;
+    }
+}

@@ -13,6 +13,8 @@ import propertiesDe from '@/locales/de/properties.json'
 import propertiesEn from '@/locales/en/properties.json'
 import appointmentsDe from '@/locales/de/appointments.json'
 import appointmentsEn from '@/locales/en/appointments.json'
+import authDe from '@/locales/de/auth.json'
+import authEn from '@/locales/en/auth.json'
 
 /** Merges all namespaced message files into one locale bundle. */
 const messages = {
@@ -24,6 +26,7 @@ const messages = {
     ...statisticsDe,
     ...propertiesDe,
     ...appointmentsDe,
+    ...authDe,
   },
   en: {
     ...headerEn,
@@ -33,6 +36,7 @@ const messages = {
     ...statisticsEn,
     ...propertiesEn,
     ...appointmentsEn,
+    ...authEn,
   },
 }
 

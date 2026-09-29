@@ -1,6 +1,7 @@
 import { expect, type APIRequestContext } from '@playwright/test'
+import { BACKEND_BASE_URL, csrfHeaders } from './apiSession.js'
 
-export const BACKEND_BASE_URL = 'http://localhost:8080'
+export { BACKEND_BASE_URL } from './apiSession.js'
 
 /** Address of every test property, split into the fields of the property form so tests can re-enter it. */
 export const TEST_PROPERTY_ADDRESS = {
@@ -17,7 +18,7 @@ export interface TestProperty {
   address: string
 }
 
-/** Creates a uniquely named property with stored coordinates via the backend API, since the database starts empty. */
+/** Creates a uniquely named property with stored coordinates via the backend API for the logged-in e2e account. */
 export async function createTestProperty(request: APIRequestContext): Promise<TestProperty> {
   const response = await request.post(`${BACKEND_BASE_URL}/api/properties`, {
     data: {
@@ -26,6 +27,7 @@ export async function createTestProperty(request: APIRequestContext): Promise<Te
       latitude: 50.937634,
       longitude: 6.8922212,
     },
+    headers: await csrfHeaders(request),
   })
   expect(response.ok()).toBe(true)
   return (await response.json()) as TestProperty
@@ -33,5 +35,5 @@ export async function createTestProperty(request: APIRequestContext): Promise<Te
 
 /** Deletes the property with the given id via the backend API, cascading to every appointment still referencing it. */
 export async function deleteTestProperty(request: APIRequestContext, id: string) {
-  await request.delete(`${BACKEND_BASE_URL}/api/properties/${id}`)
+  await request.delete(`${BACKEND_BASE_URL}/api/properties/${id}`, { headers: await csrfHeaders(request) })
 }

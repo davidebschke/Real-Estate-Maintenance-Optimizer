@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Verifies that the configured frontend origin is allowed to preflight every HTTP method the REST API actually uses.
+ * Verifies that only the configured frontend origin may preflight, with credentials, every HTTP method the REST API actually uses.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,5 +37,14 @@ class CorsConfigTest {
                 .andReturn();
 
         assertThat(result.getResponse().getHeader("Access-Control-Allow-Methods")).contains(method);
+        assertThat(result.getResponse().getHeader("Access-Control-Allow-Credentials")).isEqualTo("true");
+    }
+
+    @Test
+    void rejectsThePreflightOfAnyOtherOrigin() throws Exception {
+        mockMvc.perform(options("/api/properties")
+                        .header("Origin", "https://evil.example")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isForbidden());
     }
 }

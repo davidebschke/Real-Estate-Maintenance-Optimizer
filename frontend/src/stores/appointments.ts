@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as appointmentService from '@/services/appointmentService'
+import { useAuthStore } from '@/stores/auth'
 import type {
   AppointmentDeleteScope,
   CreateAppointmentPayload,
@@ -19,10 +20,11 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     appointments.value = await appointmentService.fetchAppointments()
   }
 
-  /** Creates a new appointment and adds its returned (first) occurrence to the local list. */
+  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit. */
   async function createAppointment(payload: CreateAppointmentPayload) {
     const created = await appointmentService.createAppointment(payload)
     await fetchAppointments()
+    await useAuthStore().refreshDemoQuota()
     return created
   }
 
@@ -73,6 +75,13 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     activeDetailAppointmentId.value = null
   }
 
+  /** Forgets every appointment and closes every overlay, e.g. when the logged-in account changes. */
+  function reset() {
+    appointments.value = []
+    isCreateDialogOpen.value = false
+    activeDetailAppointmentId.value = null
+  }
+
   return {
     appointments,
     isCreateDialogOpen,
@@ -87,5 +96,6 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     closeCreateDialog,
     openDetail,
     closeDetail,
+    reset,
   }
 })

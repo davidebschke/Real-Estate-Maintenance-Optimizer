@@ -3,16 +3,22 @@ package com.remo.realestatemaintainceoptimizer.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
+import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -24,7 +30,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 /**
- * Verifies appointment creation (including recurrence), rescheduling, and single-vs-series deletion against a real PostgreSQL database.
+ * Verifies appointment creation (including recurrence), rescheduling, single-vs-series deletion, account isolation and demo creation limits against a real PostgreSQL database.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -39,27 +45,94 @@ class AppointmentServiceTest {
     @Autowired
     private PropertyRepository propertyRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private User owner;
+
+    private User otherOwner;
+
     @BeforeEach
     void setUp() {
-        propertyRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+        owner = TestAccounts.saveRegularAccount(userRepository);
+        otherOwner = TestAccounts.saveRegularAccount(userRepository);
         propertyRepository.save(new Property(
-                "property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+                "property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+        propertyRepository.save(new Property(
+                "foreign-property", otherOwner.id(), "Fremdes Objekt", "Fremdstr. 1", "pi-building"));
         LocaleContextHolder.setLocale(Locale.ENGLISH);
     }
 
     @Test
+    void creatingAnAppointmentForAnotherAccountsPropertyIsRejected() {
+        CreateAppointmentRequest request = new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "foreign-property", "", LocalDateTime.of(2026, 8, 11, 13, 0),
+                120, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), request)).isInstanceOf(PropertyNotFoundException.class);
+        assertThat(repository.count()).isZero();
+    }
+
+    @Test
+    void anotherAccountCanNeitherSeeNorChangeAnAppointment() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        MoveAppointmentRequest moveRequest = new MoveAppointmentRequest(created.start().plusDays(1), 60);
+
+        assertThat(service.listAll(otherOwner.id())).isEmpty();
+        assertThatThrownBy(() -> service.getById(otherOwner.id(), created.id()))
+                .isInstanceOf(AppointmentNotFoundException.class);
+        assertThatThrownBy(() -> service.move(otherOwner.id(), created.id(), moveRequest))
+                .isInstanceOf(AppointmentNotFoundException.class);
+        assertThatThrownBy(() -> service.complete(otherOwner.id(), created.id(), null))
+                .isInstanceOf(AppointmentNotFoundException.class);
+        assertThatThrownBy(() -> service.reopen(otherOwner.id(), created.id()))
+                .isInstanceOf(AppointmentNotFoundException.class);
+        assertThatThrownBy(() -> service.delete(otherOwner.id(), created.id(), "single"))
+                .isInstanceOf(AppointmentNotFoundException.class);
+        assertThat(service.getById(owner.id(), created.id())).isEqualTo(created);
+    }
+
+    @Test
+    void aDemoAccountCanOnlyCreateAsManyAppointmentsAsItsRemainingLimitCountingASeriesOnce() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 2);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo-Objekt", "Demostr. 1", "pi-building"));
+        CreateAppointmentRequest single = createRequestFor("demo-property", false, null);
+        CreateAppointmentRequest series = createRequestFor("demo-property", true, 3);
+
+        service.create(demo.id(), series);
+        service.create(demo.id(), single);
+
+        assertThatThrownBy(() -> service.create(demo.id(), single)).isInstanceOf(CreationQuotaExceededException.class);
+        assertThat(service.listAll(demo.id())).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES + 1);
+    }
+
+    @Test
+    void aRejectedAppointmentDoesNotUseUpADemoAccountsLimit() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 1);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo-Objekt", "Demostr. 1", "pi-building"));
+
+        assertThatThrownBy(() -> service.create(demo.id(), createRequestFor("unknown-property", false, null)))
+                .isInstanceOf(PropertyNotFoundException.class);
+        assertThatThrownBy(() -> service.create(demo.id(), createRequestFor("demo-property", true, null)))
+                .isInstanceOf(InvalidRecurrenceException.class);
+
+        assertThat(userRepository.findById(demo.id()).orElseThrow().remainingAppointmentCreations()).isEqualTo(1);
+    }
+
+    @Test
     void createsASingleNonRecurringAppointment() {
-        AppointmentResponse response = service.create(createRequest(false, null));
+        AppointmentResponse response = service.create(owner.id(), createRequest(false, null));
 
         assertThat(response.recurring()).isFalse();
         assertThat(response.seriesId()).isNull();
         assertThat(response.history()).hasSize(1);
-        assertThat(service.listAll()).hasSize(1);
+        assertThat(service.listAll(owner.id())).hasSize(1);
     }
 
     @Test
     void createdAppointmentTakesNameAndAddressFromItsProperty() {
-        AppointmentResponse response = service.create(createRequest(false, null));
+        AppointmentResponse response = service.create(owner.id(), createRequest(false, null));
 
         assertThat(response.propertyId()).isEqualTo("property-1");
         assertThat(response.propertyName()).isEqualTo("Wohnanlage Sonnenhof");
@@ -73,41 +146,41 @@ class AppointmentServiceTest {
                 "Kellerreinigung Q3", "unknown-property", "", LocalDateTime.of(2026, 8, 11, 13, 0),
                 120, false, false, null, List.of());
 
-        assertThatThrownBy(() -> service.create(request)).isInstanceOf(PropertyNotFoundException.class);
+        assertThatThrownBy(() -> service.create(owner.id(), request)).isInstanceOf(PropertyNotFoundException.class);
         assertThat(repository.count()).isZero();
     }
 
     @Test
     void readingAnAppointmentBackReturnsTheSameDataAsItsCreation() {
-        AppointmentResponse created = service.create(createRequest(false, null));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
 
-        assertThat(service.getById(created.id())).isEqualTo(created);
+        assertThat(service.getById(owner.id(), created.id())).isEqualTo(created);
     }
 
     @Test
     void subMicrosecondStartTimesAreTruncatedToTheStoredPrecisionOnCreateAndMove() {
         LocalDateTime startWithNanos = LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_789);
-        AppointmentResponse created = service.create(new CreateAppointmentRequest(
+        AppointmentResponse created = service.create(owner.id(), new CreateAppointmentRequest(
                 "Kellerreinigung Q3", "property-1", "", startWithNanos, 120, false, false, null, List.of()));
 
-        AppointmentResponse moved = service.move(created.id(), new MoveAppointmentRequest(startWithNanos.plusDays(1), 60));
+        AppointmentResponse moved = service.move(owner.id(), created.id(), new MoveAppointmentRequest(startWithNanos.plusDays(1), 60));
 
         assertThat(created.start()).isEqualTo(LocalDateTime.of(2026, 8, 11, 13, 0, 0, 123_456_000));
         assertThat(moved.start()).isEqualTo(LocalDateTime.of(2026, 8, 12, 13, 0, 0, 123_456_000));
-        assertThat(service.getById(created.id())).isEqualTo(moved);
+        assertThat(service.getById(owner.id(), created.id())).isEqualTo(moved);
     }
 
     @Test
     void recurringAppointmentRequiresARecurrenceInterval() {
-        assertThatThrownBy(() -> service.create(createRequest(true, null)))
+        assertThatThrownBy(() -> service.create(owner.id(), createRequest(true, null)))
                 .isInstanceOf(InvalidRecurrenceException.class);
     }
 
     @Test
     void recurringAppointmentMaterializesTwelveOccurrencesSharingOneSeriesId() {
-        AppointmentResponse firstOccurrence = service.create(createRequest(true, 3));
+        AppointmentResponse firstOccurrence = service.create(owner.id(), createRequest(true, 3));
 
-        List<AppointmentResponse> all = service.listAll();
+        List<AppointmentResponse> all = service.listAll(owner.id());
 
         assertThat(all).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES);
         assertThat(all).allMatch(response -> firstOccurrence.seriesId().equals(response.seriesId()));
@@ -116,14 +189,14 @@ class AppointmentServiceTest {
 
     @Test
     void movingAnUnlockedAppointmentUpdatesItsScheduleAndHistory() {
-        AppointmentResponse created = service.create(createRequest(false, null));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
         LocalDateTime newStart = created.start().plusDays(1);
 
-        AppointmentResponse moved = service.move(created.id(), new MoveAppointmentRequest(newStart, 120));
+        AppointmentResponse moved = service.move(owner.id(), created.id(), new MoveAppointmentRequest(newStart, 120));
 
         assertThat(moved.start()).isEqualTo(newStart);
         assertThat(moved.history()).hasSize(2);
-        assertThat(service.getById(created.id()).start()).isEqualTo(newStart);
+        assertThat(service.getById(owner.id(), created.id()).start()).isEqualTo(newStart);
     }
 
     @Test
@@ -131,17 +204,17 @@ class AppointmentServiceTest {
         CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
                 "TÜV-Termin", "property-1", "Pflichttermin",
                 LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of());
-        AppointmentResponse created = service.create(lockedRequest);
+        AppointmentResponse created = service.create(owner.id(), lockedRequest);
 
-        assertThatThrownBy(() -> service.move(created.id(), new MoveAppointmentRequest(created.start().plusDays(1), 60)))
+        assertThatThrownBy(() -> service.move(owner.id(), created.id(), new MoveAppointmentRequest(created.start().plusDays(1), 60)))
                 .isInstanceOf(AppointmentLockedException.class);
     }
 
     @Test
     void completingAnAppointmentWithoutAnExplicitActualEndFallsBackToNow() {
-        AppointmentResponse created = service.create(createRequest(false, null));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
 
-        AppointmentResponse completed = service.complete(created.id(), null);
+        AppointmentResponse completed = service.complete(owner.id(), created.id(), null);
 
         assertThat(completed.completed()).isTrue();
         assertThat(completed.actualEnd()).isNotNull();
@@ -150,57 +223,61 @@ class AppointmentServiceTest {
 
     @Test
     void completingAnAppointmentWithAnExplicitActualEndUsesIt() {
-        AppointmentResponse created = service.create(createRequest(false, null));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
         LocalDateTime explicitActualEnd = LocalDateTime.of(2026, 8, 10, 16, 30);
 
-        AppointmentResponse completed = service.complete(created.id(), explicitActualEnd);
+        AppointmentResponse completed = service.complete(owner.id(), created.id(), explicitActualEnd);
 
         assertThat(completed.actualEnd()).isEqualTo(explicitActualEnd);
     }
 
     @Test
     void reopeningACompletedAppointmentClearsActualEnd() {
-        AppointmentResponse created = service.create(createRequest(false, null));
-        service.complete(created.id(), null);
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        service.complete(owner.id(), created.id(), null);
 
-        AppointmentResponse reopened = service.reopen(created.id());
+        AppointmentResponse reopened = service.reopen(owner.id(), created.id());
 
         assertThat(reopened.completed()).isFalse();
         assertThat(reopened.actualEnd()).isNull();
         assertThat(reopened.history()).hasSize(3);
-        assertThat(service.getById(created.id()).completed()).isFalse();
+        assertThat(service.getById(owner.id(), created.id()).completed()).isFalse();
     }
 
     @Test
     void deletingWithSingleScopeRemovesOnlyThatOccurrence() {
-        AppointmentResponse firstOccurrence = service.create(createRequest(true, 3));
+        AppointmentResponse firstOccurrence = service.create(owner.id(), createRequest(true, 3));
 
-        service.delete(firstOccurrence.id(), "single");
+        service.delete(owner.id(), firstOccurrence.id(), "single");
 
-        assertThat(service.listAll()).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES - 1);
+        assertThat(service.listAll(owner.id())).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES - 1);
     }
 
     @Test
     void deletingWithSeriesScopeRemovesThisAndAllFollowingOccurrences() {
-        AppointmentResponse firstOccurrence = service.create(createRequest(true, 3));
-        AppointmentResponse secondOccurrence = service.listAll().get(1);
+        AppointmentResponse firstOccurrence = service.create(owner.id(), createRequest(true, 3));
+        AppointmentResponse secondOccurrence = service.listAll(owner.id()).get(1);
 
-        service.delete(secondOccurrence.id(), "series");
+        service.delete(owner.id(), secondOccurrence.id(), "series");
 
-        assertThat(service.listAll()).containsExactly(firstOccurrence);
+        assertThat(service.listAll(owner.id())).containsExactly(firstOccurrence);
     }
 
     @Test
     void deletingWithSeriesScopeOnANonRecurringAppointmentIsRejected() {
-        AppointmentResponse created = service.create(createRequest(false, null));
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
 
-        assertThatThrownBy(() -> service.delete(created.id(), "series")).isInstanceOf(InvalidRecurrenceException.class);
+        assertThatThrownBy(() -> service.delete(owner.id(), created.id(), "series")).isInstanceOf(InvalidRecurrenceException.class);
     }
 
     private CreateAppointmentRequest createRequest(boolean recurring, Integer recurrenceIntervalMonths) {
+        return createRequestFor("property-1", recurring, recurrenceIntervalMonths);
+    }
+
+    private CreateAppointmentRequest createRequestFor(String propertyId, boolean recurring, Integer recurrenceIntervalMonths) {
         return new CreateAppointmentRequest(
                 "Kellerreinigung Q3",
-                "property-1",
+                propertyId,
                 "Was ist zu tun?",
                 LocalDateTime.of(2026, 8, 11, 13, 0),
                 120,

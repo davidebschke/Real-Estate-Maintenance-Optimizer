@@ -18,17 +18,18 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
 │   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard with its edit/delete icon buttons, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog shared by creation and, pre-filled, editing, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
-│   │   │   └── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
-│   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView)
-│   │   ├── router/                # Vue Router configuration (route definitions, NavigationKey type)
-│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts) and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
-│   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers)
-│   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
-│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields)
+│   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
+│   │   │   └── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
+│   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView, LoginView)
+│   │   ├── router/                # Vue Router configuration (route definitions incl. the public /login route, NavigationKey type, authGuard.ts login guard)
+│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts, authService.ts), httpClient.ts for the shared axios defaults (session cookie, CSRF header, expired-session handling), and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
+│   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts, stores/auth.ts)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useDemoQuota, useAccountPresentation)
+│   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, auth.ts, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
+│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, safeRedirect.ts for the post-login redirect, initials.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
-│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json)
+│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json, auth.json)
 │   │   │   └── en/                # English UI texts, mirrors the de/ structure
 │   │   ├── styles/
 │   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
@@ -37,30 +38,33 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css, property-create-card.css, property-form-dialog.css, property-location-preview-map.css)
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
+│   │   │   ├── auth/              # one CSS file per components/auth building block plus LoginView (login-view.css, auth-card.css, login-form.css, demo-account-panel.css, demo-account-banner.css, demo-quota-hint.css)
 │   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts), support/testProperty.ts creates/deletes a per-test property via the API
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts, auth.spec.ts), auth.setup.ts logs in once and stores the session in the git-ignored .auth/, support/apiSession.ts provides e2e credentials and CSRF headers, support/testProperty.ts creates/deletes a per-test property via the API
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig)
-│   │   ├── controller/             # REST endpoints (e.g. VersionController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
-│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme)
-│   │   ├── repository/             # persistence via Spring Data JPA (e.g. AppointmentRepository, PropertyRepository, see backend readme)
-│   │   ├── entity/                  # JPA entities (e.g. Appointment, HistoryEntry as @Embeddable record, Property with latitude/longitude)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig, AuthProperties, SchedulingConfig)
+│   │   ├── controller/             # REST endpoints (e.g. VersionController, AuthController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
+│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme —, AuthService, DemoAccountService, DemoDataSeeder, DemoAccountCleanupScheduler, InitialAccountPasswordService)
+│   │   ├── repository/             # persistence via Spring Data JPA (e.g. AppointmentRepository, PropertyRepository, UserRepository, see backend readme)
+│   │   ├── entity/                  # JPA entities (e.g. Appointment, HistoryEntry as @Embeddable record, Property with ownerId and latitude/longitude, User)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
-│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, CreatePropertyRequest, GeocodingResponse, AddressValidationResponse, AddressValidationStatus)
+│   │   ├── security/                # Spring Security + session JWT (SecurityConfig, JwtService, SessionCookieManager, JwtAuthenticationFilter, CsrfCookieFilter, AuthenticatedUser, SlidingWindowRateLimiter)
+│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, CreatePropertyRequest, GeocodingResponse, AddressValidationResponse, AddressValidationStatus, LoginRequest, CurrentUserResponse)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
-│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, local spring.datasource defaults, JPA/Flyway settings)
+│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.auth.*, optional import of a local .env, local spring.datasource defaults, JPA/Flyway settings)
 │   │   ├── db/migration/           # Flyway migrations (V<n>__*.sql) owning the PostgreSQL schema "remo", applied on startup
 │   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (fallback bundle, English), messages_de.properties, messages_en.properties
 │   ├── docker-compose.yml           # local PostgreSQL 17 for development, matching the application.yml datasource defaults
-│   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* environment variables
-│   ├── src/test/java/...          # JUnit tests (TestcontainersConfiguration provides the PostgreSQL test database)
+│   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* and the REMO_AUTH_* environment variables (a local copy as backend/.env is git-ignored)
+│   ├── src/test/java/...          # JUnit tests (TestcontainersConfiguration provides the PostgreSQL test database, TestAccounts creates accounts, session cookies and CSRF tokens)
+│   ├── src/test/resources/          # application.properties with the test-only JWT secret
 │   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)

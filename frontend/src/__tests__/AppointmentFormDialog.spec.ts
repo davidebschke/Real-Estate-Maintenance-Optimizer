@@ -7,6 +7,7 @@ import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { i18n } from '@/i18n'
 import AppointmentFormDialog from '@/components/appointments/AppointmentFormDialog.vue'
+import { useAuthStore } from '@/stores/auth'
 import * as appointmentService from '@/services/appointmentService'
 import * as propertyService from '@/services/propertyService'
 
@@ -116,4 +117,37 @@ describe('AppointmentFormDialog', () => {
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
   })
+
+  it('shows a demo account how many more appointments it may create', async () => {
+    logInDemoAccount(2)
+
+    await mountDialog()
+
+    expect(document.body.textContent).toContain('Sie können noch 2 weitere Termine anlegen.')
+  })
+
+  it('keeps submit disabled once a demo account created all its additional appointments', async () => {
+    logInDemoAccount(0)
+    const wrapper = await mountDialog()
+    await fillRequiredFields(wrapper)
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('bereits alle 3 zusätzlichen Termine angelegt')
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    expect(appointmentService.createAppointment).not.toHaveBeenCalled()
+  })
 })
+
+/** Logs in a demo account with the given number of remaining appointment creations. */
+function logInDemoAccount(remainingAppointmentCreations: number) {
+  useAuthStore().currentUser = {
+    username: 'demo-1',
+    displayName: 'Demo',
+    demoAccount: true,
+    expiresAt: new Date(),
+    remainingPropertyCreations: 3,
+    remainingAppointmentCreations,
+  }
+}

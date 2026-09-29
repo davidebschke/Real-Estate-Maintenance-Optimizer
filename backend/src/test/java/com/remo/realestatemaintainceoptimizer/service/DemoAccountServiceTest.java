@@ -1,0 +1,120 @@
+package com.remo.realestatemaintainceoptimizer.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.remo.realestatemaintainceoptimizer.TestAccounts;
+import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
+import com.remo.realestatemaintainceoptimizer.entity.User;
+import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.stream.IntStream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+
+/**
+ * Verifies demo account creation (expiry, creation limits, example data), its per-client and global limits, and the removal of expired demo accounts.
+ */
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
+class DemoAccountServiceTest {
+
+    @Autowired
+    private DemoAccountService service;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PropertyRepository propertyRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    @BeforeEach
+    void clearDatabase() {
+        userRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void createsAPasswordlessDemoAccountThatExpiresAfterOneSession() {
+        Instant before = Instant.now();
+
+        User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
+
+        assertThat(demo.demoAccount()).isTrue();
+        assertThat(demo.username()).startsWith(DemoAccountService.DEMO_USERNAME_PREFIX);
+        assertThat(demo.passwordHash()).isNull();
+        assertThat(demo.displayName()).isEqualTo(DemoAccountService.DEMO_DISPLAY_NAME);
+        assertThat(Duration.between(demo.createdAt(), demo.expiresAt())).isEqualTo(Duration.ofHours(8));
+        assertThat(demo.createdAt()).isAfterOrEqualTo(before.minusMillis(1));
+    }
+
+    @Test
+    void givesTheDemoAccountThreeMorePropertyAndAppointmentCreations() {
+        User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
+
+        assertThat(demo.remainingPropertyCreations()).isEqualTo(3);
+        assertThat(demo.remainingAppointmentCreations()).isEqualTo(3);
+    }
+
+    @Test
+    void fillsTheDemoAccountWithFivePropertiesAndThirtyAppointments() {
+        User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
+
+        assertThat(propertyRepository.findAllByOwnerIdOrderByNameAsc(demo.id())).hasSize(5);
+        assertThat(appointmentRepository.findAllByPropertyOwnerIdOrderByStartAsc(demo.id())).hasSize(30);
+    }
+
+    @Test
+    void everyDemoAccountGetsItsOwnUniqueUsername() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
+
+        User first = service.createDemoAccount(clientAddress);
+        User second = service.createDemoAccount(clientAddress);
+
+        assertThat(first.username()).isNotEqualTo(second.username());
+    }
+
+    @Test
+    void rejectsMoreThanTenDemoAccountsPerClientWithinTheWindow() {
+        String clientAddress = TestAccounts.uniqueClientAddress();
+        IntStream.range(0, 10).forEach(index -> service.createDemoAccount(clientAddress));
+
+        assertThatThrownBy(() -> service.createDemoAccount(clientAddress))
+                .isInstanceOf(RateLimitExceededException.class)
+                .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_TOO_MANY_DEMO_ACCOUNTS);
+        assertThat(service.createDemoAccount(TestAccounts.uniqueClientAddress())).isNotNull();
+    }
+
+    @Test
+    void rejectsNewDemoAccountsOnceTheGlobalCapacityIsReached() {
+        IntStream.range(0, 100).forEach(index ->
+                TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 3, 3));
+
+        assertThatThrownBy(() -> service.createDemoAccount(TestAccounts.uniqueClientAddress()))
+                .isInstanceOf(RateLimitExceededException.class)
+                .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_DEMO_CAPACITY_REACHED);
+    }
+
+    @Test
+    void deletesOnlyExpiredDemoAccounts() {
+        User expired = TestAccounts.saveDemoAccount(userRepository, Instant.now().minusSeconds(1), 3, 3);
+        User active = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 3, 3);
+        User regular = TestAccounts.saveRegularAccount(userRepository);
+
+        int deletedCount = service.deleteExpiredDemoAccounts();
+
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(userRepository.findById(expired.id())).isEmpty();
+        assertThat(userRepository.findById(active.id())).isPresent();
+        assertThat(userRepository.findById(regular.id())).isPresent();
+    }
+}
