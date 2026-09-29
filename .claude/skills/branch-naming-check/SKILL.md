@@ -13,7 +13,7 @@ Before creating a new branch, and before pushing a branch or opening a pull requ
 
 ## Steps
 
-1. **Check the scheme**: Confirm the branch name starts with a numeric issue number followed by a hyphen and a short, lowercase, hyphen-separated description (e.g. `21-chore-wiki-sync-reminder-in-claude-md`).
+1. **Check the scheme**: Confirm the branch name starts with a numeric issue number followed by a hyphen and a short, lowercase, hyphen-separated description (e.g. `21-chore-slim-claudemd-documentation`).
 2. **Missing issue number**: If no GitHub issue exists yet for the change, ask the user for the issue number or whether one should be created first, rather than guessing one.
 3. **Mismatch**: If an existing branch does not follow the scheme, propose the corrected name and rename it with `git branch -m <old> <new>` (and update any already-pushed remote tracking branch only after user confirmation, since renaming a pushed branch affects shared state).
 4. **PR readiness**: Before opening a PR, confirm the branch name and target (`main`) match [`.claude/rules/git-workflow.md`](../../rules/git-workflow.md).

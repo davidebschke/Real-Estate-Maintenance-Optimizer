@@ -17,7 +17,6 @@ Immediately after any file or directory under `frontend/` or `backend/` is added
 2. **Update the tree**: If a directory or file was added, renamed, or removed, edit the tree in `folder-structure.md` to match, keeping the existing inline comments' style (short purpose description per entry).
 3. **Update the backend package proposal**: If a new top-level Java package was introduced (e.g. `security/`, `ai/`), confirm it is reflected in the "Backend Package Structure" section of the same file.
 4. **Cross-check readmes**: If the change also affects what's described as implemented in `backend/readme_backend_*.md` / `frontend/readme_frontend_*.md`, hand off to the `docs-consistency-check` skill rather than duplicating that update here.
-5. **Wiki**: If `folder-structure.md` was edited, hand off to the `wiki-sync` skill (`EN-Folder-Structure.md` / `DE-Ordnerstruktur.md`).
 
 ## Non-goals
 
