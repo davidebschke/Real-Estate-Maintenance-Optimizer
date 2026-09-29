@@ -58,6 +58,13 @@
   color: var(--remo-calendar-muted-text-color, #8b8f96);
 }
 
+/* Explicit override, same reasoning as the `.p-dialog` rule above: PrimeVue's own `.p-invalid` border
+   color is injected after this stylesheet and would otherwise be masked by the plain `.p-inputtext`/`.p-select` rule. */
+.appointment-form-dialog .p-inputtext.p-invalid,
+.appointment-form-dialog .p-select.p-invalid {
+  border-color: #f87171;
+}
+
 .appointment-form-dialog__grid {
   display: grid;
   gap: 1.5rem;
@@ -101,6 +108,22 @@
 .appointment-form-dialog__error {
   color: var(--remo-calendar-accent-color, #3b82f6);
   font-size: 0.85rem;
+  margin: 0;
+}
+
+.appointment-form-dialog__required-marker {
+  color: #f87171;
+}
+
+.appointment-form-dialog__field-error {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.appointment-form-dialog__required-legend {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
   margin: 0;
 }
 

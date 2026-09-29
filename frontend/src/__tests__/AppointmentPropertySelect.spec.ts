@@ -2,6 +2,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import Select from 'primevue/select'
 import { i18n } from '@/i18n'
 import AppointmentPropertySelect from '@/components/appointments/AppointmentPropertySelect.vue'
 import * as propertyService from '@/services/propertyService'
@@ -43,5 +44,40 @@ describe('AppointmentPropertySelect', () => {
     expect(wrapper.find('.appointment-property-select__address').text()).toContain(
       'Aachener Str. 512',
     )
+  })
+
+  it('marks the label as required and shows no error hint before the field is touched', async () => {
+    const wrapper = mount(AppointmentPropertySelect, {
+      props: { modelValue: null, required: true },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.appointment-property-select__label').text()).toContain('*')
+    expect(wrapper.find('.appointment-property-select__error').exists()).toBe(false)
+  })
+
+  it('shows a required-field hint once the field is left empty after being touched', async () => {
+    const wrapper = mount(AppointmentPropertySelect, {
+      props: { modelValue: null, required: true },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+    await flushPromises()
+
+    await wrapper.findComponent(Select).vm.$emit('blur')
+
+    expect(wrapper.find('.appointment-property-select__error').exists()).toBe(true)
+  })
+
+  it('shows no required-field hint once a property has been chosen, even after the field was touched', async () => {
+    const wrapper = mount(AppointmentPropertySelect, {
+      props: { modelValue: '1', required: true },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+    await flushPromises()
+
+    await wrapper.findComponent(Select).vm.$emit('blur')
+
+    expect(wrapper.find('.appointment-property-select__error').exists()).toBe(false)
   })
 })

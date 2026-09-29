@@ -119,6 +119,56 @@ describe('PropertyFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
+  it('marks name, street, house number, postal code and city as required fields, but not the address supplement', async () => {
+    await mountDialog()
+
+    expect(bodyField('label[for="property-name"]').text()).toContain('*')
+    expect(bodyField('label[for="property-street"]').text()).toContain('*')
+    expect(bodyField('label[for="property-house-number"]').text()).toContain('*')
+    expect(bodyField('label[for="property-postal-code"]').text()).toContain('*')
+    expect(bodyField('label[for="property-city"]').text()).toContain('*')
+    expect(bodyField('label[for="property-address-supplement"]').text()).not.toContain('*')
+  })
+
+  it('shows no hint before the required fields are touched', async () => {
+    await mountDialog()
+
+    expect(bodyField('#property-name').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-house-number').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-postal-code').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-city').classes()).not.toContain('p-invalid')
+  })
+
+  it('shows a hint under every required field once it is touched and left empty, until it is filled in', async () => {
+    await mountDialog()
+
+    await bodyField('#property-name').trigger('blur')
+    await bodyField('#property-street').trigger('blur')
+    await bodyField('#property-house-number').trigger('blur')
+    await bodyField('#property-postal-code').trigger('blur')
+    await bodyField('#property-city').trigger('blur')
+
+    expect(bodyField('#property-name').classes()).toContain('p-invalid')
+    expect(bodyField('#property-street').classes()).toContain('p-invalid')
+    expect(bodyField('#property-house-number').classes()).toContain('p-invalid')
+    expect(bodyField('#property-postal-code').classes()).toContain('p-invalid')
+    expect(bodyField('#property-city').classes()).toContain('p-invalid')
+    expect(document.body.textContent).toContain('Bitte einen Namen eingeben.')
+    expect(document.body.textContent).toContain('Bitte eine Straße eingeben.')
+    expect(document.body.textContent).toContain('Bitte eine Hausnummer eingeben.')
+    expect(document.body.textContent).toContain('Bitte eine Postleitzahl eingeben.')
+    expect(document.body.textContent).toContain('Bitte einen Ort eingeben.')
+
+    await fillRequiredFields()
+
+    expect(bodyField('#property-name').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-house-number').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-postal-code').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-city').classes()).not.toContain('p-invalid')
+  })
+
   it('keeps submit disabled while the house number is empty, even with an address supplement filled in', async () => {
     const wrapper = await mountDialog()
 

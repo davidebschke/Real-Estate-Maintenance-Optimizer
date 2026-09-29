@@ -4,15 +4,19 @@
       "title": "Create appointment",
       "titleLabel": "Title",
       "titlePlaceholder": "e.g. basement cleaning Q3",
+      "titleRequiredError": "Please enter a title.",
       "property": {
         "label": "Property",
         "placeholder": "Choose a property",
-        "sourceHint": "from property master data"
+        "sourceHint": "from property master data",
+        "requiredError": "Please choose a property."
       },
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "What needs to be done? Access, contact person, special notes.",
       "dayLabel": "Day",
+      "dayRequiredError": "Please choose a day.",
       "timeLabel": "Time",
+      "timeRequiredError": "Please choose a time.",
       "durationLabel": "Duration",
       "duration": {
         "options": {
@@ -43,7 +47,8 @@
         "applyButton": "Apply suggestion"
       },
       "submit": "Create appointment",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "requiredFieldsLegend": "* Required field"
     },
     "edit": {
       "title": "Edit appointment",
