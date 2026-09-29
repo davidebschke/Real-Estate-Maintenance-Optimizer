@@ -1,7 +1,9 @@
 package com.remo.realestatemaintainceoptimizer.config;
 
+import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -10,8 +12,13 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class RestClientConfig {
 
+    private static final Duration EXTERNAL_CALL_TIMEOUT = Duration.ofSeconds(5);
+
     @Bean
     public RestClient.Builder restClientBuilder() {
-        return RestClient.builder();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(EXTERNAL_CALL_TIMEOUT);
+        requestFactory.setReadTimeout(EXTERNAL_CALL_TIMEOUT);
+        return RestClient.builder().requestFactory(requestFactory);
     }
 }

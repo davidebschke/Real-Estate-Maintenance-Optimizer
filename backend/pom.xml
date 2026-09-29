@@ -165,6 +165,29 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.28.0</version>
+                <configuration>
+                    <printFailingErrors>true</printFailingErrors>
+                    <rulesets>
+                        <ruleset>category/java/bestpractices.xml</ruleset>
+                        <ruleset>category/java/errorprone.xml</ruleset>
+                        <ruleset>category/java/multithreading.xml</ruleset>
+                        <ruleset>category/java/security.xml</ruleset>
+                    </rulesets>
+                    <excludeFromFailureFile>pmd-exclusions.properties</excludeFromFailureFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

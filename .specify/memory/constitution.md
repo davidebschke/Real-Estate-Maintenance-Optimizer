@@ -1,3 +1,16 @@
+<!--
+Sync Impact Report
+Version change: 1.0.1 → 1.1.0 (MINOR: three new principles added, no existing principle redefined or removed)
+Modified principles: none renamed or redefined
+Added sections:
+  - Core Principles: VII. Fail Fast, Handle Errors Explicitly
+  - Core Principles: VIII. Refactor Only Through the Characterization Workflow
+  - Core Principles: IX. Linting as a CI Gate
+Removed sections: none
+Templates requiring updates: none (constitution is a derived summary; dependent templates read it at runtime, not modified here)
+Follow-up TODOs: none
+-->
+
 # Real-Estate-Maintenance-Optimizer Constitution
 
 ## Core Principles
@@ -12,13 +25,22 @@ Variable, function, and identifier names are always in English. Comments are all
 Functions and methods are designed to be reusable; one-off solutions for special cases are not acceptable. Prefer extending an existing reusable unit over hard-coding a special case beside it.
 
 ### IV. Minimal-Diff Editing
-When changing existing code or documentation, edit only the specific lines/sentences that actually need to change — not the surrounding section, function, or file — unless the task explicitly calls for a rewrite of that larger scope.
+When changing existing code or documentation, edit only the specific lines/sentences that actually need to change — not the surrounding section, function, or file — unless the task explicitly calls for a rewrite of that larger scope. This governs point fixes and small feature changes; a task that is explicitly a restructuring of existing code instead follows Principle VIII.
 
 ### V. Test Coverage as a Gate
 A test is required for every new or changed component: frontend components (Vitest + Vue Test Utils, Playwright for e2e) and backend units — services, controllers, repositories (JUnit 5, Mockito, AssertJ, Testcontainers PostgreSQL). If edge cases exist for a component, they are raised with the user before tests are written, not silently assumed.
 
 ### VI. Structured Git Workflow
 All features and fixes go through feature branches named `<issue-number>-<short-description>`, with issue numbers assigned sequentially across the repository (tracked in `.claude/rules/git-workflow.md`), and pull requests against `main` reviewed by the CODEOWNER (`@davidebschke`). Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`). Every issue gets an effort estimate attached as one of `Low-Effort` / `Medium-Effort` / `High-Effort` at creation time, and whoever implements it matches that label to Sonnet 5's reasoning effort (low/medium/high, see `.claude/rules/git-workflow.md`).
+
+### VII. Fail Fast, Handle Errors Explicitly
+Invalid state and required-dependency failures stop the request or the startup, not surface later as a silent bug: missing configuration fails at startup, invalid input is rejected at the boundary with a clear 4xx. Every outgoing external HTTP call (e.g. to Nominatim) carries an explicit timeout, set once on the shared client, never left at the framework default of none. A caught exception or promise rejection is either rethrown with added context or handled as a deliberate, logged, documented degradation of an optional feature — never silently swallowed. See `.claude/rules/error-handling.md`.
+
+### VIII. Refactor Only Through the Characterization Workflow
+Restructuring existing code without changing its behaviour (rename, extract, move, inline, split) follows Assess → Characterize → Plan → Execute → Verify: a test capturing today's actual behaviour is added or confirmed before legacy code without coverage is touched, steps run least-risky-first, and each step leaves the code working. A characterization test failing mid-refactor means behaviour changed; that change is either undone or made deliberate and committed separately with an updated test expectation — an existing test is never silently edited to make a refactor "pass". See `.claude/rules/refactoring.md`.
+
+### IX. Linting as a CI Gate
+Static analysis is enforced automatically, not left to reviewer attention alone: PMD runs against the backend and ESLint against the frontend as their own CI steps, both failing the build on a violation. Pre-existing debt at the time a linter is introduced may be grandfathered in a documented baseline (e.g. `backend/pmd-exclusions.properties`) so adoption doesn't block on unrelated history, but any new violation — on any file — still fails the build, and the baseline shrinks as flagged code is next touched (Boy Scout Rule, Principle VIII). See `.claude/rules/linting.md`.
 
 ## Documentation Sync Obligations
 
@@ -30,6 +52,6 @@ Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LT
 
 ## Governance
 
-This constitution distills the binding rules already defined under `.claude/rules/` (`coding-conventions.md`, `documentation.md`, `folder-structure.md`, `git-workflow.md`, `testing.md`, `wiki.md`) and in `CLAUDE.md`; those files remain the authoritative source. An amendment here is only valid once the corresponding underlying rule file is updated first — this file is a derived summary, not an independent source of truth. Every spec, plan, and PR produced through the spec-kit workflow must comply with these principles; deviations must be justified in the plan's Complexity Tracking section.
+This constitution distills the binding rules already defined under `.claude/rules/` (`coding-conventions.md`, `documentation.md`, `error-handling.md`, `folder-structure.md`, `git-workflow.md`, `linting.md`, `refactoring.md`, `testing.md`, `wiki.md`) and in `CLAUDE.md`; those files remain the authoritative source. An amendment here is only valid once the corresponding underlying rule file is updated first — this file is a derived summary, not an independent source of truth. Every spec, plan, and PR produced through the spec-kit workflow must comply with these principles; deviations must be justified in the plan's Complexity Tracking section.
 
-**Version**: 1.0.1 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-09-28
+**Version**: 1.1.0 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-09-29

@@ -33,6 +33,9 @@ jobs:
       - name: Run tests
         run: mvn --batch-mode --no-transfer-progress test
 
+      - name: Run PMD
+        run: mvn --batch-mode --no-transfer-progress pmd:check
+
       - name: Publish test report
         uses: dorny/test-reporter@v1
         if: always()

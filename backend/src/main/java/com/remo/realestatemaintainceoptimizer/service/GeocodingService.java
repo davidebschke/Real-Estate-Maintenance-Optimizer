@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -22,6 +24,7 @@ import org.springframework.web.util.UriBuilder;
 @Service
 public class GeocodingService {
 
+    private static final Logger log = LoggerFactory.getLogger(GeocodingService.class);
     private static final Duration MIN_DELAY_BETWEEN_REQUESTS = Duration.ofSeconds(1);
     private static final GeocodingResponse NOT_FOUND = new GeocodingResponse(null, null);
     private static final Pattern GERMAN_POSTAL_CODE = Pattern.compile("\\b\\d{5}\\b");
@@ -198,6 +201,7 @@ public class GeocodingService {
                     .body(NominatimResult[].class);
             return results == null ? List.of() : List.of(results);
         } catch (RestClientException exception) {
+            log.warn("Nominatim request failed, falling back to an empty result", exception);
             return List.of();
         }
     }
