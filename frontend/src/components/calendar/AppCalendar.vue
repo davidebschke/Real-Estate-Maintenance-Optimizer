@@ -13,6 +13,7 @@ import { useLocale } from '@/composables/useLocale'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
 import { useAppointmentDragAndDrop } from '@/composables/useAppointmentDragAndDrop'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useAppointmentsStore } from '@/stores/appointments'
 import type { VueCalEventClickEvent, VueCalSlotEvent, VueCalWeekdayHeading } from '@/types/vue-cal'
 
@@ -65,6 +66,13 @@ const {
 /** vue-cal's ISO weekday number for Sunday, hidden from every calendar view since the company does not schedule appointments then. */
 const SUNDAY_ISO_WEEKDAY = 7
 
+/** Minimum pixel width for a week-view day column once the viewport is too narrow to fit them all, letting vue-cal's own horizontal scroll (synced between the day headers and the grid) take over instead of clipping days off-screen. */
+const WEEK_VIEW_MOBILE_MIN_CELL_WIDTH_PX = 96
+const { matches: isNarrowViewport } = useMediaQuery('(max-width: 48rem)')
+const weekViewMinCellWidth = computed(() =>
+  isNarrowViewport.value ? WEEK_VIEW_MOBILE_MIN_CELL_WIDTH_PX : 0,
+)
+
 /** Locale bundle for vue-cal's own built-in labels (weekday/month names), matching the active app locale, with its default "no event" label overridden to this app's "Termin" terminology. */
 const vueCalLocale = computed(() => ({
   ...(currentLocale.value === 'de' ? deLocale : enLocale),
@@ -108,6 +116,7 @@ onMounted(() => {
         :time-from="420"
         :time-to="1140"
         :time-step="60"
+        :min-cell-width="weekViewMinCellWidth"
         :hide-title-bar="true"
         :hide-view-selector="true"
         :on-event-click="handleEventClick"
