@@ -4,7 +4,14 @@
 [![Frontend Tests](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/frontend-tests.yml)
 [![Deploy to Oracle Cloud](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/deploy-oracle-cloud.yml/badge.svg)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/actions/workflows/deploy-oracle-cloud.yml)
 
+### 📊 Repository Stats
+
+[![Lines of Code](https://sloc.xyz/github/davidebschke/Real-Estate-Maintenance-Optimizer)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer)
+[![Commits](https://badgen.net/github/commits/davidebschke/Real-Estate-Maintenance-Optimizer)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/commits/main)
+[![Pull Requests](https://img.shields.io/github/issues-pr-closed/davidebschke/Real-Estate-Maintenance-Optimizer?label=pull%20requests)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/pulls?q=is%3Apr)
+
 - [Real-Estate-Maintenance-Optimizer](#real-estate-maintenance-optimizer)
+  - [📊 Repository Stats](#-repository-stats)
   - [English](#english)
     - [📌 Project Overview](#-project-overview)
     - [Prototype](#prototype)
