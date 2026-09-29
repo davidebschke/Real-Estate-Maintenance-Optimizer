@@ -21,4 +21,3 @@ After adding, renaming, or removing any user-facing UI text or server-generated 
 ## Non-goals
 
 - Do not judge translation quality/wording beyond flagging obviously missing or placeholder text — defer phrasing decisions to the user.
-- Do not touch the GitHub Wiki for pure translation-content changes; the Wiki mapping in [`.claude/rules/wiki.md`](../../rules/wiki.md) does not cover locale files.

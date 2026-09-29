@@ -18,7 +18,6 @@ After implementing a change in this repository (new/removed files or directories
 3. **CLAUDE.md**: Confirm Sections 3, 4, and 6 still only hold short summaries pointing to the canonical files above — move any accumulated detail out into the appropriate readme/rule file rather than leaving it in `CLAUDE.md`.
 4. **Version tracking**: If `pom.xml` was touched, check whether `<version>` changed. If it did, verify `GET /api/version` and `frontend/.../FooterVersion.vue` report the new version correctly, and update `CLAUDE.md` Section 3.3 accordingly.
 5. **README.md**: If a feature/epic's scope or status changed, confirm the root `README.md` (English & German) still describes it accurately.
-6. **Wiki**: If any file touched in steps 1–5 is one of the source files tracked by [`.claude/rules/wiki.md`](../../rules/wiki.md), hand off to the `wiki-sync` skill.
 
 ## Non-goals
 
