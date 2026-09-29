@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
+import { AUTH_STATE_PATH } from './e2e/support/apiSession'
 
 /**
  * Read environment variables from file.
@@ -43,25 +44,35 @@ export default defineConfig({
     headless: !!process.env.CI,
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for major browsers; "setup" logs in once (E2E_USERNAME/E2E_PASSWORD) and every browser starts from that session */
   projects: [
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        storageState: AUTH_STATE_PATH,
       },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
       use: {
         ...devices['Desktop Firefox'],
+        storageState: AUTH_STATE_PATH,
       },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
       use: {
         ...devices['Desktop Safari'],
+        storageState: AUTH_STATE_PATH,
       },
+      dependencies: ['setup'],
     },
 
     /* Test against mobile viewports. */

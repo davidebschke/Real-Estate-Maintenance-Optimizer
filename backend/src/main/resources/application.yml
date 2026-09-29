@@ -1,6 +1,12 @@
 spring:
   application:
     name: real-estate-maintenance-optimizer
+  config:
+    # Local developer secrets (REMO_AUTH_*), never committed; production passes them as real environment variables instead
+    import: optional:file:.env[.properties]
+  autoconfigure:
+    # Accounts live in the users table (see AuthService), so Spring Boot's generated in-memory default user must not exist
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   messages:
     basename: locales/messages
     encoding: UTF-8
@@ -23,7 +29,25 @@ spring:
     # Dedicated schema instead of "public", which Supabase exposes through its auto-generated Data API
     schemas: remo
 
+server:
+  # Trusts X-Forwarded-For only from local/private reverse proxies, so rate limits see the real client address behind one
+  forward-headers-strategy: native
+
 remo:
   frontend:
     # Origin allowed to call the backend REST API (Vite dev server default port)
     base-url: http://localhost:5173
+  auth:
+    # HMAC key for the session JWT, at least 32 bytes; no default on purpose, startup fails without it
+    jwt-secret: ${REMO_AUTH_JWT_SECRET:}
+    session-duration: 8h
+    # Must stay true wherever the app is served over HTTPS; only plain-HTTP local development may turn it off
+    cookie-secure: ${REMO_AUTH_COOKIE_SECURE:true}
+    # Sets the password of the "debschke" account on startup while it has none yet; never logged or stored in plain text
+    initial-user-password: ${REMO_AUTH_INITIAL_USER_PASSWORD:}
+    max-failed-logins-per-username-and-client: 5
+    max-failed-logins-per-client: 20
+    failed-login-window: 15m
+    max-demo-accounts-per-client: ${REMO_AUTH_MAX_DEMO_ACCOUNTS_PER_CLIENT:10}
+    demo-account-creation-window: 1h
+    max-active-demo-accounts: 100

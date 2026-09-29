@@ -18,4 +18,13 @@ describe('router', () => {
 
     expect(router.currentRoute.value.path).toBe(path)
   })
+
+  it('resolves the login route as the only public page, rendered without the app shell', async () => {
+    const router = createTestRouter()
+    await router.push({ name: 'login' })
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.meta).toEqual({ public: true, layout: 'auth' })
+    expect(routes.filter((route) => route.meta?.public)).toHaveLength(1)
+  })
 })

@@ -45,3 +45,6 @@ playwright-report/
 .env
 .env.*
 !.env.example
+
+# Playwright login state written by e2e/auth.setup.ts (contains a live session cookie)
+e2e/.auth/

@@ -15,6 +15,8 @@ import 'leaflet/dist/leaflet.css'
 import App from './App.vue'
 import router from './router'
 import { i18n } from './i18n'
+import { configureHttpClient } from './services/httpClient'
+import { useAuthStore } from './stores/auth'
 
 /**
  * Leaflet's built-in default-icon detection reads the images/marker-icon.png URL from leaflet.css at runtime,
@@ -31,6 +33,16 @@ L.Icon.Default.mergeOptions({
 const app = createApp(App)
 
 app.use(createPinia())
+
+configureHttpClient({
+  onSessionExpired: () => {
+    useAuthStore().clearSession()
+    const currentRoute = router.currentRoute.value
+    if (currentRoute.meta.public) return
+    router.replace({ name: 'login', query: { redirect: currentRoute.fullPath } })
+  },
+})
+
 app.use(router)
 app.use(i18n)
 app.use(PrimeVue, {
@@ -42,4 +54,4 @@ app.use(ConfirmationService)
 app.use(ToastService)
 app.directive('tooltip', Tooltip)
 
-app.mount('#app')
+router.isReady().then(() => app.mount('#app'))

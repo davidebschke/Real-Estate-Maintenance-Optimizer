@@ -5,6 +5,7 @@ import {
   deleteTestProperty,
   type TestProperty,
 } from './support/testProperty.js'
+import { csrfHeaders } from './support/apiSession.js'
 
 /** Opens the creation form, fills in the given title and property, and submits it. */
 async function createAppointment(
@@ -46,7 +47,10 @@ async function freezeClockBeforeBusinessHours(page: Page) {
 
 /** Deletes the appointment with the given id directly via the API, so tests don't leave data behind. */
 async function deleteAppointment(page: Page, id: string, scope: 'single' | 'series' = 'single') {
-  await page.request.delete(`${BACKEND_BASE_URL}/api/appointments/${id}`, { params: { scope } })
+  await page.request.delete(`${BACKEND_BASE_URL}/api/appointments/${id}`, {
+    params: { scope },
+    headers: await csrfHeaders(page.request),
+  })
 }
 
 /** Drags the calendar card with the given title 200px down, past the creation dialog's still-closing mask so the low-level mouse events actually reach the grid. */

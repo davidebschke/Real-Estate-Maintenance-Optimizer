@@ -27,3 +27,8 @@ export function formatDurationMinutes(totalMinutes: number, locale: string): str
 
   return parts.length > 0 ? parts.join(' ') : `0 ${minutesLabel}`
 }
+
+/** Formats the time of day as localized hours and minutes (e.g. "14:05" / "2:05 PM"). */
+export function formatLocalizedTime(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+}

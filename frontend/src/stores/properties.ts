@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { useAuthStore } from '@/stores/auth'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -15,6 +16,8 @@ export const usePropertiesStore = defineStore('properties', () => {
   const editingProperty = ref<Property | null>(null)
   /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
   let latestChangeToken = 0
+  /** Bumped by reset(), so a create/update/delete answered only after the account changed never touches the new account's list. */
+  let sessionEpoch = 0
 
   /** Loads every property from the backend, recording whether the request failed; ignores the result if a newer change (fetch or create) already happened. */
   async function fetchProperties() {
@@ -30,24 +33,29 @@ export const usePropertiesStore = defineStore('properties', () => {
     }
   }
 
-  /** Creates a new property and inserts it into the store in name order, recording whether the request failed. */
+  /** Creates a new property and inserts it into the store in name order, recording whether the request failed and, for a demo account, refreshing its remaining creation limit. */
   async function createProperty(payload: CreatePropertyPayload): Promise<boolean> {
+    const requestEpoch = sessionEpoch
     try {
       const created = await propertyService.createProperty(payload)
+      if (requestEpoch !== sessionEpoch) return false
       latestChangeToken++
       properties.value = [...properties.value, created].sort((a, b) => a.name.localeCompare(b.name))
       hasCreateError.value = false
-      return true
     } catch {
       hasCreateError.value = true
       return false
     }
+    await useAuthStore().refreshDemoQuota()
+    return true
   }
 
   /** Updates a property and replaces it in the store, re-sorting by name, recording whether the request failed. */
   async function updateProperty(id: string, payload: CreatePropertyPayload): Promise<boolean> {
+    const requestEpoch = sessionEpoch
     try {
       const updated = await propertyService.updateProperty(id, payload)
+      if (requestEpoch !== sessionEpoch) return false
       latestChangeToken++
       properties.value = properties.value
         .map((property) => (property.id === id ? updated : property))
@@ -62,12 +70,14 @@ export const usePropertiesStore = defineStore('properties', () => {
 
   /** Deletes a property and every appointment referencing it, recording whether the delete request itself failed; a failure to refresh the appointments store afterwards does not count as a delete failure. */
   async function deleteProperty(id: string): Promise<boolean> {
+    const requestEpoch = sessionEpoch
     try {
       await propertyService.deleteProperty(id)
     } catch {
       hasDeleteError.value = true
       return false
     }
+    if (requestEpoch !== sessionEpoch) return false
     latestChangeToken++
     properties.value = properties.value.filter((property) => property.id !== id)
     hasDeleteError.value = false
@@ -104,6 +114,19 @@ export const usePropertiesStore = defineStore('properties', () => {
     editingProperty.value = null
   }
 
+  /** Forgets every property, error flag and open form, and ignores any still in-flight fetch, e.g. when the logged-in account changes. */
+  function reset() {
+    sessionEpoch++
+    latestChangeToken++
+    properties.value = []
+    hasLoadError.value = false
+    hasCreateError.value = false
+    hasUpdateError.value = false
+    hasDeleteError.value = false
+    isCreateDialogOpen.value = false
+    editingProperty.value = null
+  }
+
   /** Whether the shared property form dialog (create or edit) should be visible; closing it also resets both modes. */
   const isFormDialogOpen = computed({
     get: () => isCreateDialogOpen.value || editingProperty.value !== null,
@@ -131,5 +154,6 @@ export const usePropertiesStore = defineStore('properties', () => {
     closeCreateDialog,
     openEditDialog,
     closeEditDialog,
+    reset,
   }
 })

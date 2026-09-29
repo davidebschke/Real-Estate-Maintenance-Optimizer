@@ -18,6 +18,7 @@
 
 .user-account-dropdown__avatar {
   align-items: center;
+  background-color: var(--remo-calendar-accent-color, #3b82f6);
   border-radius: 999px;
   color: #ffffff;
   display: flex;
@@ -76,47 +77,10 @@
   margin: 0.5rem 0;
 }
 
-.user-account-dropdown__section-label {
-  color: var(--remo-header-text-muted-color, #9ca3af);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.user-account-dropdown__account-list,
 .user-account-dropdown__menu {
   list-style: none;
   margin: 0.5rem 0 0;
   padding: 0;
-}
-
-.user-account-dropdown__account-option {
-  align-items: center;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  gap: 0.65rem;
-  padding: 0.5rem;
-  text-align: left;
-  transition: background-color 0.15s ease-in-out;
-  width: 100%;
-}
-
-.user-account-dropdown__account-option:hover {
-  background-color: #374151;
-}
-
-.user-account-dropdown__account-option--active {
-  background-color: #111827;
-}
-
-.user-account-dropdown__check {
-  color: #22c55e;
-  margin-left: auto;
 }
 
 .user-account-dropdown__menu-item {
@@ -159,4 +123,9 @@
   .user-account-dropdown__trigger .user-account-dropdown__identity {
     display: none;
   }
+}
+
+.user-account-dropdown__logout:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }

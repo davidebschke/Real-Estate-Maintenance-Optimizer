@@ -7,6 +7,7 @@ import { i18n } from '@/i18n'
 import PropertyFormDialog from '@/components/properties/PropertyFormDialog.vue'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
 import { usePropertiesStore } from '@/stores/properties'
+import { useAuthStore } from '@/stores/auth'
 import * as propertyService from '@/services/propertyService'
 import * as geocodingService from '@/services/geocodingService'
 import type { Property } from '@/types/property'
@@ -669,4 +670,48 @@ describe('PropertyFormDialog', () => {
 
     expect(bodyField('#property-name').element.getAttribute('value')).toBeNull()
   })
+
+  it('shows a demo account how many more properties it may create', async () => {
+    logInDemoAccount(1)
+
+    await mountDialog()
+
+    expect(document.body.textContent).toContain('Sie können noch ein weiteres Objekt anlegen.')
+  })
+
+  it('blocks creating once a demo account created all its additional properties', async () => {
+    logInDemoAccount(0)
+    const wrapper = await mountDialog()
+    await fillRequiredFields()
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('bereits alle 3 zusätzlichen Objekte angelegt')
+    expect(submitButton(wrapper).attributes('disabled')).toBeDefined()
+    expect(geocodingService.validateAddress).not.toHaveBeenCalled()
+    expect(propertyService.createProperty).not.toHaveBeenCalled()
+  })
+
+  it('still lets a demo account without remaining creations edit an existing property', async () => {
+    logInDemoAccount(0)
+    const wrapper = await mountDialogForEdit(createExistingProperty())
+
+    const saveButton = wrapper.findAllComponents(Button).find((button) => button.text() === 'Speichern')!
+
+    expect(saveButton.attributes('disabled')).toBeUndefined()
+    expect(document.body.textContent).not.toContain('zusätzlichen Objekte')
+  })
 })
+
+/** Logs in a demo account with the given number of remaining property creations. */
+function logInDemoAccount(remainingPropertyCreations: number) {
+  useAuthStore().currentUser = {
+    username: 'demo-1',
+    displayName: 'Demo',
+    demoAccount: true,
+    expiresAt: new Date(),
+    remainingPropertyCreations,
+    remainingAppointmentCreations: 3,
+  }
+}

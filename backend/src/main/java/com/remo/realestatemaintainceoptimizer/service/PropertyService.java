@@ -3,15 +3,17 @@ package com.remo.realestatemaintainceoptimizer.service;
 import com.remo.realestatemaintainceoptimizer.dto.CreatePropertyRequest;
 import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Business logic for creating, looking up, updating and deleting properties.
+ * Business logic for creating, looking up, updating and deleting the properties of one account; another account's properties behave as if they did not exist.
  */
 @Service
 @Transactional
@@ -20,35 +22,41 @@ public class PropertyService {
     static final String DEFAULT_ICON = "pi-building";
 
     private final PropertyRepository repository;
+    private final UserRepository userRepository;
 
-    public PropertyService(PropertyRepository repository) {
+    public PropertyService(PropertyRepository repository, UserRepository userRepository) {
         this.repository = repository;
+        this.userRepository = userRepository;
     }
 
     /**
-     * Returns every property, sorted by name.
+     * Returns every property of the given account, sorted by name.
      */
     @Transactional(readOnly = true)
-    public List<PropertyResponse> listAll() {
-        return repository.findAllByOrderByNameAsc().stream()
+    public List<PropertyResponse> listAll(String ownerId) {
+        return repository.findAllByOwnerIdOrderByNameAsc(ownerId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     /**
-     * Returns the property with the given id.
+     * Returns the property with the given id of the given account.
      */
     @Transactional(readOnly = true)
-    public PropertyResponse getById(String id) {
-        return toResponse(repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id)));
+    public PropertyResponse getById(String ownerId, String id) {
+        return toResponse(loadOrThrow(ownerId, id));
     }
 
     /**
-     * Creates a new property with a generated id and the default icon.
+     * Creates a new property for the given account with a generated id and the default icon, using up one of its creations if it has a limit.
      */
-    public PropertyResponse create(CreatePropertyRequest request) {
+    public PropertyResponse create(String ownerId, CreatePropertyRequest request) {
+        userRepository.findById(ownerId)
+                .orElseThrow(() -> new AccountNotFoundException(ownerId))
+                .consumePropertyCreation();
         Property property = new Property(
                 UUID.randomUUID().toString(),
+                ownerId,
                 request.name(),
                 request.address(),
                 DEFAULT_ICON,
@@ -60,8 +68,8 @@ public class PropertyService {
     /**
      * Updates the name, address and coordinates of the property with the given id, keeping its id and icon; appointments reference it and therefore reflect the change automatically.
      */
-    public PropertyResponse update(String id, CreatePropertyRequest request) {
-        Property property = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
+    public PropertyResponse update(String ownerId, String id, CreatePropertyRequest request) {
+        Property property = loadOrThrow(ownerId, id);
         property.updateDetails(request.name(), request.address(), request.latitude(), request.longitude());
         return toResponse(property);
     }
@@ -69,9 +77,12 @@ public class PropertyService {
     /**
      * Deletes the property with the given id along with every appointment referencing it, cascaded by the database.
      */
-    public void delete(String id) {
-        Property property = repository.findById(id).orElseThrow(() -> new PropertyNotFoundException(id));
-        repository.delete(property);
+    public void delete(String ownerId, String id) {
+        repository.delete(loadOrThrow(ownerId, id));
+    }
+
+    private Property loadOrThrow(String ownerId, String id) {
+        return repository.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> new PropertyNotFoundException(id));
     }
 
     private PropertyResponse toResponse(Property property) {

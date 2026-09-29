@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as appointmentService from '@/services/appointmentService'
+import { useAuthStore } from '@/stores/auth'
 import type {
   AppointmentDeleteScope,
   CreateAppointmentPayload,
@@ -13,16 +14,22 @@ export const useAppointmentsStore = defineStore('appointments', () => {
   const appointments = ref<Appointment[]>([])
   const isCreateDialogOpen = ref(false)
   const activeDetailAppointmentId = ref<string | null>(null)
+  /** Bumped by every fetch and by reset(), so a response that arrives after a newer fetch or an account change is discarded. */
+  let latestFetchToken = 0
 
-  /** Loads every appointment from the backend. */
+  /** Loads every appointment from the backend, ignoring the result if a newer fetch or an account change happened meanwhile. */
   async function fetchAppointments() {
-    appointments.value = await appointmentService.fetchAppointments()
+    const requestToken = ++latestFetchToken
+    const fetched = await appointmentService.fetchAppointments()
+    if (requestToken !== latestFetchToken) return
+    appointments.value = fetched
   }
 
-  /** Creates a new appointment and adds its returned (first) occurrence to the local list. */
+  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit. */
   async function createAppointment(payload: CreateAppointmentPayload) {
     const created = await appointmentService.createAppointment(payload)
     await fetchAppointments()
+    await useAuthStore().refreshDemoQuota()
     return created
   }
 
@@ -73,6 +80,14 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     activeDetailAppointmentId.value = null
   }
 
+  /** Forgets every appointment and closes every overlay, e.g. when the logged-in account changes. */
+  function reset() {
+    latestFetchToken++
+    appointments.value = []
+    isCreateDialogOpen.value = false
+    activeDetailAppointmentId.value = null
+  }
+
   return {
     appointments,
     isCreateDialogOpen,
@@ -87,5 +102,6 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     closeCreateDialog,
     openDetail,
     closeDetail,
+    reset,
   }
 })

@@ -61,6 +61,9 @@ jobs:
   e2e:
     name: Run frontend e2e tests (Playwright)
     runs-on: ubuntu-latest
+    env:
+      # CI-only credentials for the throwaway database of this job; never used anywhere else
+      E2E_PASSWORD: ci-only-e2e-password-not-a-secret
     services:
       # Matches the backend's local spring.datasource defaults (see backend/docker-compose.yml), so no extra env is needed
       postgres:
@@ -95,6 +98,12 @@ jobs:
         working-directory: backend
         env:
           REMO_FRONTEND_BASE_URL: http://localhost:4173
+          REMO_AUTH_JWT_SECRET: ci-only-jwt-secret-for-the-throwaway-e2e-backend
+          REMO_AUTH_INITIAL_USER_PASSWORD: ${{ env.E2E_PASSWORD }}
+          # The preview server and backend run on plain http://localhost in CI
+          REMO_AUTH_COOKIE_SECURE: "false"
+          # Every browser project of every (retried) run creates demo accounts from the same runner address
+          REMO_AUTH_MAX_DEMO_ACCOUNTS_PER_CLIENT: "100"
         run: |
           java -jar target/remo-backend.jar > backend.log 2>&1 &
           for i in $(seq 1 40); do

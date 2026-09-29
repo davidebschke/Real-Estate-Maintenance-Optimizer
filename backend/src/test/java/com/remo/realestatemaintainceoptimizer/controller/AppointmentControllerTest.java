@@ -9,37 +9,116 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import com.remo.realestatemaintainceoptimizer.security.JwtService;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
- * Verifies the full appointment REST API against a throwaway PostgreSQL database, emptied and seeded with one property before each test.
+ * Verifies the full appointment REST API, including account isolation and demo limits, against a throwaway PostgreSQL database seeded with one account and property before each test.
  */
 @SpringBootTest
-@AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class AppointmentControllerTest {
 
+    private static final String CREATE_REQUEST_BODY = """
+            {
+              "title": "Kellerreinigung Q3",
+              "propertyId": "property-1",
+              "description": "",
+              "start": "2026-08-11T13:00:00",
+              "durationMinutes": 120,
+              "locked": false,
+              "recurring": false,
+              "materials": []
+            }
+            """;
+
     @Autowired
-    private MockMvc mockMvc;
+    private WebApplicationContext context;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private PropertyRepository propertyRepository;
 
+    private MockMvc mockMvc;
+
+    private MockMvc otherAccountMockMvc;
+
     @BeforeEach
     void seedProperty() {
-        propertyRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+        User owner = TestAccounts.saveRegularAccount(userRepository);
+        mockMvc = TestAccounts.mockMvcAs(context, jwtService, owner);
+        otherAccountMockMvc = TestAccounts.mockMvcAs(context, jwtService, TestAccounts.saveRegularAccount(userRepository));
         propertyRepository.save(new Property(
-                "property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+                "property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln-Braunsenfeld", "pi-building"));
+    }
+
+    @Test
+    void anotherAccountCanNeitherSeeNorChangeAnAppointment() throws Exception {
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        otherAccountMockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(0)));
+        otherAccountMockMvc.perform(get("/api/appointments/{id}", id)).andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(patch("/api/appointments/{id}/schedule", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"start\": \"2026-08-12T09:00:00\", \"durationMinutes\": 60}"))
+                .andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(patch("/api/appointments/{id}/complete", id)).andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(patch("/api/appointments/{id}/reopen", id)).andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(delete("/api/appointments/{id}", id)).andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/appointments/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completed", equalTo(false)));
+    }
+
+    @Test
+    void creatingAnAppointmentForAnotherAccountsPropertyReturnsNotFound() throws Exception {
+        otherAccountMockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void aDemoAccountBeyondItsCreationLimitGetsALocalizedForbidden() throws Exception {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo-Objekt", "Demostr. 1", "pi-building"));
+
+        TestAccounts.mockMvcAs(context, jwtService, demo).perform(post("/api/appointments")
+                        .header("Accept-Language", "en")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY.replace("property-1", "demo-property")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("A demo account can create at most 3 additional appointments.")));
     }
 
     @Test

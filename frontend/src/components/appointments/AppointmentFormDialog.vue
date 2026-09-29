@@ -10,6 +10,8 @@ import { useI18n } from 'vue-i18n'
 import AppointmentPropertySelect from '@/components/appointments/AppointmentPropertySelect.vue'
 import AppointmentMaterialInput from '@/components/appointments/AppointmentMaterialInput.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
+import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
+import { useDemoQuota } from '@/composables/useDemoQuota'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useLocale } from '@/composables/useLocale'
@@ -30,6 +32,7 @@ const { t } = useI18n()
 const { currentLocale } = useLocale()
 const store = useAppointmentsStore()
 const propertiesStore = usePropertiesStore()
+const { isExhausted: isQuotaExhausted } = useDemoQuota('appointments')
 
 const timeOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value))
@@ -90,7 +93,7 @@ function resetForm() {
 
 /** Creates the appointment from the current form state, then closes the dialog. */
 async function submit() {
-  if (!isValid.value || form.propertyId === null) return
+  if (!isValid.value || isQuotaExhausted.value || form.propertyId === null) return
 
   const property = propertiesStore.properties.find((candidate) => candidate.id === form.propertyId)
   if (!property) return
@@ -207,8 +210,14 @@ function cancel() {
 
     <AppointmentAiSuggestionBanner />
 
+    <DemoQuotaHint resource="appointments" />
+
     <div class="appointment-form-dialog__actions">
-      <Button :label="t('appointments.form.submit')" :disabled="!isValid" @click="submit" />
+      <Button
+        :label="t('appointments.form.submit')"
+        :disabled="!isValid || isQuotaExhausted"
+        @click="submit"
+      />
       <button type="button" class="appointment-form-dialog__cancel" @click="cancel">
         {{ t('appointments.form.cancel') }}
       </button>

@@ -2,11 +2,13 @@ package com.remo.realestatemaintainceoptimizer.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -19,7 +21,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 
 /**
- * Verifies appointment persistence (materials, history, completion), the derived queries, and the database-level cascade on property deletion.
+ * Verifies appointment persistence (materials, history, completion), the owner-scoped derived queries, and the database-level cascades on property and account deletion.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -36,15 +38,21 @@ class AppointmentRepositoryTest {
     private PropertyRepository propertyRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private EntityManager entityManager;
+
+    private User owner;
 
     private Property property;
 
     @BeforeEach
     void seedProperty() {
-        propertyRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+        owner = TestAccounts.saveRegularAccount(userRepository);
         property = propertyRepository.save(
-                new Property("property-1", "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+                new Property("property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
     }
 
     @Test
@@ -92,29 +100,55 @@ class AppointmentRepositoryTest {
     }
 
     @Test
-    void listsEveryAppointmentSortedByStart() {
+    void listsOnlyTheGivenAccountsAppointmentsSortedByStart() {
         repository.save(createAppointment("later", null, START.plusDays(2)));
         repository.save(createAppointment("earlier", null, START));
+        repository.save(createForeignAppointment("foreign", null));
         flushAndClear();
 
-        assertThat(repository.findAllByOrderByStartAsc()).extracting(Appointment::id).containsExactly("earlier", "later");
+        assertThat(repository.findAllByPropertyOwnerIdOrderByStartAsc(owner.id())).extracting(Appointment::id)
+                .containsExactly("earlier", "later");
     }
 
     @Test
-    void findsOnlyAppointmentsOfTheGivenSeries() {
+    void findsAnAppointmentByIdOnlyForTheOwnerOfItsProperty() {
+        User otherOwner = TestAccounts.saveRegularAccount(userRepository);
+        repository.save(createAppointment("appointment-1", null, START));
+        flushAndClear();
+
+        assertThat(repository.findByIdAndPropertyOwnerId("appointment-1", owner.id())).isPresent();
+        assertThat(repository.findByIdAndPropertyOwnerId("appointment-1", otherOwner.id())).isEmpty();
+    }
+
+    @Test
+    void findsOnlyTheGivenAccountsAppointmentsOfTheGivenSeries() {
         repository.save(createAppointment("series-a-1", "series-a", START));
         repository.save(createAppointment("series-a-2", "series-a", START.plusMonths(3)));
         repository.save(createAppointment("series-b-1", "series-b", START));
+        repository.save(createForeignAppointment("series-a-foreign", "series-a"));
         flushAndClear();
 
-        assertThat(repository.findBySeriesId("series-a")).extracting(Appointment::id)
+        assertThat(repository.findBySeriesIdAndPropertyOwnerId("series-a", owner.id())).extracting(Appointment::id)
                 .containsExactlyInAnyOrder("series-a-1", "series-a-2");
+    }
+
+    @Test
+    void deletingTheOwningAccountCascadesToItsAppointments() {
+        repository.save(createAppointment("appointment-1", null, START));
+        repository.save(createForeignAppointment("foreign", null));
+        flushAndClear();
+
+        userRepository.delete(userRepository.findById(owner.id()).orElseThrow());
+        flushAndClear();
+
+        assertThat(repository.findById("appointment-1")).isEmpty();
+        assertThat(repository.findById("foreign")).isPresent();
     }
 
     @Test
     void deletingAPropertyCascadesToItsAppointmentsOnly() {
         Property otherProperty = propertyRepository.save(
-                new Property("property-2", "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
+                new Property("property-2", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
         repository.save(createAppointment("appointment-1", null, START));
         repository.save(new Appointment(
                 "appointment-2", null, "Treppenhausreinigung", otherProperty, "", START, START.plusHours(1),
@@ -136,6 +170,15 @@ class AppointmentRepositoryTest {
                 List.of("Kehrmaschine"),
                 List.of(new HistoryEntry(CREATED_AT, HistoryEventType.CREATED, List.of())),
                 null);
+    }
+
+    private Appointment createForeignAppointment(String id, String seriesId) {
+        User otherOwner = TestAccounts.saveRegularAccount(userRepository);
+        Property foreignProperty = propertyRepository.save(new Property(
+                "property-" + id, otherOwner.id(), "Fremdes Objekt", "Fremdstr. 1", "pi-building"));
+        return new Appointment(
+                id, seriesId, "Fremder Termin", foreignProperty, "", START, START.plusHours(1),
+                false, seriesId != null, seriesId != null ? 3 : null, List.of(), List.of(), null);
     }
 
     private void flushAndClear() {

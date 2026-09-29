@@ -5,6 +5,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
+import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -16,7 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Verifies that persistence conflicts surfacing at commit time are answered with a localized 409 instead of a generic 500.
+ * Verifies that persistence conflicts surfacing at commit time are answered with a localized 409 instead of a generic 500, and authentication and limit failures with their localized 401, 403 and 429.
  */
 class GlobalExceptionHandlerTest {
 
@@ -49,8 +53,57 @@ class GlobalExceptionHandlerTest {
                         "This entry was changed by someone else in the meantime. Please reload and try again.")));
     }
 
+    @Test
+    void invalidCredentialsReturnALocalizedUnauthorized() throws Exception {
+        mockMvc.perform(get("/invalid-credentials").header("Accept-Language", "de"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", equalTo("Benutzername oder Passwort ist falsch.")));
+    }
+
+    @Test
+    void aMissingAccountReturnsALocalizedUnauthorized() throws Exception {
+        mockMvc.perform(get("/account-not-found").header("Accept-Language", "en"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", equalTo("Your session has expired. Please log in again.")));
+    }
+
+    @Test
+    void anExceededRateLimitReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/rate-limit-exceeded").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuchen Sie es in einigen Minuten erneut.")));
+    }
+
+    @Test
+    void anExhaustedCreationLimitReturnsALocalizedForbidden() throws Exception {
+        mockMvc.perform(get("/creation-quota-exceeded").header("Accept-Language", "en"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("A demo account can create at most 3 additional properties.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/invalid-credentials")
+        String failWithInvalidCredentials() {
+            throw new InvalidCredentialsException();
+        }
+
+        @GetMapping("/account-not-found")
+        String failWithAccountNotFound() {
+            throw new AccountNotFoundException("deleted-account");
+        }
+
+        @GetMapping("/rate-limit-exceeded")
+        String failWithRateLimitExceeded() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_LOGIN_ATTEMPTS);
+        }
+
+        @GetMapping("/creation-quota-exceeded")
+        String failWithCreationQuotaExceeded() {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_PROPERTY);
+        }
 
         @GetMapping("/optimistic-locking-failure")
         String failWithOptimisticLocking() {

@@ -26,7 +26,7 @@ Every content-relevant change (not a pure typo/formatting fix) triggers a review
 
 ## Technology Constraints
 
-Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 3, Spring Security/JJWT, Spring Data JPA, Spring Mail. Database: PostgreSQL (appointments/objects, later user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
+Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 3, Spring Security/JJWT, Spring Data JPA, Spring Mail. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
 
 ## Governance
 

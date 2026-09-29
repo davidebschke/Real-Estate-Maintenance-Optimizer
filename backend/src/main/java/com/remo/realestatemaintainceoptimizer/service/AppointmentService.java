@@ -8,12 +8,14 @@ import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,44 +43,53 @@ public class AppointmentService {
 
     private final AppointmentRepository repository;
     private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
     private final MessageSource messageSource;
 
     public AppointmentService(
-            AppointmentRepository repository, PropertyRepository propertyRepository, MessageSource messageSource) {
+            AppointmentRepository repository,
+            PropertyRepository propertyRepository,
+            UserRepository userRepository,
+            MessageSource messageSource) {
         this.repository = repository;
         this.propertyRepository = propertyRepository;
+        this.userRepository = userRepository;
         this.messageSource = messageSource;
     }
 
     /**
-     * Returns every appointment, sorted by start time.
+     * Returns every appointment of the given account, sorted by start time.
      */
     @Transactional(readOnly = true)
-    public List<AppointmentResponse> listAll() {
-        return repository.findAllByOrderByStartAsc().stream()
+    public List<AppointmentResponse> listAll(String ownerId) {
+        return repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     /**
-     * Returns the appointment with the given id.
+     * Returns the appointment with the given id of the given account.
      */
     @Transactional(readOnly = true)
-    public AppointmentResponse getById(String id) {
-        return toResponse(loadOrThrow(id));
+    public AppointmentResponse getById(String ownerId, String id) {
+        return toResponse(loadOrThrow(ownerId, id));
     }
 
     /**
-     * Creates a new appointment for an existing property, materializing a bounded horizon of future occurrences when recurring.
+     * Creates a new appointment for one of the given account's properties, materializing a bounded horizon of future
+     * occurrences when recurring and using up one of the account's appointment creations if it has a limit.
      */
-    public AppointmentResponse create(CreateAppointmentRequest request) {
+    public AppointmentResponse create(String ownerId, CreateAppointmentRequest request) {
         if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
             throw new InvalidRecurrenceException("recurrenceIntervalRequired");
         }
 
         LocalDateTime firstStart = request.start().truncatedTo(ChronoUnit.MICROS);
-        Property property = propertyRepository.findById(request.propertyId())
+        Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
+        userRepository.findById(ownerId)
+                .orElseThrow(() -> new AccountNotFoundException(ownerId))
+                .consumeAppointmentCreation();
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
         List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
         String description = request.description() != null ? request.description() : "";
@@ -118,8 +129,8 @@ public class AppointmentService {
     /**
      * Reschedules an unlocked appointment to a new start and duration, rejecting locked appointments.
      */
-    public AppointmentResponse move(String id, MoveAppointmentRequest request) {
-        Appointment appointment = loadOrThrow(id);
+    public AppointmentResponse move(String ownerId, String id, MoveAppointmentRequest request) {
+        Appointment appointment = loadOrThrow(ownerId, id);
         if (appointment.locked()) {
             throw new AppointmentLockedException(id);
         }
@@ -138,8 +149,8 @@ public class AppointmentService {
     /**
      * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null.
      */
-    public AppointmentResponse complete(String id, LocalDateTime actualEnd) {
-        Appointment appointment = loadOrThrow(id);
+    public AppointmentResponse complete(String ownerId, String id, LocalDateTime actualEnd) {
+        Appointment appointment = loadOrThrow(ownerId, id);
         LocalDateTime resolvedActualEnd =
                 (actualEnd != null ? actualEnd : LocalDateTime.now()).truncatedTo(ChronoUnit.MICROS);
         HistoryEntry completedEntry = new HistoryEntry(
@@ -152,8 +163,8 @@ public class AppointmentService {
     /**
      * Reverts a completed appointment back to its not-yet-completed state.
      */
-    public AppointmentResponse reopen(String id) {
-        Appointment appointment = loadOrThrow(id);
+    public AppointmentResponse reopen(String ownerId, String id) {
+        Appointment appointment = loadOrThrow(ownerId, id);
         HistoryEntry reopenedEntry = new HistoryEntry(currentInstant(), HistoryEventType.REOPENED, List.of());
 
         appointment.changeActualEnd(null, reopenedEntry);
@@ -163,8 +174,8 @@ public class AppointmentService {
     /**
      * Deletes a single appointment, or every not-yet-past occurrence of its recurring series when {@code scope} is "series".
      */
-    public void delete(String id, String scope) {
-        Appointment appointment = loadOrThrow(id);
+    public void delete(String ownerId, String id, String scope) {
+        Appointment appointment = loadOrThrow(ownerId, id);
         if (!SCOPE_SERIES.equalsIgnoreCase(scope)) {
             repository.delete(appointment);
             return;
@@ -174,13 +185,13 @@ public class AppointmentService {
             throw new InvalidRecurrenceException("seriesScopeNotRecurring");
         }
 
-        repository.findBySeriesId(appointment.seriesId()).stream()
+        repository.findBySeriesIdAndPropertyOwnerId(appointment.seriesId(), ownerId).stream()
                 .filter(candidate -> !candidate.start().isBefore(appointment.start()))
                 .forEach(repository::delete);
     }
 
-    private Appointment loadOrThrow(String id) {
-        return repository.findById(id).orElseThrow(() -> new AppointmentNotFoundException(id));
+    private Appointment loadOrThrow(String ownerId, String id) {
+        return repository.findByIdAndPropertyOwnerId(id, ownerId).orElseThrow(() -> new AppointmentNotFoundException(id));
     }
 
     private AppointmentResponse toResponse(Appointment appointment) {

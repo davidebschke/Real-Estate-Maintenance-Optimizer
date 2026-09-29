@@ -17,6 +17,9 @@ public class Property {
     @Column(length = 36)
     private String id;
 
+    @Column(name = "owner_id", nullable = false, length = 36)
+    private String ownerId;
+
     @Column(nullable = false, length = 50)
     private String name;
 
@@ -36,8 +39,10 @@ public class Property {
     protected Property() {
     }
 
-    public Property(String id, String name, String address, String icon, Double latitude, Double longitude) {
+    public Property(
+            String id, String ownerId, String name, String address, String icon, Double latitude, Double longitude) {
         this.id = id;
+        this.ownerId = ownerId;
         this.name = name;
         this.address = address;
         this.icon = icon;
@@ -48,8 +53,8 @@ public class Property {
     /**
      * Creates a property without known coordinates, geocoded on demand via {@code GeocodingService}.
      */
-    public Property(String id, String name, String address, String icon) {
-        this(id, name, address, icon, null, null);
+    public Property(String id, String ownerId, String name, String address, String icon) {
+        this(id, ownerId, name, address, icon, null, null);
     }
 
     /**
@@ -64,6 +69,10 @@ public class Property {
 
     public String id() {
         return id;
+    }
+
+    public String ownerId() {
+        return ownerId;
     }
 
     public String name() {

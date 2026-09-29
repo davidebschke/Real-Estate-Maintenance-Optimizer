@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePropertiesStore } from '@/stores/properties'
+import { useAuthStore } from '@/stores/auth'
 import * as propertyService from '@/services/propertyService'
 import * as appointmentService from '@/services/appointmentService'
 import type { Property } from '@/types/property'
@@ -255,5 +256,64 @@ describe('usePropertiesStore', () => {
     expect(result).toBe(true)
     expect(store.properties).toEqual([])
     expect(store.hasDeleteError).toBe(false)
+  })
+
+  it('refreshes the remaining creation limit of a demo account only after a successful create', async () => {
+    const refreshDemoQuota = vi.spyOn(useAuthStore(), 'refreshDemoQuota').mockResolvedValue()
+    const store = usePropertiesStore()
+    vi.mocked(propertyService.createProperty).mockRejectedValueOnce(new Error('403'))
+    await store.createProperty({ name: 'Objekt', address: 'Str. 1', latitude: null, longitude: null })
+    expect(refreshDemoQuota).not.toHaveBeenCalled()
+
+    vi.mocked(propertyService.createProperty).mockResolvedValue(createProperty())
+    await store.createProperty({ name: 'Objekt', address: 'Str. 1', latitude: null, longitude: null })
+
+    expect(refreshDemoQuota).toHaveBeenCalledOnce()
+  })
+
+  it('forgets every property, error and open form on reset and ignores a fetch still in flight', async () => {
+    let resolveFetch: (properties: Property[]) => void = () => {}
+    vi.mocked(propertyService.fetchProperties).mockReturnValue(new Promise((resolve) => (resolveFetch = resolve)))
+    const store = usePropertiesStore()
+    store.properties = [createProperty()]
+    store.hasCreateError = true
+    store.openEditDialog(createProperty())
+    const pendingFetch = store.fetchProperties()
+
+    store.reset()
+    resolveFetch([createProperty({ id: 'from-previous-account' })])
+    await pendingFetch
+
+    expect(store.properties).toEqual([])
+    expect(store.hasCreateError).toBe(false)
+    expect(store.isFormDialogOpen).toBe(false)
+  })
+
+  it('does not add a property to the list when its creation is answered only after an account change', async () => {
+    let resolveCreate: (property: Property) => void = () => {}
+    vi.mocked(propertyService.createProperty).mockReturnValue(new Promise((resolve) => (resolveCreate = resolve)))
+    const store = usePropertiesStore()
+    const pendingCreate = store.createProperty({ name: 'Objekt', address: 'Str. 1', latitude: null, longitude: null })
+
+    store.reset()
+    resolveCreate(createProperty({ id: 'from-previous-account' }))
+
+    expect(await pendingCreate).toBe(false)
+    expect(store.properties).toEqual([])
+  })
+
+  it('ignores an update or delete answered only after an account change', async () => {
+    vi.mocked(propertyService.updateProperty).mockResolvedValue(createProperty({ name: 'Umbenannt' }))
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue()
+    const store = usePropertiesStore()
+    const pendingUpdate = store.updateProperty('1', { name: 'Umbenannt', address: 'Str. 1', latitude: null, longitude: null })
+    const pendingDelete = store.deleteProperty('1')
+
+    store.reset()
+    store.properties = [createProperty()]
+
+    expect(await pendingUpdate).toBe(false)
+    expect(await pendingDelete).toBe(false)
+    expect(store.properties).toEqual([createProperty()])
   })
 })

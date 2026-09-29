@@ -1,10 +1,14 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
+import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -49,6 +53,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(PropertyNotFoundException exception, Locale locale) {
         String message = messageSource.getMessage("property.error.notFound", new Object[] {exception.propertyId()}, locale);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(Locale locale) {
+        String message = messageSource.getMessage("auth.error.invalidCredentials", null, locale);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAccountNotFound(Locale locale) {
+        String message = messageSource.getMessage("auth.error.sessionExpired", null, locale);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException exception, Locale locale) {
+        String message = messageSource.getMessage("auth.error." + exception.reasonCode(), null, locale);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(CreationQuotaExceededException.class)
+    public ResponseEntity<ErrorResponse> handleCreationQuotaExceeded(CreationQuotaExceededException exception, Locale locale) {
+        String message = messageSource.getMessage("demo.error." + exception.resource() + "QuotaExceeded", null, locale);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})
