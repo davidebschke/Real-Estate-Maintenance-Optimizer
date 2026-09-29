@@ -64,7 +64,7 @@ class InitialAccountPasswordServiceTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"   ", "too-short"})
+    @ValueSource(strings = {"        ", "7-chars"})
     void ignoresAMissingBlankOrTooShortPassword(String rawPassword) {
         boolean applied = service.applyInitialPassword(InitialAccountPasswordService.INITIAL_USERNAME, rawPassword);
 
@@ -80,6 +80,15 @@ class InitialAccountPasswordServiceTest {
 
         assertThat(applied).isFalse();
         assertThat(loadInitialAccount().passwordHash()).isNull();
+    }
+
+    @Test
+    void acceptsAPasswordOfExactlyTheMinimumLength() {
+        String minimumLengthPassword = "8-chars!";
+
+        assertThat(service.applyInitialPassword(InitialAccountPasswordService.INITIAL_USERNAME, minimumLengthPassword))
+                .isTrue();
+        assertThat(passwordEncoder.matches(minimumLengthPassword, loadInitialAccount().passwordHash())).isTrue();
     }
 
     @Test

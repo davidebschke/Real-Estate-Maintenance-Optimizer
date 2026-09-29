@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InitialAccountPasswordService {
 
     static final String INITIAL_USERNAME = "debschke";
-    static final int MIN_PASSWORD_LENGTH = 12;
+    static final int MIN_PASSWORD_LENGTH = 8;
     static final int MAX_PASSWORD_BYTES = 72;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialAccountPasswordService.class);
@@ -45,7 +45,7 @@ public class InitialAccountPasswordService {
     }
 
     /**
-     * Sets the given password on the given account only while it has none yet and the password has between 12
+     * Sets the given password on the given account only while it has none yet and the password has between 8
      * characters and the 72 bytes BCrypt supports, returning whether it was set; an already set password is never overwritten.
      */
     public boolean applyInitialPassword(String username, String rawPassword) {
