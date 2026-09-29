@@ -113,6 +113,16 @@
   margin: 0;
 }
 
+.property-form-dialog__required-marker {
+  color: #f87171;
+}
+
+.property-form-dialog__required-legend {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
 .property-form-dialog__address-suggestion {
   align-items: flex-start;
   display: flex;

@@ -127,6 +127,30 @@ describe('AppointmentFormDialog', () => {
     expect(submitButton(wrapper).attributes('disabled')).toBeUndefined()
   })
 
+  it('marks title, property, day, time and duration as required fields', async () => {
+    await mountDialog()
+
+    expect(bodyField('label[for="appointment-title"]').text()).toContain('*')
+    expect(bodyField('.appointment-property-select__label').text()).toContain('*')
+    expect(bodyField('label[for="appointment-day"]').text()).toContain('*')
+    expect(bodyField('label[for="appointment-time"]').text()).toContain('*')
+    expect(bodyField('label[for="appointment-duration"]').text()).toContain('*')
+  })
+
+  it('shows a hint under the title and property fields while they are empty, until they are filled in', async () => {
+    const wrapper = await mountDialog()
+
+    expect(bodyField('#appointment-title').classes()).toContain('p-invalid')
+    expect(document.body.textContent).toContain('Bitte einen Titel eingeben.')
+    expect(document.body.textContent).toContain('Bitte ein Objekt wählen.')
+
+    await fillRequiredFields(wrapper)
+
+    expect(bodyField('#appointment-title').classes()).not.toContain('p-invalid')
+    expect(document.body.textContent).not.toContain('Bitte einen Titel eingeben.')
+    expect(document.body.textContent).not.toContain('Bitte ein Objekt wählen.')
+  })
+
   it('requires a recurrence interval once the recurring toggle is switched on', async () => {
     const wrapper = await mountDialog()
     await fillRequiredFields(wrapper)

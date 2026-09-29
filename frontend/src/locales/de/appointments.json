@@ -4,15 +4,19 @@
       "title": "Termin anlegen",
       "titleLabel": "Titel",
       "titlePlaceholder": "z. B. Kellerreinigung Q3",
+      "titleRequiredError": "Bitte einen Titel eingeben.",
       "property": {
         "label": "Objekt",
         "placeholder": "Objekt wählen",
-        "sourceHint": "aus Objektstammdaten"
+        "sourceHint": "aus Objektstammdaten",
+        "requiredError": "Bitte ein Objekt wählen."
       },
       "descriptionLabel": "Beschreibung",
       "descriptionPlaceholder": "Was ist zu tun? Zugang, Ansprechpartner, Besonderheiten.",
       "dayLabel": "Tag",
+      "dayRequiredError": "Bitte einen Tag wählen.",
       "timeLabel": "Uhrzeit",
+      "timeRequiredError": "Bitte eine Uhrzeit wählen.",
       "durationLabel": "Dauer",
       "duration": {
         "options": {
@@ -43,7 +47,8 @@
         "applyButton": "Vorschlag übernehmen"
       },
       "submit": "Termin anlegen",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "requiredFieldsLegend": "* Pflichtfeld"
     },
     "edit": {
       "title": "Termin bearbeiten",

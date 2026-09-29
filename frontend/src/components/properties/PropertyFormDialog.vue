@@ -113,6 +113,21 @@ const isPostalCodeFormatInvalid = computed(() => {
   return postalCode.length > 0 && !POSTAL_CODE_PATTERN.test(postalCode)
 })
 
+/** Whether the name is empty, i.e. its required-field hint must be shown. */
+const isNameMissing = computed(() => form.name.trim().length === 0)
+
+/** Whether the street is empty, i.e. its required-field hint must be shown. */
+const isStreetMissing = computed(() => form.street.trim().length === 0)
+
+/** Whether the house number is empty, i.e. its required-field hint must be shown. */
+const isHouseNumberMissing = computed(() => form.houseNumber.trim().length === 0)
+
+/** Whether the postal code is empty, i.e. its required-field hint must be shown. */
+const isPostalCodeMissing = computed(() => form.postalCode.trim().length === 0)
+
+/** Whether the city is empty, i.e. its required-field hint must be shown. */
+const isCityMissing = computed(() => form.city.trim().length === 0)
+
 /** Combines street, house number and the optional supplement into a single "Straße Hausnummer[Zusatz]" line. */
 const streetAndHouseNumber = computed(
   () => `${form.street.trim()} ${form.houseNumber.trim()}${form.addressSupplement.trim()}`.trim(),
@@ -282,45 +297,63 @@ function cancel() {
     class="property-form-dialog"
   >
     <div class="property-form-dialog__field">
-      <label for="property-name">{{ t('properties.create.nameLabel') }}</label>
+      <label for="property-name">
+        {{ t('properties.create.nameLabel')
+        }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
+      </label>
       <InputText
         id="property-name"
         v-model="form.name"
         :maxlength="NAME_MAX_LENGTH"
-        :invalid="isDuplicateName"
+        :invalid="isDuplicateName || isNameMissing"
         :placeholder="t('properties.create.namePlaceholder')"
       />
-      <p v-if="isDuplicateName" class="property-form-dialog__field-error">
+      <p v-if="isNameMissing" class="property-form-dialog__field-error">
+        {{ t('properties.create.nameRequiredError') }}
+      </p>
+      <p v-else-if="isDuplicateName" class="property-form-dialog__field-error">
         {{ t('properties.create.duplicateNameError') }}
       </p>
     </div>
 
     <div class="property-form-dialog__grid property-form-dialog__grid--address">
       <div class="property-form-dialog__field">
-        <label for="property-street">{{ t('properties.create.streetLabel') }}</label>
+        <label for="property-street">
+          {{ t('properties.create.streetLabel')
+          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <InputText
           id="property-street"
           v-model="form.street"
           :maxlength="STREET_MAX_LENGTH"
-          :invalid="isDuplicateAddress || isStreetFormatInvalid"
+          :invalid="isDuplicateAddress || isStreetFormatInvalid || isStreetMissing"
           :placeholder="t('properties.create.streetPlaceholder')"
         />
-        <p v-if="isStreetFormatInvalid" class="property-form-dialog__field-error">
+        <p v-if="isStreetMissing" class="property-form-dialog__field-error">
+          {{ t('properties.create.streetRequiredError') }}
+        </p>
+        <p v-else-if="isStreetFormatInvalid" class="property-form-dialog__field-error">
           {{ t('properties.create.streetFormatError') }}
         </p>
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-house-number">{{ t('properties.create.houseNumberLabel') }}</label>
+        <label for="property-house-number">
+          {{ t('properties.create.houseNumberLabel')
+          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <InputText
           id="property-house-number"
           v-model="form.houseNumber"
           :maxlength="HOUSE_NUMBER_MAX_LENGTH"
           inputmode="numeric"
-          :invalid="isDuplicateAddress || isHouseNumberFormatInvalid"
+          :invalid="isDuplicateAddress || isHouseNumberFormatInvalid || isHouseNumberMissing"
           :placeholder="t('properties.create.houseNumberPlaceholder')"
         />
-        <p v-if="isHouseNumberFormatInvalid" class="property-form-dialog__field-error">
+        <p v-if="isHouseNumberMissing" class="property-form-dialog__field-error">
+          {{ t('properties.create.houseNumberRequiredError') }}
+        </p>
+        <p v-else-if="isHouseNumberFormatInvalid" class="property-form-dialog__field-error">
           {{ t('properties.create.houseNumberFormatError') }}
         </p>
       </div>
@@ -339,30 +372,42 @@ function cancel() {
 
     <div class="property-form-dialog__grid">
       <div class="property-form-dialog__field">
-        <label for="property-postal-code">{{ t('properties.create.postalCodeLabel') }}</label>
+        <label for="property-postal-code">
+          {{ t('properties.create.postalCodeLabel')
+          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <InputText
           id="property-postal-code"
           v-model="form.postalCode"
           maxlength="5"
           inputmode="numeric"
-          :invalid="isDuplicateAddress || isPostalCodeFormatInvalid"
+          :invalid="isDuplicateAddress || isPostalCodeFormatInvalid || isPostalCodeMissing"
           :placeholder="t('properties.create.postalCodePlaceholder')"
         />
-        <p v-if="isPostalCodeFormatInvalid" class="property-form-dialog__field-error">
+        <p v-if="isPostalCodeMissing" class="property-form-dialog__field-error">
+          {{ t('properties.create.postalCodeRequiredError') }}
+        </p>
+        <p v-else-if="isPostalCodeFormatInvalid" class="property-form-dialog__field-error">
           {{ t('properties.create.postalCodeFormatError') }}
         </p>
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-city">{{ t('properties.create.cityLabel') }}</label>
+        <label for="property-city">
+          {{ t('properties.create.cityLabel')
+          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <InputText
           id="property-city"
           v-model="form.city"
           :maxlength="CITY_MAX_LENGTH"
-          :invalid="isDuplicateAddress || isCityFormatInvalid"
+          :invalid="isDuplicateAddress || isCityFormatInvalid || isCityMissing"
           :placeholder="t('properties.create.cityPlaceholder')"
         />
-        <p v-if="isCityFormatInvalid" class="property-form-dialog__field-error">
+        <p v-if="isCityMissing" class="property-form-dialog__field-error">
+          {{ t('properties.create.cityRequiredError') }}
+        </p>
+        <p v-else-if="isCityFormatInvalid" class="property-form-dialog__field-error">
           {{ t('properties.create.cityFormatError') }}
         </p>
       </div>
@@ -402,6 +447,8 @@ function cancel() {
     </p>
 
     <DemoQuotaHint v-if="!isEditMode" resource="properties" />
+
+    <p class="property-form-dialog__required-legend">{{ t('properties.create.requiredFieldsLegend') }}</p>
 
     <div class="property-form-dialog__actions">
       <Button

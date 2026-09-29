@@ -44,4 +44,25 @@ describe('AppointmentPropertySelect', () => {
       'Aachener Str. 512',
     )
   })
+
+  it('marks the label as required and shows no error hint by default', async () => {
+    const wrapper = mount(AppointmentPropertySelect, {
+      props: { modelValue: null, required: true },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.appointment-property-select__label').text()).toContain('*')
+    expect(wrapper.find('.appointment-property-select__error').exists()).toBe(false)
+  })
+
+  it('shows a required-field hint when marked invalid', async () => {
+    const wrapper = mount(AppointmentPropertySelect, {
+      props: { modelValue: null, invalid: true },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+    await flushPromises()
+
+    expect(wrapper.find('.appointment-property-select__error').exists()).toBe(true)
+  })
 })

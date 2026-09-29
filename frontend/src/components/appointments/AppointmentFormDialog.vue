@@ -90,6 +90,18 @@ const isValid = computed(
     (!form.recurring || form.recurrenceIntervalMonths !== null),
 )
 
+/** Whether the title is empty, i.e. its required-field hint must be shown. */
+const isTitleMissing = computed(() => form.title.trim().length === 0)
+
+/** Whether no property has been chosen, i.e. its required-field hint must be shown. */
+const isPropertyMissing = computed(() => form.propertyId === null)
+
+/** Whether no day has been chosen, i.e. its required-field hint must be shown. */
+const isDayMissing = computed(() => form.day === '')
+
+/** Whether no time has been chosen, i.e. its required-field hint must be shown. */
+const isTimeMissing = computed(() => form.time === '')
+
 watch(visible, (isVisible) => {
   if (isVisible) resetForm()
 })
@@ -171,16 +183,28 @@ function cancel() {
   >
     <div class="appointment-form-dialog__grid">
       <div class="appointment-form-dialog__field">
-        <label for="appointment-title">{{ t('appointments.form.titleLabel') }}</label>
+        <label for="appointment-title">
+          {{ t('appointments.form.titleLabel')
+          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <InputText
           id="appointment-title"
           v-model="form.title"
           :maxlength="TITLE_MAX_LENGTH"
+          :invalid="isTitleMissing"
           :placeholder="t('appointments.form.titlePlaceholder')"
         />
+        <p v-if="isTitleMissing" class="appointment-form-dialog__field-error">
+          {{ t('appointments.form.titleRequiredError') }}
+        </p>
       </div>
 
-      <AppointmentPropertySelect v-model="form.propertyId" class="appointment-form-dialog__field" />
+      <AppointmentPropertySelect
+        v-model="form.propertyId"
+        required
+        :invalid="isPropertyMissing"
+        class="appointment-form-dialog__field"
+      />
     </div>
 
     <div class="appointment-form-dialog__field">
@@ -196,27 +220,44 @@ function cancel() {
 
     <div class="appointment-form-dialog__grid appointment-form-dialog__grid--schedule">
       <div class="appointment-form-dialog__field">
-        <label for="appointment-day">{{ t('appointments.form.dayLabel') }}</label>
+        <label for="appointment-day">
+          {{ t('appointments.form.dayLabel')
+          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <Select
           input-id="appointment-day"
           v-model="form.day"
           :options="dayOptions"
           option-label="label"
           option-value="value"
+          :invalid="isDayMissing"
         />
+        <p v-if="isDayMissing" class="appointment-form-dialog__field-error">
+          {{ t('appointments.form.dayRequiredError') }}
+        </p>
       </div>
       <div class="appointment-form-dialog__field">
-        <label for="appointment-time">{{ t('appointments.form.timeLabel') }}</label>
+        <label for="appointment-time">
+          {{ t('appointments.form.timeLabel')
+          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <Select
           input-id="appointment-time"
           v-model="form.time"
           :options="timeOptions"
           option-label="label"
           option-value="value"
+          :invalid="isTimeMissing"
         />
+        <p v-if="isTimeMissing" class="appointment-form-dialog__field-error">
+          {{ t('appointments.form.timeRequiredError') }}
+        </p>
       </div>
       <div class="appointment-form-dialog__field">
-        <label for="appointment-duration">{{ t('appointments.form.durationLabel') }}</label>
+        <label for="appointment-duration">
+          {{ t('appointments.form.durationLabel')
+          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
+        </label>
         <Select
           input-id="appointment-duration"
           v-model="form.durationMinutes"
@@ -258,6 +299,8 @@ function cancel() {
     </p>
 
     <DemoQuotaHint v-if="!isEditMode" resource="appointments" />
+
+    <p class="appointment-form-dialog__required-legend">{{ t('appointments.form.requiredFieldsLegend') }}</p>
 
     <div class="appointment-form-dialog__actions">
       <Button
