@@ -7,7 +7,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,22 +60,46 @@ public class GeocodingService {
             return cached;
         }
 
-        GeocodingResponse result = fetchByFreeTextQuery(address);
+        boolean anyRequestFailed = false;
+
+        Optional<GeocodingResponse> attempt = attempt(() -> fetchByFreeTextQuery(address));
+        GeocodingResponse result = attempt.orElse(NOT_FOUND);
+        anyRequestFailed |= attempt.isEmpty();
+
         if (result.latitude() == null) {
             String addressWithoutCityDistrict = withoutCityDistrictSuffix(address);
             if (!addressWithoutCityDistrict.equals(address)) {
-                result = fetchByFreeTextQuery(addressWithoutCityDistrict);
+                attempt = attempt(() -> fetchByFreeTextQuery(addressWithoutCityDistrict));
+                result = attempt.orElse(NOT_FOUND);
+                anyRequestFailed |= attempt.isEmpty();
             }
         }
         if (result.latitude() == null) {
             Matcher postalCodeMatcher = GERMAN_POSTAL_CODE.matcher(address);
             if (postalCodeMatcher.find()) {
-                result = fetchByPostalCode(postalCodeMatcher.group());
+                attempt = attempt(() -> fetchByPostalCode(postalCodeMatcher.group()));
+                result = attempt.orElse(NOT_FOUND);
+                anyRequestFailed |= attempt.isEmpty();
             }
         }
 
-        cache.put(address, result);
+        if (!anyRequestFailed) {
+            cache.put(address, result);
+        }
         return result;
+    }
+
+    /**
+     * Runs the given Nominatim lookup, logging and reporting an empty result instead of throwing if the request
+     * fails, so a transient failure is distinguishable from a genuine not-found and is never cached as one.
+     */
+    private Optional<GeocodingResponse> attempt(Supplier<GeocodingResponse> fetch) {
+        try {
+            return Optional.of(fetch.get());
+        } catch (RestClientException exception) {
+            log.warn("Nominatim request failed", exception);
+            return Optional.empty();
+        }
     }
 
     private String withoutCityDistrictSuffix(String address) {
@@ -154,13 +180,18 @@ public class GeocodingService {
     }
 
     private List<NominatimResult> fetchStructured(String street, String postalCode, String city, int limit) {
-        return fetchRaw(uriBuilder -> {
-            uriBuilder = uriBuilder.path("/search").queryParam("street", street);
-            if (postalCode != null && !postalCode.isBlank()) {
-                uriBuilder = uriBuilder.queryParam("postalcode", postalCode);
-            }
-            return uriBuilder.queryParam("city", city).queryParam("country", "Germany").queryParam("addressdetails", 1);
-        }, limit);
+        try {
+            return fetchRaw(uriBuilder -> {
+                uriBuilder = uriBuilder.path("/search").queryParam("street", street);
+                if (postalCode != null && !postalCode.isBlank()) {
+                    uriBuilder = uriBuilder.queryParam("postalcode", postalCode);
+                }
+                return uriBuilder.queryParam("city", city).queryParam("country", "Germany").queryParam("addressdetails", 1);
+            }, limit);
+        } catch (RestClientException exception) {
+            log.warn("Nominatim request failed", exception);
+            return List.of();
+        }
     }
 
     private GeocodingResponse fetchByFreeTextQuery(String address) {
@@ -185,25 +216,20 @@ public class GeocodingService {
     }
 
     /**
-     * Runs the given Nominatim search query, rate-limited and cleared to a JSON result list, returning an empty
-     * list instead of throwing if the request fails.
+     * Runs the given Nominatim search query, rate-limited and cleared to a JSON result list; callers decide how to
+     * degrade on a {@link RestClientException} since a failed request must not be cached as a genuine not-found.
      */
     private synchronized List<NominatimResult> fetchRaw(UnaryOperator<UriBuilder> query, int limit) {
         waitForRateLimit();
-        try {
-            NominatimResult[] results = restClient
-                    .get()
-                    .uri(uriBuilder -> query.apply(uriBuilder)
-                            .queryParam("format", "json")
-                            .queryParam("limit", limit)
-                            .build())
-                    .retrieve()
-                    .body(NominatimResult[].class);
-            return results == null ? List.of() : List.of(results);
-        } catch (RestClientException exception) {
-            log.warn("Nominatim request failed, falling back to an empty result", exception);
-            return List.of();
-        }
+        NominatimResult[] results = restClient
+                .get()
+                .uri(uriBuilder -> query.apply(uriBuilder)
+                        .queryParam("format", "json")
+                        .queryParam("limit", limit)
+                        .build())
+                .retrieve()
+                .body(NominatimResult[].class);
+        return results == null ? List.of() : List.of(results);
     }
 
     private void waitForRateLimit() {
