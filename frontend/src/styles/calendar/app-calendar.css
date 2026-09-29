@@ -78,11 +78,5 @@
 @media (max-width: 48rem) {
   .app-calendar__grid.vuecal {
     min-height: 32rem;
-    overflow-x: auto;
-  }
-
-  .app-calendar__grid :deep(.vuecal__heading),
-  .app-calendar__grid :deep(.vuecal__cell) {
-    min-width: 6rem;
   }
 }

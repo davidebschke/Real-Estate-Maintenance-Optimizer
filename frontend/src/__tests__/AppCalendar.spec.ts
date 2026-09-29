@@ -53,6 +53,7 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
 afterEach(() => {
   i18n.global.locale.value = 'de'
   vi.mocked(appointmentService.fetchAppointments).mockReset()
+  vi.restoreAllMocks()
 })
 
 describe('AppCalendar', () => {
@@ -113,6 +114,35 @@ describe('AppCalendar', () => {
     })
 
     expect(wrapper.findComponent(VueCal).props('hideWeekdays')).toEqual([7])
+  })
+
+  it('keeps vue-cal in charge of its own column width on wide viewports', () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+
+    expect(wrapper.findComponent(VueCal).props('minCellWidth')).toBe(0)
+  })
+
+  it('gives week-view day columns a minimum width on narrow viewports, so vue-cal scrolls them horizontally in sync instead of clipping them', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(max-width: 48rem)',
+      onchange: null,
+      addEventListener: vi.fn<(type: string, listener: EventListener) => void>(),
+      removeEventListener: vi.fn<(type: string, listener: EventListener) => void>(),
+      addListener: vi.fn<(listener: EventListener) => void>(),
+      removeListener: vi.fn<(listener: EventListener) => void>(),
+      dispatchEvent: vi.fn<(event: Event) => boolean>(),
+    } as unknown as MediaQueryList)
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+
+    expect(wrapper.findComponent(VueCal).props('minCellWidth')).toBeGreaterThan(0)
   })
 
   it('exposes each rendered appointment card as a drag-and-drop source via its appointment id', async () => {

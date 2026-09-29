@@ -48,6 +48,7 @@ export interface VueCalProps {
   timeFrom?: number
   timeTo?: number
   timeStep?: number
+  minCellWidth?: number
   hideTitleBar?: boolean
   hideViewSelector?: boolean
   hideWeekdays?: number[]
