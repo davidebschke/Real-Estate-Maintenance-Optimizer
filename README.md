@@ -6,7 +6,7 @@
 
 ### 📊 Repository Stats
 
-[![Lines of Code](https://tokei.rs/b1/github/davidebschke/Real-Estate-Maintenance-Optimizer)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer)
+[![Lines of Code](https://sloc.xyz/github/davidebschke/Real-Estate-Maintenance-Optimizer)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer)
 [![Commits](https://badgen.net/github/commits/davidebschke/Real-Estate-Maintenance-Optimizer)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/commits/main)
 [![Pull Requests](https://img.shields.io/github/issues-pr-closed/davidebschke/Real-Estate-Maintenance-Optimizer?label=pull%20requests)](https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer/pulls?q=is%3Apr)
 
