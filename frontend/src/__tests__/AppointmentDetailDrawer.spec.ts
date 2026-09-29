@@ -84,6 +84,20 @@ describe('AppointmentDetailDrawer', () => {
     ).toBe(false)
   })
 
+  it('opens the shared appointment form dialog in edit mode, pre-filled with the current appointment, and closes the detail view', async () => {
+    const appointment = createAppointment()
+    const { wrapper, store } = await mountDrawer(appointment)
+
+    const editButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Termin bearbeiten')
+    await editButton!.trigger('click')
+
+    expect(store.editingAppointment).toEqual(appointment)
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
   it('reschedules an unlocked appointment via the schedule form', async () => {
     vi.mocked(appointmentService.moveAppointment).mockResolvedValue(createAppointment())
     const { wrapper } = await mountDrawer(createAppointment())

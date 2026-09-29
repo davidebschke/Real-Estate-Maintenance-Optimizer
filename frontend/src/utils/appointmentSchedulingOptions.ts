@@ -42,18 +42,23 @@ export const RECURRENCE_INTERVAL_OPTIONS: RecurrenceIntervalOption[] = [
 /** JavaScript `Date.getDay()` value for Sunday, excluded from every selectable-day list since the company does not schedule appointments then. */
 export const SUNDAY_WEEKDAY_INDEX = 0
 
-/** Generates the next `dayCount` selectable calendar days (Sundays excluded) from `referenceDate`, formatted for the given locale (e.g. "Di., 11.08.2026"). */
-export function generateUpcomingDayOptions(
-  referenceDate: Date,
-  locale: string,
-  dayCount = 60,
-): DayOption[] {
+/** Formats a single calendar day as a day option, for the given locale (e.g. "Di., 11.08.2026"). */
+export function formatDayOption(date: Date, locale: string): DayOption {
   const formatter = new Intl.DateTimeFormat(locale, {
     weekday: 'short',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
+  return { value: toIsoDate(date), label: formatter.format(date) }
+}
+
+/** Generates the next `dayCount` selectable calendar days (Sundays excluded) from `referenceDate`, formatted for the given locale (e.g. "Di., 11.08.2026"). */
+export function generateUpcomingDayOptions(
+  referenceDate: Date,
+  locale: string,
+  dayCount = 60,
+): DayOption[] {
   const options: DayOption[] = []
 
   for (let dayOffset = 0; options.length < dayCount; dayOffset++) {
@@ -63,7 +68,7 @@ export function generateUpcomingDayOptions(
       referenceDate.getDate() + dayOffset,
     )
     if (date.getDay() === SUNDAY_WEEKDAY_INDEX) continue
-    options.push({ value: toIsoDate(date), label: formatter.format(date) })
+    options.push(formatDayOption(date, locale))
   }
 
   return options

@@ -91,8 +91,8 @@ public class AppointmentService {
                 .orElseThrow(() -> new AccountNotFoundException(ownerId))
                 .consumeAppointmentCreation();
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
-        List<String> materials = request.materials() != null ? List.copyOf(request.materials()) : List.of();
-        String description = request.description() != null ? request.description() : "";
+        List<String> materials = normalizeMaterials(request.materials());
+        String description = normalizeDescription(request.description());
         int occurrenceCount = request.recurring() ? RECURRENCE_HORIZON_OCCURRENCES : 1;
 
         Appointment firstOccurrence = null;
@@ -147,6 +147,87 @@ public class AppointmentService {
     }
 
     /**
+     * Updates an appointment's title, property, schedule, locked/recurring state, description and materials, rejecting a schedule change on a locked appointment; turning "recurring" on for a not-yet-recurring appointment additionally materializes the same horizon of future occurrences a newly created recurring appointment would get.
+     */
+    public AppointmentResponse update(String ownerId, String id, CreateAppointmentRequest request) {
+        if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
+            throw new InvalidRecurrenceException("recurrenceIntervalRequired");
+        }
+
+        Appointment appointment = loadOrThrow(ownerId, id);
+        Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
+                .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
+
+        LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
+        boolean scheduleChanged = !newStart.equals(appointment.start()) || !newEnd.equals(appointment.end());
+        if (scheduleChanged && appointment.locked()) {
+            throw new AppointmentLockedException(id);
+        }
+
+        boolean startsNewSeries = request.recurring() && !appointment.recurring();
+        String seriesId = request.recurring() ? (startsNewSeries ? UUID.randomUUID().toString() : appointment.seriesId()) : null;
+        List<String> materials = normalizeMaterials(request.materials());
+        String description = normalizeDescription(request.description());
+        HistoryEntry editEntry = new HistoryEntry(currentInstant(), HistoryEventType.EDITED, List.of());
+
+        appointment.updateDetails(
+                request.title(),
+                property,
+                description,
+                newStart,
+                newEnd,
+                request.locked(),
+                request.recurring(),
+                request.recurrenceIntervalMonths(),
+                seriesId,
+                materials,
+                editEntry);
+
+        if (startsNewSeries) {
+            materializeFutureOccurrences(
+                    seriesId, request.title(), property, description, newStart, request.durationMinutes(),
+                    request.locked(), request.recurrenceIntervalMonths(), materials);
+        }
+
+        return toResponse(appointment);
+    }
+
+    /**
+     * Creates the occurrences following the given first occurrence's start, sharing its seriesId, mirroring the horizon a newly created recurring appointment materializes.
+     */
+    private void materializeFutureOccurrences(
+            String seriesId,
+            String title,
+            Property property,
+            String description,
+            LocalDateTime firstStart,
+            int durationMinutes,
+            boolean locked,
+            int recurrenceIntervalMonths,
+            List<String> materials) {
+        for (int occurrenceIndex = 1; occurrenceIndex < RECURRENCE_HORIZON_OCCURRENCES; occurrenceIndex++) {
+            LocalDateTime occurrenceStart = firstStart.plusMonths((long) recurrenceIntervalMonths * occurrenceIndex);
+            LocalDateTime occurrenceEnd = occurrenceStart.plusMinutes(durationMinutes);
+
+            repository.save(new Appointment(
+                    UUID.randomUUID().toString(),
+                    seriesId,
+                    title,
+                    property,
+                    description,
+                    occurrenceStart,
+                    occurrenceEnd,
+                    locked,
+                    true,
+                    recurrenceIntervalMonths,
+                    materials,
+                    List.of(new HistoryEntry(currentInstant(), HistoryEventType.CREATED, List.of())),
+                    null));
+        }
+    }
+
+    /**
      * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null.
      */
     public AppointmentResponse complete(String ownerId, String id, LocalDateTime actualEnd) {
@@ -190,6 +271,14 @@ public class AppointmentService {
                 .forEach(repository::delete);
     }
 
+    private static List<String> normalizeMaterials(List<String> materials) {
+        return materials != null ? List.copyOf(materials) : List.of();
+    }
+
+    private static String normalizeDescription(String description) {
+        return description != null ? description : "";
+    }
+
     private Appointment loadOrThrow(String ownerId, String id) {
         return repository.findByIdAndPropertyOwnerId(id, ownerId).orElseThrow(() -> new AppointmentNotFoundException(id));
     }
@@ -225,6 +314,7 @@ public class AppointmentService {
             case MOVED -> "appointment.history.moved";
             case COMPLETED -> "appointment.history.completed";
             case REOPENED -> "appointment.history.reopened";
+            case EDITED -> "appointment.history.edited";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
     }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as appointmentService from '@/services/appointmentService'
 import { useAuthStore } from '@/stores/auth'
@@ -9,10 +9,12 @@ import type {
 } from '@/services/appointmentService'
 import type { Appointment } from '@/types/appointment'
 
-/** Holds every appointment and the create/detail overlay state shared across the app. */
+/** Holds every appointment and the create/edit/detail overlay state shared across the app. */
 export const useAppointmentsStore = defineStore('appointments', () => {
   const appointments = ref<Appointment[]>([])
   const isCreateDialogOpen = ref(false)
+  const editingAppointment = ref<Appointment | null>(null)
+  const hasUpdateError = ref(false)
   const activeDetailAppointmentId = ref<string | null>(null)
   /** Bumped by every fetch and by reset(), so a response that arrives after a newer fetch or an account change is discarded. */
   let latestFetchToken = 0
@@ -31,6 +33,19 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     await fetchAppointments()
     await useAuthStore().refreshDemoQuota()
     return created
+  }
+
+  /** Updates an appointment's title, property, schedule, locked/recurring state, description and materials, recording whether the request failed. */
+  async function updateAppointment(id: string, payload: CreateAppointmentPayload): Promise<boolean> {
+    try {
+      await appointmentService.updateAppointment(id, payload)
+      await fetchAppointments()
+      hasUpdateError.value = false
+      return true
+    } catch {
+      hasUpdateError.value = true
+      return false
+    }
   }
 
   /** Reschedules an appointment and refreshes the local list from the backend. */
@@ -70,6 +85,17 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     isCreateDialogOpen.value = false
   }
 
+  /** Opens the appointment form pre-filled for editing the given appointment, clearing a previous update error so it never carries over to a different appointment. */
+  function openEditDialog(appointment: Appointment) {
+    hasUpdateError.value = false
+    editingAppointment.value = appointment
+  }
+
+  /** Closes the appointment edit form. */
+  function closeEditDialog() {
+    editingAppointment.value = null
+  }
+
   /** Opens the detail view for the given appointment id. */
   function openDetail(id: string) {
     activeDetailAppointmentId.value = id
@@ -85,21 +111,39 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     latestFetchToken++
     appointments.value = []
     isCreateDialogOpen.value = false
+    editingAppointment.value = null
+    hasUpdateError.value = false
     activeDetailAppointmentId.value = null
   }
+
+  /** Whether the shared appointment form dialog (create or edit) should be visible; closing it also resets both modes. */
+  const isFormDialogOpen = computed({
+    get: () => isCreateDialogOpen.value || editingAppointment.value !== null,
+    set: (value: boolean) => {
+      if (value) return
+      closeCreateDialog()
+      closeEditDialog()
+    },
+  })
 
   return {
     appointments,
     isCreateDialogOpen,
+    editingAppointment,
+    hasUpdateError,
+    isFormDialogOpen,
     activeDetailAppointmentId,
     fetchAppointments,
     createAppointment,
+    updateAppointment,
     moveAppointment,
     completeAppointment,
     reopenAppointment,
     deleteAppointment,
     openCreateDialog,
     closeCreateDialog,
+    openEditDialog,
+    closeEditDialog,
     openDetail,
     closeDetail,
     reset,

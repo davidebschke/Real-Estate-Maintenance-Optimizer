@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,6 +44,19 @@ class AppointmentControllerTest {
               "locked": false,
               "recurring": false,
               "materials": []
+            }
+            """;
+
+    private static final String UPDATE_REQUEST_BODY = """
+            {
+              "title": "Kellerreinigung Q3 (aktualisiert)",
+              "propertyId": "property-1",
+              "description": "Neue Beschreibung",
+              "start": "2026-08-11T13:00:00",
+              "durationMinutes": 90,
+              "locked": false,
+              "recurring": false,
+              "materials": ["Kehrmaschine"]
             }
             """;
 
@@ -88,6 +102,10 @@ class AppointmentControllerTest {
         otherAccountMockMvc.perform(patch("/api/appointments/{id}/schedule", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"start\": \"2026-08-12T09:00:00\", \"durationMinutes\": 60}"))
+                .andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(put("/api/appointments/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_REQUEST_BODY))
                 .andExpect(status().isNotFound());
         otherAccountMockMvc.perform(patch("/api/appointments/{id}/complete", id)).andExpect(status().isNotFound());
         otherAccountMockMvc.perform(patch("/api/appointments/{id}/reopen", id)).andExpect(status().isNotFound());
@@ -255,6 +273,86 @@ class AppointmentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"start\": \"2026-08-12T09:00:00\", \"durationMinutes\": 60}"))
                 .andExpect(status().isConflict());
+
+        mockMvc.perform(put("/api/appointments/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "TÜV-Termin",
+                                  "propertyId": "property-1",
+                                  "description": "",
+                                  "start": "2026-08-12T09:00:00",
+                                  "durationMinutes": 60,
+                                  "locked": true,
+                                  "recurring": false,
+                                  "materials": []
+                                }
+                                """))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void updatesAnAppointment() throws Exception {
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        mockMvc.perform(put("/api/appointments/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_REQUEST_BODY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", equalTo(id)))
+                .andExpect(jsonPath("$.title", equalTo("Kellerreinigung Q3 (aktualisiert)")))
+                .andExpect(jsonPath("$.description", equalTo("Neue Beschreibung")))
+                .andExpect(jsonPath("$.materials[0]", equalTo("Kehrmaschine")));
+
+        mockMvc.perform(get("/api/appointments/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", equalTo("Kellerreinigung Q3 (aktualisiert)")));
+    }
+
+    @Test
+    void updatingForAnUnknownPropertyReturnsNotFound() throws Exception {
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        mockMvc.perform(put("/api/appointments/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_REQUEST_BODY.replace("property-1", "unknown-property")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updatingAnUnknownAppointmentReturnsNotFound() throws Exception {
+        mockMvc.perform(put("/api/appointments/{id}", "unknown-id")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_REQUEST_BODY))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updatingWithBlankTitleIsRejected() throws Exception {
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        mockMvc.perform(put("/api/appointments/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_REQUEST_BODY.replace("Kellerreinigung Q3 (aktualisiert)", "")))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

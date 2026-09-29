@@ -72,6 +72,18 @@ export async function createAppointment(payload: CreateAppointmentPayload): Prom
   return toAppointment(data)
 }
 
+/** Updates an appointment's title, property, schedule, locked/recurring state, description and materials. */
+export async function updateAppointment(
+  id: string,
+  payload: CreateAppointmentPayload,
+): Promise<Appointment> {
+  const { data } = await axios.put<AppointmentResponseDto>(`${apiBaseUrl}/api/appointments/${id}`, {
+    ...payload,
+    start: toLocalDateTimeString(payload.start),
+  })
+  return toAppointment(data)
+}
+
 /** Reschedules an unlocked appointment to a new start and duration. */
 export async function moveAppointment(
   id: string,

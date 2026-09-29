@@ -39,7 +39,7 @@ const isDetailVisible = computed({
     </main>
     <AppFooter />
 
-    <AppointmentFormDialog v-model:visible="appointmentsStore.isCreateDialogOpen" />
+    <AppointmentFormDialog v-model:visible="appointmentsStore.isFormDialogOpen" />
     <AppointmentDetailDrawer
       v-model:visible="isDetailVisible"
       :appointment-id="appointmentsStore.activeDetailAppointmentId"

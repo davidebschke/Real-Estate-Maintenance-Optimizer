@@ -36,6 +36,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(appointmentService.fetchAppointments).mockReset()
   vi.mocked(appointmentService.createAppointment).mockReset()
+  vi.mocked(appointmentService.updateAppointment).mockReset()
   vi.mocked(appointmentService.moveAppointment).mockReset()
   vi.mocked(appointmentService.completeAppointment).mockReset()
   vi.mocked(appointmentService.reopenAppointment).mockReset()
@@ -43,11 +44,12 @@ beforeEach(() => {
 })
 
 describe('useAppointmentsStore', () => {
-  it('starts with no appointments and both overlays closed', () => {
+  it('starts with no appointments and every overlay closed', () => {
     const store = useAppointmentsStore()
 
     expect(store.appointments).toEqual([])
     expect(store.isCreateDialogOpen).toBe(false)
+    expect(store.editingAppointment).toBeNull()
     expect(store.activeDetailAppointmentId).toBeNull()
   })
 
@@ -80,6 +82,82 @@ describe('useAppointmentsStore', () => {
 
     expect(result).toEqual(created)
     expect(store.appointments).toEqual([created])
+  })
+
+  it('updates an appointment, refreshes the list and clears a previous update error', async () => {
+    const updated = createAppointment({ title: 'Fensterreinigung' })
+    vi.mocked(appointmentService.updateAppointment).mockResolvedValue(updated)
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([updated])
+    const store = useAppointmentsStore()
+    store.hasUpdateError = true
+
+    const succeeded = await store.updateAppointment('1', {
+      title: updated.title,
+      propertyId: updated.propertyId,
+      description: updated.description,
+      start: updated.start,
+      durationMinutes: 120,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: [],
+    })
+
+    expect(succeeded).toBe(true)
+    expect(store.appointments).toEqual([updated])
+    expect(store.hasUpdateError).toBe(false)
+  })
+
+  it('records an update failure without touching the local list', async () => {
+    vi.mocked(appointmentService.updateAppointment).mockRejectedValue(new Error('network error'))
+    const store = useAppointmentsStore()
+    store.appointments = [createAppointment()]
+
+    const succeeded = await store.updateAppointment('1', {
+      title: 'Fensterreinigung',
+      propertyId: 'property-1',
+      description: '',
+      start: new Date(2026, 7, 11, 13, 0),
+      durationMinutes: 120,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: [],
+    })
+
+    expect(succeeded).toBe(false)
+    expect(store.hasUpdateError).toBe(true)
+    expect(store.appointments).toEqual([createAppointment()])
+  })
+
+  it('clears a stale update error when opening the edit dialog for a (possibly different) appointment', () => {
+    const store = useAppointmentsStore()
+    store.hasUpdateError = true
+
+    store.openEditDialog(createAppointment({ id: '2' }))
+
+    expect(store.hasUpdateError).toBe(false)
+  })
+
+  it('opens and closes the edit dialog, and reflects both dialog modes through isFormDialogOpen', () => {
+    const appointment = createAppointment()
+    const store = useAppointmentsStore()
+
+    expect(store.isFormDialogOpen).toBe(false)
+
+    store.openEditDialog(appointment)
+    expect(store.editingAppointment).toEqual(appointment)
+    expect(store.isFormDialogOpen).toBe(true)
+
+    store.closeEditDialog()
+    expect(store.editingAppointment).toBeNull()
+    expect(store.isFormDialogOpen).toBe(false)
+
+    store.openCreateDialog()
+    expect(store.isFormDialogOpen).toBe(true)
+
+    store.isFormDialogOpen = false
+    expect(store.isCreateDialogOpen).toBe(false)
   })
 
   it('moves an appointment and refreshes the list', async () => {
@@ -178,12 +256,16 @@ describe('useAppointmentsStore', () => {
     const store = useAppointmentsStore()
     store.appointments = [createAppointment()]
     store.openCreateDialog()
+    store.openEditDialog(createAppointment())
+    store.hasUpdateError = true
     store.openDetail('1')
 
     store.reset()
 
     expect(store.appointments).toEqual([])
     expect(store.isCreateDialogOpen).toBe(false)
+    expect(store.editingAppointment).toBeNull()
+    expect(store.hasUpdateError).toBe(false)
     expect(store.activeDetailAppointmentId).toBeNull()
   })
 

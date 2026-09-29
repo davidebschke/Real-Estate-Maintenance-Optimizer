@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest'
 import {
   DURATION_OPTIONS,
   RECURRENCE_INTERVAL_OPTIONS,
+  formatDayOption,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
 } from '@/utils/appointmentSchedulingOptions'
 
 describe('appointmentSchedulingOptions', () => {
+  it('formats a single day the same way as the upcoming-day list', () => {
+    expect(formatDayOption(new Date(2026, 7, 11), 'de-DE')).toEqual({
+      value: '2026-08-11',
+      label: expect.stringContaining('11.08.2026'),
+    })
+  })
+
   it('generates the requested number of upcoming days, starting from the reference date', () => {
     const options = generateUpcomingDayOptions(new Date(2026, 7, 11), 'de-DE', 3)
 
