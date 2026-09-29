@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -90,17 +90,11 @@ const isValid = computed(
     (!form.recurring || form.recurrenceIntervalMonths !== null),
 )
 
-/** Whether the title is empty, i.e. its required-field hint must be shown. */
-const isTitleMissing = computed(() => form.title.trim().length === 0)
+/** Whether the title has been left (blurred) at least once, so its required-field hint may be shown. */
+const isTitleTouched = ref(false)
 
-/** Whether no property has been chosen, i.e. its required-field hint must be shown. */
-const isPropertyMissing = computed(() => form.propertyId === null)
-
-/** Whether no day has been chosen, i.e. its required-field hint must be shown. */
-const isDayMissing = computed(() => form.day === '')
-
-/** Whether no time has been chosen, i.e. its required-field hint must be shown. */
-const isTimeMissing = computed(() => form.time === '')
+/** Whether the title has been left empty after being touched, i.e. its required-field hint must be shown. */
+const isTitleMissing = computed(() => isTitleTouched.value && form.title.trim().length === 0)
 
 watch(visible, (isVisible) => {
   if (isVisible) resetForm()
@@ -122,6 +116,8 @@ function fillFormFromEditingAppointment(appointment: NonNullable<typeof store.ed
 
 /** Resets every field to its default, or fills them from the appointment being edited, called each time the dialog is opened. */
 function resetForm() {
+  isTitleTouched.value = false
+
   if (store.editingAppointment) {
     fillFormFromEditingAppointment(store.editingAppointment)
     return
@@ -192,19 +188,17 @@ function cancel() {
           v-model="form.title"
           :maxlength="TITLE_MAX_LENGTH"
           :invalid="isTitleMissing"
+          aria-required="true"
+          :aria-describedby="isTitleMissing ? 'appointment-title-error' : undefined"
           :placeholder="t('appointments.form.titlePlaceholder')"
+          @blur="isTitleTouched = true"
         />
-        <p v-if="isTitleMissing" class="appointment-form-dialog__field-error">
+        <p v-if="isTitleMissing" id="appointment-title-error" class="appointment-form-dialog__field-error">
           {{ t('appointments.form.titleRequiredError') }}
         </p>
       </div>
 
-      <AppointmentPropertySelect
-        v-model="form.propertyId"
-        required
-        :invalid="isPropertyMissing"
-        class="appointment-form-dialog__field"
-      />
+      <AppointmentPropertySelect v-model="form.propertyId" required class="appointment-form-dialog__field" />
     </div>
 
     <div class="appointment-form-dialog__field">
@@ -230,11 +224,8 @@ function cancel() {
           :options="dayOptions"
           option-label="label"
           option-value="value"
-          :invalid="isDayMissing"
+          aria-required="true"
         />
-        <p v-if="isDayMissing" class="appointment-form-dialog__field-error">
-          {{ t('appointments.form.dayRequiredError') }}
-        </p>
       </div>
       <div class="appointment-form-dialog__field">
         <label for="appointment-time">
@@ -247,11 +238,8 @@ function cancel() {
           :options="timeOptions"
           option-label="label"
           option-value="value"
-          :invalid="isTimeMissing"
+          aria-required="true"
         />
-        <p v-if="isTimeMissing" class="appointment-form-dialog__field-error">
-          {{ t('appointments.form.timeRequiredError') }}
-        </p>
       </div>
       <div class="appointment-form-dialog__field">
         <label for="appointment-duration">
@@ -264,6 +252,7 @@ function cancel() {
           :options="durationOptions"
           option-label="label"
           option-value="minutes"
+          aria-required="true"
         />
       </div>
     </div>

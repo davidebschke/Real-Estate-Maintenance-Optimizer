@@ -130,8 +130,24 @@ describe('PropertyFormDialog', () => {
     expect(bodyField('label[for="property-address-supplement"]').text()).not.toContain('*')
   })
 
-  it('shows a hint under every empty required field, until it is filled in', async () => {
-    const wrapper = await mountDialog()
+  it('shows no hint before the required fields are touched', async () => {
+    await mountDialog()
+
+    expect(bodyField('#property-name').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-street').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-house-number').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-postal-code').classes()).not.toContain('p-invalid')
+    expect(bodyField('#property-city').classes()).not.toContain('p-invalid')
+  })
+
+  it('shows a hint under every required field once it is touched and left empty, until it is filled in', async () => {
+    await mountDialog()
+
+    await bodyField('#property-name').trigger('blur')
+    await bodyField('#property-street').trigger('blur')
+    await bodyField('#property-house-number').trigger('blur')
+    await bodyField('#property-postal-code').trigger('blur')
+    await bodyField('#property-city').trigger('blur')
 
     expect(bodyField('#property-name').classes()).toContain('p-invalid')
     expect(bodyField('#property-street').classes()).toContain('p-invalid')

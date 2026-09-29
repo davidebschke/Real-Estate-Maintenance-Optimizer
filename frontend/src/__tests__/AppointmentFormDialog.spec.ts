@@ -137,8 +137,19 @@ describe('AppointmentFormDialog', () => {
     expect(bodyField('label[for="appointment-duration"]').text()).toContain('*')
   })
 
-  it('shows a hint under the title and property fields while they are empty, until they are filled in', async () => {
+  it('shows no hint before the title and property fields are touched', async () => {
+    await mountDialog()
+
+    expect(bodyField('#appointment-title').classes()).not.toContain('p-invalid')
+    expect(document.body.textContent).not.toContain('Bitte einen Titel eingeben.')
+    expect(document.body.textContent).not.toContain('Bitte ein Objekt wählen.')
+  })
+
+  it('shows a hint under the title and property fields once they are touched and left empty, until they are filled in', async () => {
     const wrapper = await mountDialog()
+
+    await bodyField('#appointment-title').trigger('blur')
+    await wrapper.findAllComponents(Select)[0]!.vm.$emit('blur')
 
     expect(bodyField('#appointment-title').classes()).toContain('p-invalid')
     expect(document.body.textContent).toContain('Bitte einen Titel eingeben.')
