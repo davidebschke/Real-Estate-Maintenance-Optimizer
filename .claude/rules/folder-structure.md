@@ -65,7 +65,8 @@ Real-Estate-Maintenance-Optimizer/
 │   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* and the REMO_AUTH_* environment variables (a local copy as backend/.env is git-ignored)
 │   ├── src/test/java/...          # JUnit tests (TestcontainersConfiguration provides the PostgreSQL test database, TestAccounts creates accounts, session cookies and CSRF tokens)
 │   ├── src/test/resources/          # application.properties with the test-only JWT secret
-│   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version
+│   ├── pmd-exclusions.properties    # PMD baseline (see .claude/rules/linting.md), grandfathers the violations that existed when the linter was introduced
+│   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version; also configures the maven-pmd-plugin (bound to the verify phase)
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)
 │   └── skills/                     # project-specific Claude skills, plus the GitHub spec-kit skills (speckit-constitution, speckit-specify, speckit-plan, speckit-tasks, speckit-clarify, speckit-checklist, speckit-analyze, speckit-implement, speckit-converge, speckit-taskstoissues)
@@ -100,7 +101,7 @@ com.remo.realestatemaintainceoptimizer
 
 ## `.claude` Directory
 
-- `.claude/rules/` — binding project rules extracted from `CLAUDE.md`, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`, `testing.md`, `documentation.md`, `folder-structure.md`). Each corresponding section in `CLAUDE.md` references its rule file.
+- `.claude/rules/` — binding project rules extracted from `CLAUDE.md`, one topic per file (e.g. `coding-conventions.md`, `git-workflow.md`, `testing.md`, `linting.md`, `error-handling.md`, `refactoring.md`, `documentation.md`, `folder-structure.md`). Each corresponding section in `CLAUDE.md` references its rule file.
 - `.claude/skills/` — project-specific Claude skills: `wiki-sync/SKILL.md` (Wiki update workflow per [`wiki.md`](wiki.md)), `docs-consistency-check/SKILL.md` (post-change documentation review per [`documentation.md`](documentation.md)), `naming-conventions-check/SKILL.md` and `branch-naming-check/SKILL.md` and `commit-message-lint/SKILL.md` (naming/branch/commit conventions per [`coding-conventions.md`](coding-conventions.md)), `folder-structure-sync/SKILL.md` (keeps this file in sync with the actual tree), `test-coverage-check/SKILL.md` (coverage review per [`testing.md`](testing.md)), and `i18n-parity-check/SKILL.md` (frontend/backend translation parity) — plus the GitHub spec-kit skills (`speckit-constitution`, `speckit-specify`, `speckit-plan`, `speckit-tasks`, `speckit-clarify`, `speckit-checklist`, `speckit-analyze`, `speckit-implement`, `speckit-converge`, `speckit-taskstoissues`) that drive the Spec-Driven Development workflow described in `.specify/`.
 
 For the current, detailed implementation status of the backend and frontend (which controllers/services/components exist, what they do), see `backend/readme_backend_en.md` / `readme_backend_de.md` and `frontend/readme_frontend_en.md` / `readme_frontend_de.md` instead of this file — this file only tracks the physical folder layout.

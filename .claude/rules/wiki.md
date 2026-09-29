@@ -20,6 +20,7 @@ After every change to this repository that is **content-relevant** (not a pure t
 - `.claude/rules/coding-conventions.md` → `EN-Coding-Conventions.md` / `DE-Coding-Konventionen.md`
 - `.claude/rules/testing.md` → `EN-Testing.md` / `DE-Testing.md`
 - `.claude/rules/git-workflow.md` → `EN-Git-Workflow.md` / `DE-Git-Workflow.md`
+- `.claude/rules/error-handling.md`, `.claude/rules/refactoring.md`, `.claude/rules/linting.md` → new topic pages not yet created in the Wiki (see "Current topic pages" above); create `EN-`/`DE-` pairs for them (and add the pair to `Home.md`/`_Sidebar.md`) the next time one of these three files changes, rather than leaving the gap open indefinitely.
 
 If a change touches one of the source files above, update both the German and the English Wiki page together — never only one language.
 

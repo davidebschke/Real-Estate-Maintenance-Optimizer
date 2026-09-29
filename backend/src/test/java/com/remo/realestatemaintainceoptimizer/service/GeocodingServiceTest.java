@@ -106,6 +106,22 @@ class GeocodingServiceTest {
     }
 
     @Test
+    void doesNotCacheAFailedLookupSoItRetriesOnTheNextCall() {
+        mockServer.expect(requestTo(containsString("q=Fehler"))).andRespond(withServerError());
+        mockServer.expect(requestTo(containsString("postalcode=12345"))).andRespond(withServerError());
+        mockServer
+                .expect(requestTo(containsString("q=Fehler")))
+                .andRespond(withSuccess(
+                        "[{\"lat\":\"50.9420135\",\"lon\":\"6.8771884\"}]", MediaType.APPLICATION_JSON));
+
+        service.geocode("Fehler 1, 12345 Nirgendwo");
+        GeocodingResponse response = service.geocode("Fehler 1, 12345 Nirgendwo");
+
+        assertThat(response.latitude()).isEqualTo(50.9420135);
+        assertThat(response.longitude()).isEqualTo(6.8771884);
+    }
+
+    @Test
     void cachesTheResultPerAddressInsteadOfRequestingItAgain() {
         mockServer
                 .expect(requestTo(containsString("q=Aachener")))
