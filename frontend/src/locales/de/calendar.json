@@ -10,13 +10,17 @@
         "day": "Tag",
         "week": "Woche",
         "month": "Monat",
-        "year": "Jahr"
+        "year": "Jahr",
+        "list": "Liste"
       }
     },
     "dayHeader": {
       "appointmentCountSingular": "{count} Termin",
       "appointmentCountPlural": "{count} Termine",
       "travelDistance": "{km} km"
+    },
+    "list": {
+      "empty": "Keine Termine im angezeigten Zeitraum."
     },
     "noAppointments": "Keine Termine",
     "dragLocked": "Dieser Termin ist unverschiebbar und kann nicht verlegt werden."

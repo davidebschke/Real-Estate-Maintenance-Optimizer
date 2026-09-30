@@ -10,13 +10,17 @@
         "day": "Day",
         "week": "Week",
         "month": "Month",
-        "year": "Year"
+        "year": "Year",
+        "list": "List"
       }
     },
     "dayHeader": {
       "appointmentCountSingular": "{count} appointment",
       "appointmentCountPlural": "{count} appointments",
       "travelDistance": "{km} km"
+    },
+    "list": {
+      "empty": "No appointments in the shown period."
     },
     "noAppointments": "No appointments",
     "dragLocked": "This appointment is not movable and cannot be rescheduled."

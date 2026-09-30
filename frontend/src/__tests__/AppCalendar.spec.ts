@@ -5,6 +5,7 @@ import VueCal from 'vue-cal'
 import { useToast } from 'primevue/usetoast'
 import { i18n } from '@/i18n'
 import AppCalendar from '@/components/calendar/AppCalendar.vue'
+import CalendarListView from '@/components/calendar/CalendarListView.vue'
 import { useAppointmentsStore } from '@/stores/appointments'
 import * as appointmentService from '@/services/appointmentService'
 import type { Appointment } from '@/types/appointment'
@@ -197,5 +198,21 @@ describe('AppCalendar', () => {
     onEventClick({ appointmentId: '42' })
 
     expect(useAppointmentsStore().activeDetailAppointmentId).toBe('42')
+  })
+
+  it('switches to the list view without unmounting the vue-cal grid', async () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+    const wrapper = mount(AppCalendar, {
+      global: { plugins: [i18n, createPinia()] },
+    })
+
+    const listButton = wrapper
+      .findAll('.calendar-toolbar__view-button')
+      .find((button) => button.text() === 'Liste')
+    await listButton?.trigger('click')
+
+    expect(wrapper.findComponent(VueCal).exists()).toBe(true)
+    expect(wrapper.find('.app-calendar__drag-container').isVisible()).toBe(false)
+    expect(wrapper.findComponent(CalendarListView).exists()).toBe(true)
   })
 })

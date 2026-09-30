@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { i18n } from '@/i18n'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import type { VueCalView, VueCalViewChangeEvent } from '@/types/vue-cal'
@@ -118,5 +118,20 @@ describe('useCalendarNavigation', () => {
       navigation.goToNext()
       navigation.goToToday()
     }).not.toThrow()
+  })
+
+  it('keeps the underlying vue-cal grid view at its last real value while the list view is active', async () => {
+    const navigation = mountNavigation('week')
+
+    navigation.activeView.value = 'list'
+    await nextTick()
+
+    expect(navigation.activeView.value).toBe('list')
+    expect(navigation.gridView.value).toBe('week')
+
+    navigation.activeView.value = 'month'
+    await nextTick()
+
+    expect(navigation.gridView.value).toBe('month')
   })
 })

@@ -1,6 +1,11 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { VueCalInstance, VueCalView, VueCalViewChangeEvent } from '@/types/vue-cal'
+import type {
+  AppCalendarView,
+  VueCalInstance,
+  VueCalView,
+  VueCalViewChangeEvent,
+} from '@/types/vue-cal'
 import { formatLocalizedDayNumber } from '@/utils/dateFormat'
 
 /** Provides reusable state and controls for navigating the calendar grid: active view, visible range, previous/next/today. */
@@ -8,16 +13,17 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
   const { locale } = useI18n()
 
   const vueCalRef = ref<VueCalInstance | null>(null)
-  const activeView = ref<VueCalView>(initialView)
-  const visibleRange = ref<{ start: Date; end: Date }>(computeInitialRange(initialView, new Date()))
+  const activeView = ref<AppCalendarView>(initialView)
+  /** vue-cal's own grid view, kept at its last real value while the app-level list view is active since vue-cal has no list mode of its own. */
+  const gridView = ref<VueCalView>(initialView)
+  const visibleRange = ref<{ start: Date; end: Date }>(computeInitialRange(gridView.value, new Date()))
+
+  watch(activeView, (view) => {
+    if (view !== 'list') gridView.value = view
+  })
 
   const rangeLabel = computed(() =>
-    formatRangeLabel(
-      visibleRange.value.start,
-      visibleRange.value.end,
-      activeView.value,
-      locale.value,
-    ),
+    formatRangeLabel(visibleRange.value.start, visibleRange.value.end, gridView.value, locale.value),
   )
 
   /** Updates the visible date range whenever vue-cal reports a view or navigation change. */
@@ -43,6 +49,7 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
   return {
     vueCalRef,
     activeView,
+    gridView,
     visibleRange,
     rangeLabel,
     handleViewChange,

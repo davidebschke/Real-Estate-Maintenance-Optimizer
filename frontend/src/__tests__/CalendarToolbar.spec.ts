@@ -46,4 +46,19 @@ describe('CalendarToolbar', () => {
 
     expect(wrapper.emitted('update:activeView')).toEqual([['month']])
   })
+
+  it('renders a list view button alongside the four grid views and emits it when clicked', async () => {
+    const wrapper = mount(CalendarToolbar, {
+      props: { rangeLabel: '10. – 14. August 2026', activeView: 'week' },
+      global: { plugins: [i18n] },
+    })
+
+    const viewButtons = wrapper.findAll('.calendar-toolbar__view-button')
+    expect(viewButtons).toHaveLength(5)
+
+    const listButton = viewButtons.find((button) => button.text() === 'Liste')
+    await listButton?.trigger('click')
+
+    expect(wrapper.emitted('update:activeView')).toEqual([['list']])
+  })
 })

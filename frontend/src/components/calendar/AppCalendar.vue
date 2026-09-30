@@ -9,6 +9,7 @@ import enLocale from 'vue-cal/dist/i18n/en.es.js'
 import CalendarToolbar from '@/components/calendar/CalendarToolbar.vue'
 import CalendarDayHeader from '@/components/calendar/CalendarDayHeader.vue'
 import CalendarEventCard from '@/components/calendar/CalendarEventCard.vue'
+import CalendarListView from '@/components/calendar/CalendarListView.vue'
 import { useLocale } from '@/composables/useLocale'
 import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
@@ -23,6 +24,7 @@ const toast = useToast()
 const {
   vueCalRef,
   activeView,
+  gridView,
   visibleRange,
   rangeLabel,
   handleViewChange,
@@ -30,8 +32,11 @@ const {
   goToNext,
   goToToday,
 } = useCalendarNavigation()
-const { events, getDaySummary } = useCalendarAppointments()
+const { appointments, events, getDaySummary } = useCalendarAppointments()
 const appointmentsStore = useAppointmentsStore()
+
+/** Whether the day-grouped list view is active instead of vue-cal's own grid. */
+const isListView = computed(() => activeView.value === 'list')
 
 /** Milliseconds the "this appointment can't be dragged" toast stays visible before it dismisses itself. */
 const TOAST_LIFE_MS = 3000
@@ -55,7 +60,7 @@ const {
   wasLastInteractionADrag,
 } = useAppointmentDragAndDrop(
   calendarGridRef,
-  activeView,
+  gridView,
   visibleRange,
   async (appointmentId, newStart, durationMinutes) => {
     await appointmentsStore.moveAppointment(appointmentId, { start: newStart, durationMinutes })
@@ -101,13 +106,14 @@ onMounted(() => {
     />
 
     <div
+      v-show="!isListView"
       ref="calendarGridRef"
       class="app-calendar__drag-container"
       @pointerdown="handlePointerDown"
     >
       <VueCal
         ref="vueCalRef"
-        v-model:active-view="activeView"
+        v-model:active-view="gridView"
         class="app-calendar__grid"
         :disable-views="['years']"
         :hide-weekdays="[SUNDAY_ISO_WEEKDAY]"
@@ -150,6 +156,13 @@ onMounted(() => {
         {{ dragPreview.label }}
       </div>
     </div>
+
+    <CalendarListView
+      v-if="isListView"
+      :visible-start="visibleRange.start"
+      :visible-end="visibleRange.end"
+      :appointments="appointments"
+    />
   </div>
 </template>
 

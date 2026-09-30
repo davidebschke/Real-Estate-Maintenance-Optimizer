@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { VueCalView } from '@/types/vue-cal'
+import type { AppCalendarView } from '@/types/vue-cal'
 
 defineProps<{ rangeLabel: string }>()
 
-const activeView = defineModel<VueCalView>('activeView', { required: true })
+const activeView = defineModel<AppCalendarView>('activeView', { required: true })
 
 const emit = defineEmits<{ previous: []; next: []; today: [] }>()
 
 const { t } = useI18n()
 
 /** Views the toolbar lets the user switch between, in display order. */
-const viewOptions: VueCalView[] = ['day', 'week', 'month', 'year']
+const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
 </script>
 
 <template>
