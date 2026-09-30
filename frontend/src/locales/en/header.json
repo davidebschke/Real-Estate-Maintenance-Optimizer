@@ -14,8 +14,6 @@
     "account": {
       "menu": {
         "profile": "Profile & Settings",
-        "vehicle": "My Vehicle & Storage",
-        "notifications": "Notifications",
         "logout": "Log out"
       }
     },

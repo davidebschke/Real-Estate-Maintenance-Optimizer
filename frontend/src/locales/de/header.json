@@ -14,8 +14,6 @@
     "account": {
       "menu": {
         "profile": "Profil & Einstellungen",
-        "vehicle": "Mein Fahrzeug & Lager",
-        "notifications": "Benachrichtigungen",
         "logout": "Abmelden"
       }
     },

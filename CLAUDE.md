@@ -81,11 +81,11 @@ The detailed, current implementation status (which controllers/services/componen
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events, plus a fifth, day-grouped list view (`CalendarListView`) that vue-cal itself does not provide.
 - **Appointments (create/read/move/update/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time. Rescheduling also works by dragging an event onto a new day/time cell in the calendar's day/week view (`useAppointmentDragAndDrop`, Pointer Events based so mouse and touch both work), in addition to the manual form. An "Edit appointment" action in `AppointmentDetailDrawer` opens the shared `AppointmentFormDialog` in edit mode, pre-filled with the appointment's current title, property, schedule, locked/recurring state, description and materials.
 - **i18n (static UI text):** German/English via `vue-i18n`, German as the active default locale, English as `fallbackLocale`.
-- **Not yet implemented:** account management beyond login/logout (profile/vehicle/notification menu entries are placeholders). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
+- **Not yet implemented:** account management beyond login/logout (the profile menu entry is a placeholder). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
 
 ### 3.3 Version Tracking
 
-`pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.1.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
+`pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.7.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
 
 ## 4. Folder Structure (Monorepo)
 

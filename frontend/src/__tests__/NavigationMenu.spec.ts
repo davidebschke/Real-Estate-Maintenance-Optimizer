@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { i18n } from '@/i18n'
@@ -10,6 +10,10 @@ function createTestRouter() {
 }
 
 describe('NavigationMenu', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('renders every navigation entry label', async () => {
     const router = createTestRouter()
     const wrapper = mount(NavigationMenu, {
@@ -21,6 +25,17 @@ describe('NavigationMenu', () => {
     expect(wrapper.text()).toContain('Kalender')
     expect(wrapper.text()).toContain('Statistik')
     expect(wrapper.text()).toContain('Immobilien')
+  })
+
+  it('hides the statistics entry outside development', async () => {
+    vi.stubEnv('DEV', false)
+    const router = createTestRouter()
+    const wrapper = mount(NavigationMenu, {
+      global: { plugins: [i18n, router] },
+    })
+    await router.isReady()
+
+    expect(wrapper.text()).not.toContain('Statistik')
   })
 
   it('navigates to the matching route when an entry is clicked', async () => {

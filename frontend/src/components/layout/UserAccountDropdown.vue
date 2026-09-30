@@ -57,16 +57,6 @@ async function logout(): Promise<void> {
             {{ t('header.account.menu.profile') }}
           </button>
         </li>
-        <li>
-          <button type="button" class="user-account-dropdown__menu-item">
-            {{ t('header.account.menu.vehicle') }}
-          </button>
-        </li>
-        <li>
-          <button type="button" class="user-account-dropdown__menu-item">
-            {{ t('header.account.menu.notifications') }}
-          </button>
-        </li>
       </ul>
 
       <div class="user-account-dropdown__divider"></div>

@@ -14,7 +14,7 @@
 
     <groupId>com.remo</groupId>
     <artifactId>real-estate-maintenance-optimizer</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <name>real-estate-maintenance-optimizer</name>
     <description>Backend for the Real-Estate-Maintenance-Optimizer (REMO)</description>
     <packaging>jar</packaging>
