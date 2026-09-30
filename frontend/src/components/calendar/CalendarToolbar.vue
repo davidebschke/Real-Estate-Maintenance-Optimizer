@@ -19,25 +19,27 @@ const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
     <div class="calendar-toolbar__top">
       <div class="calendar-toolbar__range">
         <h2 class="calendar-toolbar__title">{{ rangeLabel }}</h2>
-        <button
-          type="button"
-          class="calendar-toolbar__nav-button"
-          :aria-label="t('calendar.toolbar.previous')"
-          @click="emit('previous')"
-        >
-          <i class="pi pi-chevron-left" aria-hidden="true"></i>
-        </button>
-        <button type="button" class="calendar-toolbar__today-button" @click="emit('today')">
-          {{ t('calendar.toolbar.today') }}
-        </button>
-        <button
-          type="button"
-          class="calendar-toolbar__nav-button"
-          :aria-label="t('calendar.toolbar.next')"
-          @click="emit('next')"
-        >
-          <i class="pi pi-chevron-right" aria-hidden="true"></i>
-        </button>
+        <template v-if="activeView !== 'list'">
+          <button
+            type="button"
+            class="calendar-toolbar__nav-button"
+            :aria-label="t('calendar.toolbar.previous')"
+            @click="emit('previous')"
+          >
+            <i class="pi pi-chevron-left" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="calendar-toolbar__today-button" @click="emit('today')">
+            {{ t('calendar.toolbar.today') }}
+          </button>
+          <button
+            type="button"
+            class="calendar-toolbar__nav-button"
+            :aria-label="t('calendar.toolbar.next')"
+            @click="emit('next')"
+          >
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </template>
       </div>
 
       <p class="calendar-toolbar__hint">{{ t('calendar.toolbar.hint') }}</p>

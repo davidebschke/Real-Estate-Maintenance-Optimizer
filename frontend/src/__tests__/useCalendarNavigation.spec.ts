@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick } from 'vue'
 import { i18n } from '@/i18n'
-import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
+import { LIST_VIEW_RANGE_DAYS, useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import type { VueCalView, VueCalViewChangeEvent } from '@/types/vue-cal'
 
 /** Runs `useCalendarNavigation` inside a mounted host component so `useI18n` has a valid setup context. */
@@ -21,6 +21,7 @@ function mountNavigation(initialView: VueCalView = 'week') {
 
 afterEach(() => {
   i18n.global.locale.value = 'de'
+  vi.useRealTimers()
 })
 
 describe('useCalendarNavigation', () => {
@@ -133,5 +134,23 @@ describe('useCalendarNavigation', () => {
     await nextTick()
 
     expect(navigation.gridView.value).toBe('month')
+  })
+
+  it('computes the list view as a fixed 365-day window starting today, independent of the navigated grid range', async () => {
+    vi.setSystemTime(new Date(2026, 8, 30, 10, 0))
+    const navigation = mountNavigation('week')
+
+    expect(navigation.listRange.start).toEqual(new Date(2026, 8, 30))
+    expect(navigation.listRange.end).toEqual(new Date(2027, 8, 29))
+    expect(
+      Math.round(
+        (navigation.listRange.end.getTime() - navigation.listRange.start.getTime()) / 86_400_000,
+      ) + 1,
+    ).toBe(LIST_VIEW_RANGE_DAYS)
+
+    navigation.activeView.value = 'list'
+    await nextTick()
+
+    expect(navigation.rangeLabel.value).toBe('30. September 2026 – 29. September 2027')
   })
 })

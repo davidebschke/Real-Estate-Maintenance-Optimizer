@@ -26,6 +26,7 @@ const {
   activeView,
   gridView,
   visibleRange,
+  listRange,
   rangeLabel,
   handleViewChange,
   goToPrevious,
@@ -159,8 +160,8 @@ onMounted(() => {
 
     <CalendarListView
       v-if="isListView"
-      :visible-start="visibleRange.start"
-      :visible-end="visibleRange.end"
+      :visible-start="listRange.start"
+      :visible-end="listRange.end"
       :appointments="appointments"
     />
   </div>

@@ -8,6 +8,9 @@ import type {
 } from '@/types/vue-cal'
 import { formatLocalizedDayNumber } from '@/utils/dateFormat'
 
+/** Number of days, including today, the calendar's list view spans into the future — it always shows the same fixed forward-looking window regardless of navigation, unlike the grid views. */
+export const LIST_VIEW_RANGE_DAYS = 365
+
 /** Provides reusable state and controls for navigating the calendar grid: active view, visible range, previous/next/today. */
 export function useCalendarNavigation(initialView: VueCalView = 'week') {
   const { locale } = useI18n()
@@ -17,13 +20,17 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
   /** vue-cal's own grid view, kept at its last real value while the app-level list view is active since vue-cal has no list mode of its own. */
   const gridView = ref<VueCalView>(initialView)
   const visibleRange = ref<{ start: Date; end: Date }>(computeInitialRange(gridView.value, new Date()))
+  /** Fixed date range the list view covers, computed once for this navigation instance's lifetime since it does not follow previous/next/today navigation. */
+  const listRange = computeListRange(new Date())
 
   watch(activeView, (view) => {
     if (view !== 'list') gridView.value = view
   })
 
   const rangeLabel = computed(() =>
-    formatRangeLabel(visibleRange.value.start, visibleRange.value.end, gridView.value, locale.value),
+    activeView.value === 'list'
+      ? formatListRangeLabel(listRange.start, listRange.end, locale.value)
+      : formatRangeLabel(visibleRange.value.start, visibleRange.value.end, gridView.value, locale.value),
   )
 
   /** Updates the visible date range whenever vue-cal reports a view or navigation change. */
@@ -51,6 +58,7 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
     activeView,
     gridView,
     visibleRange,
+    listRange,
     rangeLabel,
     handleViewChange,
     goToPrevious,
@@ -92,6 +100,19 @@ function monthRange(date: Date): { start: Date; end: Date } {
 /** Returns the January 1 to December 31 range of the year containing the given date. */
 function yearRange(date: Date): { start: Date; end: Date } {
   return { start: new Date(date.getFullYear(), 0, 1), end: new Date(date.getFullYear(), 11, 31) }
+}
+
+/** Returns the list view's fixed range: the calendar day of the given reference date through `LIST_VIEW_RANGE_DAYS - 1` days after it. */
+function computeListRange(referenceDate: Date): { start: Date; end: Date } {
+  const start = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate())
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + LIST_VIEW_RANGE_DAYS - 1)
+  return { start, end }
+}
+
+/** Formats the list view's fixed date range as a localized title (e.g. "30. September 2026 – 29. September 2027"). */
+function formatListRangeLabel(start: Date, end: Date, locale: string): string {
+  const fullDate = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
+  return `${fullDate.format(start)} – ${fullDate.format(end)}`
 }
 
 /** Formats the visible date range as a localized title matching the active view (e.g. "10. – 14. August 2026"). */

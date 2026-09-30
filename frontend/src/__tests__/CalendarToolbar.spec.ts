@@ -61,4 +61,14 @@ describe('CalendarToolbar', () => {
 
     expect(wrapper.emitted('update:activeView')).toEqual([['list']])
   })
+
+  it('hides the previous/today/next navigation buttons while the list view is active, since it shows a fixed range', () => {
+    const wrapper = mount(CalendarToolbar, {
+      props: { rangeLabel: '30. September 2026 – 29. September 2027', activeView: 'list' },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.calendar-toolbar__nav-button').exists()).toBe(false)
+    expect(wrapper.find('.calendar-toolbar__today-button').exists()).toBe(false)
+  })
 })
