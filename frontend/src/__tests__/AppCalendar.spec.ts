@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import VueCal from 'vue-cal'
@@ -50,9 +50,14 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
   }
 }
 
+beforeEach(() => {
+  vi.setSystemTime(new Date('2026-10-07T12:00:00'))
+})
+
 afterEach(() => {
   i18n.global.locale.value = 'de'
   vi.mocked(appointmentService.fetchAppointments).mockReset()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
