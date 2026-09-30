@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { VueCalView } from '@/types/vue-cal'
+import type { AppCalendarView } from '@/types/vue-cal'
 
 defineProps<{ rangeLabel: string }>()
 
-const activeView = defineModel<VueCalView>('activeView', { required: true })
+const activeView = defineModel<AppCalendarView>('activeView', { required: true })
 
 const emit = defineEmits<{ previous: []; next: []; today: [] }>()
 
 const { t } = useI18n()
 
 /** Views the toolbar lets the user switch between, in display order. */
-const viewOptions: VueCalView[] = ['day', 'week', 'month', 'year']
+const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
 </script>
 
 <template>
@@ -19,25 +19,27 @@ const viewOptions: VueCalView[] = ['day', 'week', 'month', 'year']
     <div class="calendar-toolbar__top">
       <div class="calendar-toolbar__range">
         <h2 class="calendar-toolbar__title">{{ rangeLabel }}</h2>
-        <button
-          type="button"
-          class="calendar-toolbar__nav-button"
-          :aria-label="t('calendar.toolbar.previous')"
-          @click="emit('previous')"
-        >
-          <i class="pi pi-chevron-left" aria-hidden="true"></i>
-        </button>
-        <button type="button" class="calendar-toolbar__today-button" @click="emit('today')">
-          {{ t('calendar.toolbar.today') }}
-        </button>
-        <button
-          type="button"
-          class="calendar-toolbar__nav-button"
-          :aria-label="t('calendar.toolbar.next')"
-          @click="emit('next')"
-        >
-          <i class="pi pi-chevron-right" aria-hidden="true"></i>
-        </button>
+        <template v-if="activeView !== 'list'">
+          <button
+            type="button"
+            class="calendar-toolbar__nav-button"
+            :aria-label="t('calendar.toolbar.previous')"
+            @click="emit('previous')"
+          >
+            <i class="pi pi-chevron-left" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="calendar-toolbar__today-button" @click="emit('today')">
+            {{ t('calendar.toolbar.today') }}
+          </button>
+          <button
+            type="button"
+            class="calendar-toolbar__nav-button"
+            :aria-label="t('calendar.toolbar.next')"
+            @click="emit('next')"
+          >
+            <i class="pi pi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </template>
       </div>
 
       <p class="calendar-toolbar__hint">{{ t('calendar.toolbar.hint') }}</p>

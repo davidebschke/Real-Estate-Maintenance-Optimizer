@@ -1,6 +1,9 @@
 /** Single view mode supported by the vue-cal grid. */
 export type VueCalView = 'years' | 'year' | 'month' | 'week' | 'day'
 
+/** View mode the app's calendar toolbar lets the user pick, extending vue-cal's own grid views with a day-grouped list view that vue-cal itself does not render. */
+export type AppCalendarView = VueCalView | 'list'
+
 /** Payload emitted by vue-cal whenever the active view or its visible date range changes. */
 export interface VueCalViewChangeEvent {
   view: VueCalView

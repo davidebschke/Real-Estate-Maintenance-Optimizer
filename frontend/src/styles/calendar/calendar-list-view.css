@@ -1,0 +1,89 @@
+.calendar-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.calendar-list-view__empty {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  margin: 0;
+  padding: 1rem 0;
+}
+
+.calendar-list-view__day {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.calendar-list-view__day-header {
+  align-items: baseline;
+  display: flex;
+  gap: 0.625rem;
+  justify-content: space-between;
+}
+
+.calendar-list-view__day-heading {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.calendar-list-view__day-count {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+}
+
+.calendar-list-view__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.calendar-list-view__item {
+  align-items: baseline;
+  background-color: transparent;
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.5rem;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  font: inherit;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  width: 100%;
+}
+
+.calendar-list-view__item:hover {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+}
+
+.calendar-list-view__item--completed {
+  opacity: 0.6;
+}
+
+.calendar-list-view__time {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-weight: 700;
+}
+
+.calendar-list-view__title {
+  font-weight: 600;
+}
+
+.calendar-list-view__property {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}
+
+@media (max-width: 30rem) {
+  .calendar-list-view {
+    padding: 1rem;
+  }
+}
