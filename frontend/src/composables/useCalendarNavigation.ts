@@ -26,6 +26,10 @@ export function useCalendarNavigation(initialView: VueCalView = 'week') {
   watch(activeView, (view) => {
     if (view !== 'list') gridView.value = view
   })
+  /** Keeps the toolbar's active view in sync when vue-cal switches its own grid view internally, e.g. via its default double-click-to-narrow-view navigation. */
+  watch(gridView, (view) => {
+    if (activeView.value !== 'list') activeView.value = view
+  })
 
   const rangeLabel = computed(() =>
     activeView.value === 'list'

@@ -153,4 +153,24 @@ describe('useCalendarNavigation', () => {
 
     expect(navigation.rangeLabel.value).toBe('30. September 2026 – 29. September 2027')
   })
+
+  it('keeps the toolbar active view in sync when vue-cal switches its own grid view internally', async () => {
+    const navigation = mountNavigation('week')
+
+    navigation.gridView.value = 'day'
+    await nextTick()
+
+    expect(navigation.activeView.value).toBe('day')
+  })
+
+  it('does not switch out of the list view when the background grid view changes', async () => {
+    const navigation = mountNavigation('week')
+    navigation.activeView.value = 'list'
+    await nextTick()
+
+    navigation.gridView.value = 'month'
+    await nextTick()
+
+    expect(navigation.activeView.value).toBe('list')
+  })
 })
