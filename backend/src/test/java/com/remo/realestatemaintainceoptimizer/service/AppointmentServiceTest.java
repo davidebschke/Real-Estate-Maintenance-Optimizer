@@ -13,6 +13,7 @@ import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidActualEndException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
@@ -351,11 +352,21 @@ class AppointmentServiceTest {
     @Test
     void completingAnAppointmentWithAnExplicitActualEndUsesIt() {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
-        LocalDateTime explicitActualEnd = LocalDateTime.of(2026, 8, 10, 16, 30);
+        LocalDateTime explicitActualEnd = LocalDateTime.of(2026, 8, 11, 16, 30);
 
         AppointmentResponse completed = service.complete(owner.id(), created.id(), explicitActualEnd);
 
         assertThat(completed.actualEnd()).isEqualTo(explicitActualEnd);
+    }
+
+    @Test
+    void completingAnAppointmentWithAnActualEndBeforeItsPlannedStartIsRejected() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        LocalDateTime actualEndBeforeStart = created.start().minusHours(1);
+
+        assertThatThrownBy(() -> service.complete(owner.id(), created.id(), actualEndBeforeStart))
+                .isInstanceOf(InvalidActualEndException.class);
+        assertThat(service.getById(owner.id(), created.id()).completed()).isFalse();
     }
 
     @Test

@@ -142,9 +142,9 @@ describe('AppointmentDetailDrawer', () => {
     expect(dateInput?.value).toBe('2026-08-11')
     expect(timeInput?.value).toBe('16:45')
 
-    dateInput!.value = '2026-08-10'
+    dateInput!.value = '2026-08-11'
     dateInput!.dispatchEvent(new Event('input'))
-    timeInput!.value = '09:15'
+    timeInput!.value = '17:15'
     timeInput!.dispatchEvent(new Event('input'))
     await flushPromises()
 
@@ -156,8 +156,42 @@ describe('AppointmentDetailDrawer', () => {
 
     expect(appointmentService.completeAppointment).toHaveBeenCalledWith(
       '1',
-      new Date(2026, 7, 10, 9, 15),
+      new Date(2026, 7, 11, 17, 15),
     )
+    vi.useRealTimers()
+  })
+
+  it('pre-fills the completion form with the planned start when it lies in the future, and rejects an actual end before that start', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 7, 1, 8, 0))
+    const { wrapper } = await mountDrawer(createAppointment())
+
+    const completeButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Als erledigt markieren')
+    await completeButton!.trigger('click')
+
+    const dateInput = document.body.querySelector<HTMLInputElement>('#appointment-complete-date')
+    const timeInput = document.body.querySelector<HTMLInputElement>('#appointment-complete-time')
+    expect(dateInput?.value).toBe('2026-08-11')
+    expect(timeInput?.value).toBe('13:00')
+
+    dateInput!.value = '2026-08-10'
+    dateInput!.dispatchEvent(new Event('input'))
+    await flushPromises()
+
+    expect(document.body.textContent).toContain(
+      "Das tatsächliche Ende darf nicht vor dem geplanten Start des Termins liegen.",
+    )
+    const confirmButton = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.text() === 'Bestätigen')
+    expect(confirmButton!.attributes('disabled')).toBeDefined()
+
+    await confirmButton!.trigger('click')
+    await flushPromises()
+
+    expect(appointmentService.completeAppointment).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 

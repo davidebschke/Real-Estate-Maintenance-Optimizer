@@ -64,6 +64,12 @@ const scheduleForm = reactive({ day: '', time: '', durationMinutes: 60 })
 const isCompleting = ref(false)
 const completeForm = reactive({ day: '', time: '' })
 
+/** Whether the entered actual end lies before the appointment's planned start. */
+const isActualEndBeforeStart = computed(() => {
+  if (!appointment.value || !completeForm.day || !completeForm.time) return false
+  return combineDayAndTime(completeForm.day, completeForm.time) < appointment.value.start
+})
+
 watch(appointment, (current) => {
   isEditingSchedule.value = false
   isCompleting.value = false
@@ -108,11 +114,12 @@ function edit() {
   close()
 }
 
-/** Switches the completion action into edit mode, pre-filled with the current date and time. */
+/** Switches the completion action into edit mode, pre-filled with the current date and time, or the appointment's planned start if that lies in the future. */
 function startCompleting() {
-  const now = new Date()
-  completeForm.day = toIsoDate(now)
-  completeForm.time = toTimeString(now)
+  if (!appointment.value) return
+  const suggestedActualEnd = new Date(Math.max(Date.now(), appointment.value.start.getTime()))
+  completeForm.day = toIsoDate(suggestedActualEnd)
+  completeForm.time = toTimeString(suggestedActualEnd)
   isCompleting.value = true
 }
 
@@ -121,9 +128,9 @@ function cancelCompleting() {
   isCompleting.value = false
 }
 
-/** Marks the appointment as completed with the entered date and time as its actual end. */
+/** Marks the appointment as completed with the entered date and time as its actual end, rejecting an actual end before the planned start. */
 async function confirmCompleting() {
-  if (!appointment.value) return
+  if (!appointment.value || isActualEndBeforeStart.value) return
   await store.completeAppointment(
     appointment.value.id,
     combineDayAndTime(completeForm.day, completeForm.time),
@@ -286,11 +293,18 @@ function requestDelete() {
               t('appointments.detail.completeTimeLabel')
             }}</label>
             <input id="appointment-complete-time" v-model="completeForm.time" type="time" />
+            <p
+              v-if="isActualEndBeforeStart"
+              class="appointment-detail-drawer__field-error"
+            >
+              {{ t('appointments.detail.actualEndBeforeStartError') }}
+            </p>
             <div class="appointment-detail-drawer__complete-actions">
               <Button
                 :label="t('appointments.detail.confirmCompleteButton')"
                 severity="success"
                 size="small"
+                :disabled="isActualEndBeforeStart"
                 @click="confirmCompleting"
               />
               <button type="button" @click="cancelCompleting">
