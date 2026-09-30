@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
 import { useAppointmentsStore } from '@/stores/appointments'
-import { isSameDay } from '@/utils/dateFormat'
 import type { Appointment } from '@/types/appointment'
 
 const props = defineProps<{
@@ -48,18 +47,35 @@ function appointmentCountKey(count: number): string {
     : 'calendar.dayHeader.appointmentCountPlural'
 }
 
+/** Formats a date as a `YYYY-MM-DD` key for grouping appointments by calendar day. */
+function toDayKey(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 /** Groups the given appointments by calendar day across the visible range, in ascending day and start-time order, omitting empty days. */
 function buildDayGroups(appointments: Appointment[], rangeStart: Date, rangeEnd: Date): DayGroup[] {
+  const appointmentsByDay = new Map<string, Appointment[]>()
+  for (const appointment of appointments) {
+    const key = toDayKey(appointment.start)
+    const dayAppointments = appointmentsByDay.get(key)
+    if (dayAppointments) dayAppointments.push(appointment)
+    else appointmentsByDay.set(key, [appointment])
+  }
+
   const groups: DayGroup[] = []
   const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate())
   const end = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate())
 
   while (cursor <= end) {
     const date = new Date(cursor)
-    const dayAppointments = appointments
-      .filter((appointment) => isSameDay(appointment.start, date))
-      .sort((a, b) => a.start.getTime() - b.start.getTime())
-    if (dayAppointments.length > 0) groups.push({ date, appointments: dayAppointments })
+    const dayAppointments = appointmentsByDay.get(toDayKey(date))
+    if (dayAppointments) {
+      groups.push({
+        date,
+        appointments: [...dayAppointments].sort((a, b) => a.start.getTime() - b.start.getTime()),
+      })
+    }
     cursor.setDate(cursor.getDate() + 1)
   }
 
