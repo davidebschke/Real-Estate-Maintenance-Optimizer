@@ -85,7 +85,7 @@ The detailed, current implementation status (which controllers/services/componen
 
 ### 3.3 Version Tracking
 
-`pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.1.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
+`pom.xml` holds the single source of truth for the application version (`<version>`, currently `0.7.0-SNAPSHOT`), surfaced to the frontend footer via `GET /api/version`. Whenever `pom.xml` is touched, check whether `<version>` changed; if it did, note the change here in Section 3 and verify the footer still displays the new version correctly (no other file duplicates this value, so nothing else needs updating).
 
 ## 4. Folder Structure (Monorepo)
 
