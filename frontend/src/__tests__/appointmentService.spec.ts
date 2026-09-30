@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import axios from 'axios'
+import axios, { AxiosError, AxiosHeaders } from 'axios'
 import {
   completeAppointment,
   createAppointment,
@@ -12,7 +12,33 @@ import {
 } from '@/services/appointmentService'
 import type { AppointmentResponseDto } from '@/services/appointmentService'
 
-vi.mock('axios')
+vi.mock('axios', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('axios')>()
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      get: vi.fn<typeof actual.default.get>(),
+      post: vi.fn<typeof actual.default.post>(),
+      put: vi.fn<typeof actual.default.put>(),
+      patch: vi.fn<typeof actual.default.patch>(),
+      delete: vi.fn<typeof actual.default.delete>(),
+      isAxiosError: actual.isAxiosError,
+    },
+  }
+})
+
+/** Builds the axios error a request rejects with for the given HTTP status and body. */
+function httpError(status: number, data: unknown = {}): AxiosError {
+  const config = { headers: new AxiosHeaders() }
+  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
+    status,
+    statusText: '',
+    headers: {},
+    config,
+    data,
+  })
+}
 
 /** Builds a sample backend appointment DTO for tests, with overridable fields. */
 function createDto(overrides: Partial<AppointmentResponseDto> = {}): AppointmentResponseDto {
@@ -96,16 +122,13 @@ describe('appointmentService', () => {
   })
 
   it('returns the suggested next free slot when creation is blocked by a 409 conflict', async () => {
-    vi.mocked(axios.post).mockRejectedValue({
-      response: {
-        status: 409,
-        data: {
-          message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
-          suggestedStart: '2026-08-11T15:00:00',
-          suggestedEnd: '2026-08-11T16:00:00',
-        },
-      },
-    })
+    vi.mocked(axios.post).mockRejectedValue(
+      httpError(409, {
+        message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+        suggestedStart: '2026-08-11T15:00:00',
+        suggestedEnd: '2026-08-11T16:00:00',
+      }),
+    )
 
     const result = await createAppointment({
       title: 'Kellerreinigung Q3',
@@ -128,7 +151,8 @@ describe('appointmentService', () => {
   })
 
   it('rethrows an error that is not a 409 conflict response', async () => {
-    vi.mocked(axios.post).mockRejectedValue({ response: { status: 500, data: {} } })
+    const serverError = httpError(500)
+    vi.mocked(axios.post).mockRejectedValue(serverError)
 
     await expect(
       createAppointment({
@@ -142,7 +166,7 @@ describe('appointmentService', () => {
         recurrenceIntervalMonths: null,
         materials: [],
       }),
-    ).rejects.toEqual({ response: { status: 500, data: {} } })
+    ).rejects.toBe(serverError)
   })
 
   it('updates an appointment, sending the start as a local date-time string', async () => {

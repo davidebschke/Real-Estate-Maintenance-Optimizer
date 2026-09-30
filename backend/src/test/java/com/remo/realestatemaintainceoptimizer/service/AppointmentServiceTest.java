@@ -20,10 +20,17 @@ import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundExceptio
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -149,6 +156,63 @@ class AppointmentServiceTest {
         assertThatThrownBy(() -> service.create(demo.id(), overlapping)).isInstanceOf(AppointmentConflictException.class);
 
         assertThat(userRepository.findById(demo.id()).orElseThrow().remainingAppointmentCreations()).isEqualTo(1);
+    }
+
+    @Test
+    void theConflictExceptionNeverSuggestsASunday() {
+        // 2026-08-15 is a Saturday; this appointment occupies its last hour through all of Sunday 2026-08-16.
+        CreateAppointmentRequest spanningIntoSunday = new CreateAppointmentRequest(
+                "Wartung", "property-1", "", LocalDateTime.of(2026, 8, 15, 23, 0), 1440, false, false, null, List.of());
+        service.create(owner.id(), spanningIntoSunday);
+        CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 15, 23, 0), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), overlapping))
+                .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 0));
+                    assertThat(exception.suggestedStart().getDayOfWeek()).isNotEqualTo(DayOfWeek.SUNDAY);
+                });
+    }
+
+    @Test
+    void concurrentCreationOfOverlappingAppointmentsResultsInExactlyOneSuccess() throws Exception {
+        CreateAppointmentRequest requestA = createRequest(false, null);
+        CreateAppointmentRequest requestB = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", requestA.start(), requestA.durationMinutes(), false, false, null, List.of());
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CyclicBarrier barrier = new CyclicBarrier(2);
+
+        try {
+            List<Future<Boolean>> results = executor.invokeAll(List.of(
+                    attemptCreate(barrier, requestA), attemptCreate(barrier, requestB)));
+            long successCount = results.stream().filter(AppointmentServiceTest::succeeded).count();
+
+            assertThat(successCount).isEqualTo(1);
+            assertThat(service.listAll(owner.id())).hasSize(1);
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        }
+    }
+
+    private Callable<Boolean> attemptCreate(CyclicBarrier barrier, CreateAppointmentRequest request) {
+        return () -> {
+            barrier.await();
+            try {
+                service.create(owner.id(), request);
+                return true;
+            } catch (AppointmentConflictException exception) {
+                return false;
+            }
+        };
+    }
+
+    private static boolean succeeded(Future<Boolean> future) {
+        try {
+            return future.get();
+        } catch (Exception exception) {
+            throw new AssertionError(exception);
+        }
     }
 
     @Test

@@ -1,5 +1,4 @@
 import axios from 'axios'
-import type { AxiosResponse } from 'axios'
 import type { Appointment } from '@/types/appointment'
 
 /** Shape of a history entry as returned by the backend. */
@@ -100,11 +99,10 @@ export async function createAppointment(payload: CreateAppointmentPayload): Prom
 
 /** Extracts the suggested next free slot from a 409 conflict response, or `null` for any other error. */
 function toAppointmentConflict(error: unknown): AppointmentConflict | null {
-  const response = (error as { response?: AxiosResponse<Partial<AppointmentConflictResponseDto>> })?.response
-  if (response?.status !== 409) {
+  if (!axios.isAxiosError<Partial<AppointmentConflictResponseDto>>(error) || error.response?.status !== 409) {
     return null
   }
-  const conflict = response.data
+  const conflict = error.response.data
   if (!conflict.suggestedStart || !conflict.suggestedEnd) {
     return null
   }

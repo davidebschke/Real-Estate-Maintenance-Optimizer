@@ -18,6 +18,7 @@ import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundExceptio
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -92,6 +93,9 @@ public class AppointmentService {
         Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
 
+        // Serializes concurrent creations for the same account, so two requests racing for the same slot cannot both
+        // pass the conflict check below before either has persisted its appointment.
+        userRepository.acquireTransactionLock(ownerId.hashCode());
         List<Appointment> existingAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId);
         rejectIfConflicting(existingAppointments, firstStart, firstEnd, request.durationMinutes());
 
@@ -299,24 +303,29 @@ public class AppointmentService {
 
     /**
      * Returns the earliest start at or after the given start at which the given duration is free of every given
-     * appointment's occupied range.
+     * appointment's occupied range, never suggesting a Sunday since the company schedules no appointments then.
      */
     private static LocalDateTime findNextAvailableStart(
             List<Appointment> existingAppointments, LocalDateTime requestedStart, int durationMinutes) {
         LocalDateTime candidateStart = requestedStart;
-        boolean conflictFound;
+        boolean candidateChanged;
         do {
-            conflictFound = false;
+            candidateChanged = false;
+            if (candidateStart.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                candidateStart = candidateStart.plusDays(1);
+                candidateChanged = true;
+                continue;
+            }
             LocalDateTime candidateEnd = candidateStart.plusMinutes(durationMinutes);
             for (Appointment existing : existingAppointments) {
                 LocalDateTime existingEnd = occupiedEnd(existing);
                 if (rangesOverlap(existing.start(), existingEnd, candidateStart, candidateEnd)) {
                     candidateStart = existingEnd;
-                    conflictFound = true;
+                    candidateChanged = true;
                     break;
                 }
             }
-        } while (conflictFound);
+        } while (candidateChanged);
         return candidateStart;
     }
 
