@@ -15,6 +15,7 @@ import { useDemoQuota } from '@/composables/useDemoQuota'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useLocale } from '@/composables/useLocale'
+import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
   DURATION_OPTIONS,
   RECURRENCE_INTERVAL_OPTIONS,
@@ -96,9 +97,22 @@ const isTitleTouched = ref(false)
 /** Whether the title has been left empty after being touched, i.e. its required-field hint must be shown. */
 const isTitleMissing = computed(() => isTitleTouched.value && form.title.trim().length === 0)
 
+/** The account's suggested next free slot after a blocked creation, as a single readable line. */
+const suggestedSlotLine = computed(() => {
+  const conflict = store.appointmentConflict
+  if (!conflict) return ''
+  const { label } = formatDayOption(conflict.suggestedStart, currentLocale.value)
+  return `${label}, ${formatLocalizedTime(conflict.suggestedStart, currentLocale.value)}`
+})
+
 watch(visible, (isVisible) => {
   if (isVisible) resetForm()
 })
+
+watch(
+  () => [form.day, form.time, form.durationMinutes],
+  () => store.clearAppointmentConflict(),
+)
 
 /** Fills every field from the appointment being edited. */
 function fillFormFromEditingAppointment(appointment: NonNullable<typeof store.editingAppointment>) {
@@ -117,6 +131,7 @@ function fillFormFromEditingAppointment(appointment: NonNullable<typeof store.ed
 /** Resets every field to its default, or fills them from the appointment being edited, called each time the dialog is opened. */
 function resetForm() {
   isTitleTouched.value = false
+  store.clearAppointmentConflict()
 
   if (store.editingAppointment) {
     fillFormFromEditingAppointment(store.editingAppointment)
@@ -160,8 +175,18 @@ async function submit() {
     return
   }
 
-  await store.createAppointment(payload)
-  visible.value = false
+  const created = await store.createAppointment(payload)
+  if (created) visible.value = false
+}
+
+/** Applies the account's suggested next free slot to the day and time fields without any further manual input. */
+function acceptSuggestedSlot() {
+  const conflict = store.appointmentConflict
+  if (!conflict) return
+
+  form.day = toIsoDate(conflict.suggestedStart)
+  form.time = toTimeString(conflict.suggestedStart)
+  store.clearAppointmentConflict()
 }
 
 /** Closes the dialog without creating an appointment. */
@@ -282,6 +307,16 @@ function cancel() {
     <AppointmentMaterialInput v-model="form.materials" />
 
     <AppointmentAiSuggestionBanner v-if="!isEditMode" />
+
+    <div v-if="!isEditMode && store.appointmentConflict" class="appointment-form-dialog__conflict">
+      <p class="appointment-form-dialog__field-error">{{ store.appointmentConflict.message }}</p>
+      <p class="appointment-form-dialog__field-error">
+        {{ t('appointments.form.conflict.suggestion', { slot: suggestedSlotLine }) }}
+      </p>
+      <button type="button" class="appointment-form-dialog__accept-suggestion" @click="acceptSuggestedSlot">
+        {{ t('appointments.form.conflict.acceptSuggestion') }}
+      </button>
+    </div>
 
     <p v-if="isEditMode && store.hasUpdateError" class="appointment-form-dialog__error">
       {{ t('appointments.edit.error') }}

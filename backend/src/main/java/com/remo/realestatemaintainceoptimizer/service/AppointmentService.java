@@ -9,6 +9,7 @@ import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidActualEndException;
@@ -77,8 +78,9 @@ public class AppointmentService {
     }
 
     /**
-     * Creates a new appointment for one of the given account's properties, materializing a bounded horizon of future
-     * occurrences when recurring and using up one of the account's appointment creations if it has a limit.
+     * Creates a new appointment for one of the given account's properties, rejecting a schedule that overlaps with
+     * another of the account's own appointments, materializing a bounded horizon of future occurrences when
+     * recurring and using up one of the account's appointment creations if it has a limit.
      */
     public AppointmentResponse create(String ownerId, CreateAppointmentRequest request) {
         if (request.recurring() && (request.recurrenceIntervalMonths() == null || request.recurrenceIntervalMonths() <= 0)) {
@@ -86,8 +88,13 @@ public class AppointmentService {
         }
 
         LocalDateTime firstStart = request.start().truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime firstEnd = firstStart.plusMinutes(request.durationMinutes());
         Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
+
+        List<Appointment> existingAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId);
+        rejectIfConflicting(existingAppointments, firstStart, firstEnd, request.durationMinutes());
+
         userRepository.findById(ownerId)
                 .orElseThrow(() -> new AccountNotFoundException(ownerId))
                 .consumeAppointmentCreation();
@@ -273,6 +280,59 @@ public class AppointmentService {
         repository.findBySeriesIdAndPropertyOwnerId(appointment.seriesId(), ownerId).stream()
                 .filter(candidate -> !candidate.start().isBefore(appointment.start()))
                 .forEach(repository::delete);
+    }
+
+    /**
+     * Throws an {@link AppointmentConflictException} carrying the next free slot of the given duration if the given
+     * schedule overlaps with any of the given account's existing appointments.
+     */
+    private static void rejectIfConflicting(
+            List<Appointment> existingAppointments, LocalDateTime start, LocalDateTime end, int durationMinutes) {
+        boolean hasConflict = existingAppointments.stream()
+                .anyMatch(existing -> rangesOverlap(existing.start(), occupiedEnd(existing), start, end));
+        if (!hasConflict) {
+            return;
+        }
+        LocalDateTime suggestedStart = findNextAvailableStart(existingAppointments, start, durationMinutes);
+        throw new AppointmentConflictException(suggestedStart, suggestedStart.plusMinutes(durationMinutes));
+    }
+
+    /**
+     * Returns the earliest start at or after the given start at which the given duration is free of every given
+     * appointment's occupied range.
+     */
+    private static LocalDateTime findNextAvailableStart(
+            List<Appointment> existingAppointments, LocalDateTime requestedStart, int durationMinutes) {
+        LocalDateTime candidateStart = requestedStart;
+        boolean conflictFound;
+        do {
+            conflictFound = false;
+            LocalDateTime candidateEnd = candidateStart.plusMinutes(durationMinutes);
+            for (Appointment existing : existingAppointments) {
+                LocalDateTime existingEnd = occupiedEnd(existing);
+                if (rangesOverlap(existing.start(), existingEnd, candidateStart, candidateEnd)) {
+                    candidateStart = existingEnd;
+                    conflictFound = true;
+                    break;
+                }
+            }
+        } while (conflictFound);
+        return candidateStart;
+    }
+
+    /**
+     * Returns an appointment's occupied end: its actual end once completed (which may lie before or after its
+     * originally planned end), its planned end otherwise.
+     */
+    private static LocalDateTime occupiedEnd(Appointment appointment) {
+        return appointment.completed() ? appointment.actualEnd() : appointment.end();
+    }
+
+    /**
+     * Returns whether the half-open ranges {@code [start1, end1)} and {@code [start2, end2)} overlap.
+     */
+    private static boolean rangesOverlap(LocalDateTime start1, LocalDateTime end1, LocalDateTime start2, LocalDateTime end2) {
+        return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
     private static List<String> normalizeMaterials(List<String> materials) {

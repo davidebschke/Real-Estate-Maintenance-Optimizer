@@ -100,6 +100,45 @@ test.describe('appointments', () => {
     }
   })
 
+  test('creating an appointment that overlaps an existing one is blocked, and the suggested next free slot can be applied', async ({
+    page,
+  }) => {
+    await page.goto('/calendar')
+    const firstTitle = `E2E Konflikt Basis ${Date.now()}`
+    const secondTitle = `E2E Konflikt Neu ${Date.now()}`
+
+    const firstId = await createAppointment(page, { title: firstTitle, property: property.name })
+
+    try {
+      await page.getByRole('button', { name: '+ Termin' }).click()
+      await page.getByLabel('Titel').fill(secondTitle)
+      await page.locator('#appointment-property').click()
+      await page.getByRole('option', { name: property.name }).click()
+      await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
+
+      const conflictBanner = page.locator('.appointment-form-dialog__conflict')
+      await expect(conflictBanner).toBeVisible()
+      await expect(page.getByText(secondTitle)).toHaveCount(0)
+
+      const responsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/appointments') && response.request().method() === 'POST',
+      )
+      await page.locator('.appointment-form-dialog__accept-suggestion').click()
+      await expect(conflictBanner).toHaveCount(0)
+      await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
+
+      const response = await responsePromise
+      expect(response.status()).toBe(201)
+      const secondId = ((await response.json()) as { id: string }).id
+      await expect(page.getByText(secondTitle)).toBeVisible()
+
+      await deleteAppointment(page, secondId)
+    } finally {
+      await deleteAppointment(page, firstId)
+    }
+  })
+
   test('reschedules an unlocked appointment from its detail view', async ({ page }) => {
     await page.goto('/calendar')
     const title = `E2E Verschiebbar ${Date.now()}`

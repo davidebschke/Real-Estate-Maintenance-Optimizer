@@ -177,6 +177,40 @@ class AppointmentControllerTest {
     }
 
     @Test
+    void creatingAnOverlappingAppointmentReturnsAConflictWithASuggestedNextFreeSlot() throws Exception {
+        mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andExpect(status().isCreated());
+
+        String overlappingRequestBody = """
+                {
+                  "title": "Fensterreinigung",
+                  "propertyId": "property-1",
+                  "description": "",
+                  "start": "2026-08-11T14:00:00",
+                  "durationMinutes": 60,
+                  "locked": false,
+                  "recurring": false,
+                  "materials": []
+                }
+                """;
+
+        mockMvc.perform(post("/api/appointments")
+                        .header("Accept-Language", "en")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(overlappingRequestBody))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath(
+                        "$.message",
+                        equalTo("The selected time range overlaps with an existing appointment of the same account.")))
+                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:00:00")))
+                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:00:00")));
+
+        mockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
     void creatingForAnUnknownPropertyReturnsNotFound() throws Exception {
         String requestBody = """
                 {

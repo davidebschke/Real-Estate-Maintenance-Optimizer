@@ -76,7 +76,7 @@ describe('appointmentService', () => {
   it('creates an appointment, sending the start as a local date-time string', async () => {
     vi.mocked(axios.post).mockResolvedValue({ data: createDto() })
 
-    await createAppointment({
+    const result = await createAppointment({
       title: 'Kellerreinigung Q3',
       propertyId: 'property-1',
       description: 'Was ist zu tun?',
@@ -92,6 +92,57 @@ describe('appointmentService', () => {
       expect.stringContaining('/api/appointments'),
       expect.objectContaining({ start: '2026-08-11T13:00:00' }),
     )
+    expect(result).toEqual(expect.objectContaining({ status: 'created' }))
+  })
+
+  it('returns the suggested next free slot when creation is blocked by a 409 conflict', async () => {
+    vi.mocked(axios.post).mockRejectedValue({
+      response: {
+        status: 409,
+        data: {
+          message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+          suggestedStart: '2026-08-11T15:00:00',
+          suggestedEnd: '2026-08-11T16:00:00',
+        },
+      },
+    })
+
+    const result = await createAppointment({
+      title: 'Kellerreinigung Q3',
+      propertyId: 'property-1',
+      description: '',
+      start: new Date(2026, 7, 11, 13, 0),
+      durationMinutes: 60,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: [],
+    })
+
+    expect(result).toEqual({
+      status: 'conflict',
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart: new Date('2026-08-11T15:00:00'),
+      suggestedEnd: new Date('2026-08-11T16:00:00'),
+    })
+  })
+
+  it('rethrows an error that is not a 409 conflict response', async () => {
+    vi.mocked(axios.post).mockRejectedValue({ response: { status: 500, data: {} } })
+
+    await expect(
+      createAppointment({
+        title: 'Kellerreinigung Q3',
+        propertyId: 'property-1',
+        description: '',
+        start: new Date(2026, 7, 11, 13, 0),
+        durationMinutes: 60,
+        locked: false,
+        recurring: false,
+        recurrenceIntervalMonths: null,
+        materials: [],
+      }),
+    ).rejects.toEqual({ response: { status: 500, data: {} } })
   })
 
   it('updates an appointment, sending the start as a local date-time string', async () => {

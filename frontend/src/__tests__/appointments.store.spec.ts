@@ -64,7 +64,7 @@ describe('useAppointmentsStore', () => {
 
   it('creates an appointment and refreshes the list', async () => {
     const created = createAppointment()
-    vi.mocked(appointmentService.createAppointment).mockResolvedValue(created)
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue({ status: 'created', appointment: created })
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([created])
     const store = useAppointmentsStore()
 
@@ -82,6 +82,48 @@ describe('useAppointmentsStore', () => {
 
     expect(result).toEqual(created)
     expect(store.appointments).toEqual([created])
+  })
+
+  it('records a creation conflict without creating an appointment, then clears it on the next successful create', async () => {
+    const suggestedStart = new Date(2026, 7, 11, 15, 0)
+    const suggestedEnd = new Date(2026, 7, 11, 16, 0)
+    vi.mocked(appointmentService.createAppointment).mockResolvedValueOnce({
+      status: 'conflict',
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart,
+      suggestedEnd,
+    })
+    const store = useAppointmentsStore()
+    const payload = {
+      title: 'Kellerreinigung Q3',
+      propertyId: 'property-1',
+      description: '',
+      start: new Date(2026, 7, 11, 13, 0),
+      durationMinutes: 120,
+      locked: false,
+      recurring: false,
+      recurrenceIntervalMonths: null,
+      materials: [],
+    }
+
+    const blockedResult = await store.createAppointment(payload)
+
+    expect(blockedResult).toBeNull()
+    expect(store.appointmentConflict).toEqual({
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart,
+      suggestedEnd,
+    })
+    expect(store.appointments).toEqual([])
+
+    const created = createAppointment()
+    vi.mocked(appointmentService.createAppointment).mockResolvedValueOnce({ status: 'created', appointment: created })
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([created])
+
+    const succeededResult = await store.createAppointment(payload)
+
+    expect(succeededResult).toEqual(created)
+    expect(store.appointmentConflict).toBeNull()
   })
 
   it('updates an appointment, refreshes the list and clears a previous update error', async () => {
@@ -232,7 +274,10 @@ describe('useAppointmentsStore', () => {
   })
 
   it('refreshes the remaining creation limit of a demo account after creating an appointment', async () => {
-    vi.mocked(appointmentService.createAppointment).mockResolvedValue(createAppointment())
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue({
+      status: 'created',
+      appointment: createAppointment(),
+    })
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([createAppointment()])
     const refreshDemoQuota = vi.spyOn(useAuthStore(), 'refreshDemoQuota').mockResolvedValue()
     const store = useAppointmentsStore()
@@ -258,6 +303,11 @@ describe('useAppointmentsStore', () => {
     store.openCreateDialog()
     store.openEditDialog(createAppointment())
     store.hasUpdateError = true
+    store.appointmentConflict = {
+      message: 'Konflikt',
+      suggestedStart: new Date(2026, 7, 11, 15, 0),
+      suggestedEnd: new Date(2026, 7, 11, 16, 0),
+    }
     store.openDetail('1')
 
     store.reset()
@@ -266,6 +316,7 @@ describe('useAppointmentsStore', () => {
     expect(store.isCreateDialogOpen).toBe(false)
     expect(store.editingAppointment).toBeNull()
     expect(store.hasUpdateError).toBe(false)
+    expect(store.appointmentConflict).toBeNull()
     expect(store.activeDetailAppointmentId).toBeNull()
   })
 

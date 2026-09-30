@@ -177,8 +177,10 @@ class PropertyServiceTest {
     void updatingAPropertyIsReflectedInItsAppointmentsOnly() {
         repository.save(new Property("1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
         repository.save(new Property("2", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
-        AppointmentResponse appointment = appointmentService.create(owner.id(), createAppointmentRequest("1"));
-        AppointmentResponse unrelated = appointmentService.create(owner.id(), createAppointmentRequest("2"));
+        AppointmentResponse appointment = appointmentService.create(
+                owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 13, 0)));
+        AppointmentResponse unrelated = appointmentService.create(
+                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 15, 0)));
 
         service.update(owner.id(), "1", new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", null, null));
 
@@ -207,9 +209,12 @@ class PropertyServiceTest {
     void deletingAPropertyAlsoDeletesItsAppointments() {
         repository.save(new Property("1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
         repository.save(new Property("2", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
-        AppointmentResponse first = appointmentService.create(owner.id(), createAppointmentRequest("1"));
-        AppointmentResponse second = appointmentService.create(owner.id(), createAppointmentRequest("1"));
-        AppointmentResponse unrelated = appointmentService.create(owner.id(), createAppointmentRequest("2"));
+        AppointmentResponse first = appointmentService.create(
+                owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 13, 0)));
+        AppointmentResponse second = appointmentService.create(
+                owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 15, 0)));
+        AppointmentResponse unrelated = appointmentService.create(
+                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 17, 0)));
 
         service.delete(owner.id(), "1");
 
@@ -225,12 +230,12 @@ class PropertyServiceTest {
         assertThatThrownBy(() -> service.delete(owner.id(), "unknown")).isInstanceOf(PropertyNotFoundException.class);
     }
 
-    private CreateAppointmentRequest createAppointmentRequest(String propertyId) {
+    private CreateAppointmentRequest createAppointmentRequest(String propertyId, LocalDateTime start) {
         return new CreateAppointmentRequest(
                 "Kellerreinigung Q3",
                 propertyId,
                 "Was ist zu tun?",
-                LocalDateTime.of(2026, 8, 11, 13, 0),
+                start,
                 120,
                 false,
                 false,

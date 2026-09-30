@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { AxiosResponse } from 'axios'
 import type { Appointment } from '@/types/appointment'
 
 /** Shape of a history entry as returned by the backend. */
@@ -49,6 +50,25 @@ export interface MoveAppointmentPayload {
 /** Scope of a delete operation: only the given appointment, or it and every following occurrence of its recurring series. */
 export type AppointmentDeleteScope = 'single' | 'series'
 
+/** Shape of the 409 response returned when a new appointment's schedule overlaps with an existing one of the same account. */
+interface AppointmentConflictResponseDto {
+  message: string
+  suggestedStart: string
+  suggestedEnd: string
+}
+
+/** The account's next free slot suggested after a blocked appointment creation, alongside its localized message. */
+export interface AppointmentConflict {
+  message: string
+  suggestedStart: Date
+  suggestedEnd: Date
+}
+
+/** Outcome of creating an appointment: either the created (first) occurrence, or the conflict that blocked it. */
+export type CreateAppointmentResult =
+  | { status: 'created'; appointment: Appointment }
+  | ({ status: 'conflict' } & AppointmentConflict)
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 /** Fetches every appointment, sorted by start time. */
@@ -63,13 +83,36 @@ export async function fetchAppointment(id: string): Promise<Appointment> {
   return toAppointment(data)
 }
 
-/** Creates a new appointment, returning its first (or only) occurrence. */
-export async function createAppointment(payload: CreateAppointmentPayload): Promise<Appointment> {
-  const { data } = await axios.post<AppointmentResponseDto>(`${apiBaseUrl}/api/appointments`, {
-    ...payload,
-    start: toLocalDateTimeString(payload.start),
-  })
-  return toAppointment(data)
+/** Creates a new appointment, returning its first (or only) occurrence, or the account's next free slot if its schedule overlaps with an existing appointment of the same account. */
+export async function createAppointment(payload: CreateAppointmentPayload): Promise<CreateAppointmentResult> {
+  try {
+    const { data } = await axios.post<AppointmentResponseDto>(`${apiBaseUrl}/api/appointments`, {
+      ...payload,
+      start: toLocalDateTimeString(payload.start),
+    })
+    return { status: 'created', appointment: toAppointment(data) }
+  } catch (error) {
+    const conflict = toAppointmentConflict(error)
+    if (conflict) return { status: 'conflict', ...conflict }
+    throw error
+  }
+}
+
+/** Extracts the suggested next free slot from a 409 conflict response, or `null` for any other error. */
+function toAppointmentConflict(error: unknown): AppointmentConflict | null {
+  const response = (error as { response?: AxiosResponse<Partial<AppointmentConflictResponseDto>> })?.response
+  if (response?.status !== 409) {
+    return null
+  }
+  const conflict = response.data
+  if (!conflict.suggestedStart || !conflict.suggestedEnd) {
+    return null
+  }
+  return {
+    message: conflict.message ?? '',
+    suggestedStart: new Date(conflict.suggestedStart),
+    suggestedEnd: new Date(conflict.suggestedEnd),
+  }
 }
 
 /** Updates an appointment's title, property, schedule, locked/recurring state, description and materials. */

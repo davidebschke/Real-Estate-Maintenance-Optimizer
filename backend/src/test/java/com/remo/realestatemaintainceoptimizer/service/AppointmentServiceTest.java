@@ -10,6 +10,7 @@ import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.MoveAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.User;
+import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
@@ -76,6 +77,81 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void creatingAnAppointmentOverlappingAnExistingOneOfTheSameAccountIsBlocked() {
+        service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 14, 0), 120, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), overlapping)).isInstanceOf(AppointmentConflictException.class);
+        assertThat(service.listAll(owner.id())).hasSize(1);
+    }
+
+    @Test
+    void theConflictExceptionSuggestsTheNextFreeSlotAfterEveryOverlappingAppointment() {
+        service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest secondExisting = new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "", LocalDateTime.of(2026, 8, 11, 15, 0), 60, false, false, null, List.of());
+        service.create(owner.id(), secondExisting);
+        CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 13, 0), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), overlapping))
+                .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 0));
+                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 0));
+                });
+    }
+
+    @Test
+    void creatingAnAppointmentImmediatelyAdjacentToAnExistingOneIsAllowed() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest adjacent = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.end(), 60, false, false, null, List.of());
+
+        assertThat(service.create(owner.id(), adjacent)).isNotNull();
+        assertThat(service.listAll(owner.id())).hasSize(2);
+    }
+
+    @Test
+    void appointmentsOfDifferentAccountsAtTheSameTimeDoNotConflict() {
+        service.create(owner.id(), createRequest(false, null));
+        propertyRepository.save(new Property(
+                "other-owner-property", otherOwner.id(), "Anderes Objekt", "Anderestr. 1", "pi-building"));
+        CreateAppointmentRequest sameTimeOtherOwner = new CreateAppointmentRequest(
+                "Fensterreinigung", "other-owner-property", "", LocalDateTime.of(2026, 8, 11, 13, 0), 120, false, false, null, List.of());
+
+        assertThat(service.create(otherOwner.id(), sameTimeOtherOwner)).isNotNull();
+    }
+
+    @Test
+    void aCompletedAppointmentOnlyBlocksUpToItsActualEnd() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        service.complete(owner.id(), created.id(), LocalDateTime.of(2026, 8, 11, 14, 0));
+        CreateAppointmentRequest afterActualEnd = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 14, 0), 60, false, false, null, List.of());
+
+        assertThat(service.create(owner.id(), afterActualEnd)).isNotNull();
+
+        CreateAppointmentRequest beforeActualEnd = new CreateAppointmentRequest(
+                "Kellerreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 13, 30), 15, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), beforeActualEnd)).isInstanceOf(AppointmentConflictException.class);
+    }
+
+    @Test
+    void aConflictingAppointmentDoesNotUseUpADemoAccountsCreationLimit() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 2);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo-Objekt", "Demostr. 1", "pi-building"));
+        service.create(demo.id(), createRequestFor("demo-property", false, null));
+        CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
+                "Fensterreinigung", "demo-property", "", LocalDateTime.of(2026, 8, 11, 14, 0), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(demo.id(), overlapping)).isInstanceOf(AppointmentConflictException.class);
+
+        assertThat(userRepository.findById(demo.id()).orElseThrow().remainingAppointmentCreations()).isEqualTo(1);
+    }
+
+    @Test
     void anotherAccountCanNeitherSeeNorChangeAnAppointment() {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
         MoveAppointmentRequest moveRequest = new MoveAppointmentRequest(created.start().plusDays(1), 60);
@@ -100,13 +176,16 @@ class AppointmentServiceTest {
     void aDemoAccountCanOnlyCreateAsManyAppointmentsAsItsRemainingLimitCountingASeriesOnce() {
         User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 2);
         propertyRepository.save(new Property("demo-property", demo.id(), "Demo-Objekt", "Demostr. 1", "pi-building"));
-        CreateAppointmentRequest single = createRequestFor("demo-property", false, null);
         CreateAppointmentRequest series = createRequestFor("demo-property", true, 3);
+        CreateAppointmentRequest single = new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "demo-property", "", LocalDateTime.of(2026, 8, 12, 13, 0), 120, false, false, null, List.of());
+        CreateAppointmentRequest thirdAttempt = new CreateAppointmentRequest(
+                "Kellerreinigung Q3", "demo-property", "", LocalDateTime.of(2026, 8, 13, 13, 0), 120, false, false, null, List.of());
 
         service.create(demo.id(), series);
         service.create(demo.id(), single);
 
-        assertThatThrownBy(() -> service.create(demo.id(), single)).isInstanceOf(CreationQuotaExceededException.class);
+        assertThatThrownBy(() -> service.create(demo.id(), thirdAttempt)).isInstanceOf(CreationQuotaExceededException.class);
         assertThat(service.listAll(demo.id())).hasSize(AppointmentService.RECURRENCE_HORIZON_OCCURRENCES + 1);
     }
 
