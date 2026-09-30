@@ -14,7 +14,6 @@
     "account": {
       "menu": {
         "profile": "Profil & Einstellungen",
-        "notifications": "Benachrichtigungen",
         "logout": "Abmelden"
       }
     },
