@@ -55,7 +55,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── entity/                  # JPA entities (e.g. Appointment, HistoryEntry as @Embeddable record, Property with ownerId and latitude/longitude, User)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
 │   │   ├── security/                # Spring Security + session JWT (SecurityConfig, JwtService, SessionCookieManager, JwtAuthenticationFilter, CsrfCookieFilter, AuthenticatedUser, SlidingWindowRateLimiter)
-│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, PropertyResponse, CreatePropertyRequest, GeocodingResponse, AddressValidationResponse, AddressValidationStatus, LoginRequest, CurrentUserResponse)
+│   │   ├── dto/                    # data transfer objects (e.g. VersionResponse, AppointmentResponse, CreateAppointmentRequest, AppointmentConflictResponse, PropertyResponse, CreatePropertyRequest, GeocodingResponse, AddressValidationResponse, AddressValidationStatus, LoginRequest, CurrentUserResponse)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
 │   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.auth.*, optional import of a local .env, local spring.datasource defaults, JPA/Flyway settings)

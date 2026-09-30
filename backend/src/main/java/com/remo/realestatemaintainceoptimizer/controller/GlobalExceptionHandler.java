@@ -1,7 +1,9 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
+import com.remo.realestatemaintainceoptimizer.dto.AppointmentConflictResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
@@ -42,6 +44,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleLocked(AppointmentLockedException exception, Locale locale) {
         String message = messageSource.getMessage("appointment.error.locked", null, locale);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(AppointmentConflictException.class)
+    public ResponseEntity<AppointmentConflictResponse> handleAppointmentConflict(
+            AppointmentConflictException exception, Locale locale) {
+        String message = messageSource.getMessage("appointment.error.conflict", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new AppointmentConflictResponse(message, exception.suggestedStart(), exception.suggestedEnd()));
     }
 
     @ExceptionHandler(InvalidRecurrenceException.class)

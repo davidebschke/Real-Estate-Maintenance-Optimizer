@@ -179,7 +179,10 @@ describe('AppointmentFormDialog', () => {
   })
 
   it('creates the appointment with the resolved property and closes the dialog on submit', async () => {
-    vi.mocked(appointmentService.createAppointment).mockResolvedValue({ id: '1' } as never)
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue({
+      status: 'created',
+      appointment: { id: '1' },
+    } as never)
     const wrapper = await mountDialog()
     await fillRequiredFields(wrapper)
 
@@ -197,6 +200,48 @@ describe('AppointmentFormDialog', () => {
     )
     const visibleEvents = wrapper.emitted('update:visible')
     expect(visibleEvents?.[visibleEvents.length - 1]).toEqual([false])
+  })
+
+  it('shows a conflict message and the suggested next free slot, keeping the dialog open, when creation is blocked by an overlap', async () => {
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue({
+      status: 'conflict',
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart: new Date(2026, 9, 15, 15, 0),
+      suggestedEnd: new Date(2026, 9, 15, 16, 0),
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields(wrapper)
+
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain(
+      'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+    )
+    expect(document.body.textContent).toContain('15:00')
+    const visibleEvents = wrapper.emitted('update:visible')
+    expect(visibleEvents).toBeUndefined()
+  })
+
+  it('applies the suggested next free slot to the day and time fields and clears the conflict banner', async () => {
+    vi.mocked(appointmentService.createAppointment).mockResolvedValue({
+      status: 'conflict',
+      message: 'Konflikt mit einem bestehenden Termin.',
+      suggestedStart: new Date(2026, 9, 15, 15, 0),
+      suggestedEnd: new Date(2026, 9, 15, 16, 0),
+    })
+    const wrapper = await mountDialog()
+    await fillRequiredFields(wrapper)
+    await submitButton(wrapper).trigger('click')
+    await flushPromises()
+
+    await bodyField('.appointment-form-dialog__accept-suggestion').trigger('click')
+    await flushPromises()
+
+    const selects = wrapper.findAllComponents(Select)
+    expect(selects[1]!.props('modelValue')).toBe('2026-10-15')
+    expect(selects[2]!.props('modelValue')).toBe('15:00')
+    expect(document.body.textContent).not.toContain('Konflikt mit einem bestehenden Termin.')
   })
 
   it('shows a demo account how many more appointments it may create', async () => {

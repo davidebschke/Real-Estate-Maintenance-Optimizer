@@ -3,11 +3,14 @@ import { defineStore } from 'pinia'
 import * as appointmentService from '@/services/appointmentService'
 import { useAuthStore } from '@/stores/auth'
 import type {
+  AppointmentConflict,
   AppointmentDeleteScope,
   CreateAppointmentPayload,
   MoveAppointmentPayload,
 } from '@/services/appointmentService'
 import type { Appointment } from '@/types/appointment'
+
+export type { AppointmentConflict } from '@/services/appointmentService'
 
 /** Holds every appointment and the create/edit/detail overlay state shared across the app. */
 export const useAppointmentsStore = defineStore('appointments', () => {
@@ -15,6 +18,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
   const isCreateDialogOpen = ref(false)
   const editingAppointment = ref<Appointment | null>(null)
   const hasUpdateError = ref(false)
+  const appointmentConflict = ref<AppointmentConflict | null>(null)
   const activeDetailAppointmentId = ref<string | null>(null)
   /** Bumped by every fetch and by reset(), so a response that arrives after a newer fetch or an account change is discarded. */
   let latestFetchToken = 0
@@ -27,12 +31,23 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     appointments.value = fetched
   }
 
-  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit. */
-  async function createAppointment(payload: CreateAppointmentPayload) {
-    const created = await appointmentService.createAppointment(payload)
+  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit; returns `null` and records the conflict if its schedule overlaps with an existing appointment of the same account. */
+  async function createAppointment(payload: CreateAppointmentPayload): Promise<Appointment | null> {
+    const result = await appointmentService.createAppointment(payload)
+    if (result.status === 'conflict') {
+      appointmentConflict.value = { message: result.message, suggestedStart: result.suggestedStart, suggestedEnd: result.suggestedEnd }
+      return null
+    }
+
+    appointmentConflict.value = null
     await fetchAppointments()
     await useAuthStore().refreshDemoQuota()
-    return created
+    return result.appointment
+  }
+
+  /** Clears a previously recorded creation conflict, e.g. once the user changes the form or reopens it. */
+  function clearAppointmentConflict() {
+    appointmentConflict.value = null
   }
 
   /** Updates an appointment's title, property, schedule, locked/recurring state, description and materials, recording whether the request failed. */
@@ -75,8 +90,9 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     await fetchAppointments()
   }
 
-  /** Opens the appointment creation form. */
+  /** Opens the appointment creation form, clearing a previous creation conflict. */
   function openCreateDialog() {
+    appointmentConflict.value = null
     isCreateDialogOpen.value = true
   }
 
@@ -113,6 +129,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     isCreateDialogOpen.value = false
     editingAppointment.value = null
     hasUpdateError.value = false
+    appointmentConflict.value = null
     activeDetailAppointmentId.value = null
   }
 
@@ -131,10 +148,12 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     isCreateDialogOpen,
     editingAppointment,
     hasUpdateError,
+    appointmentConflict,
     isFormDialogOpen,
     activeDetailAppointmentId,
     fetchAppointments,
     createAppointment,
+    clearAppointmentConflict,
     updateAppointment,
     moveAppointment,
     completeAppointment,
