@@ -81,7 +81,7 @@ The detailed, current implementation status (which controllers/services/componen
 - **Calendar:** `vue-cal`-based day/week/month/year calendar with custom toolbar, per-day headers and category-colored events, plus a fifth, day-grouped list view (`CalendarListView`) that vue-cal itself does not provide.
 - **Appointments (create/read/move/update/delete/complete):** implemented via the shared `stores/appointments.ts` Pinia store and two overlays (`AppointmentFormDialog`, `AppointmentDetailDrawer`). A completed appointment gets a muted calendar color and is drawn up to its actual (not planned) end time. Rescheduling also works by dragging an event onto a new day/time cell in the calendar's day/week view (`useAppointmentDragAndDrop`, Pointer Events based so mouse and touch both work), in addition to the manual form. An "Edit appointment" action in `AppointmentDetailDrawer` opens the shared `AppointmentFormDialog` in edit mode, pre-filled with the appointment's current title, property, schedule, locked/recurring state, description and materials.
 - **i18n (static UI text):** German/English via `vue-i18n`, German as the active default locale, English as `fallbackLocale`.
-- **Not yet implemented:** account management beyond login/logout (profile/vehicle/notification menu entries are placeholders). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
+- **Not yet implemented:** account management beyond login/logout (profile/notification menu entries are placeholders). Route/distance calculation (Feature 6) and location-based automatic scheduling (Features 3–4) are also not yet implemented.
 
 ### 3.3 Version Tracking
 
