@@ -5,6 +5,7 @@ import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidActualEndException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
@@ -46,6 +47,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidRecurrenceException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRecurrence(InvalidRecurrenceException exception, Locale locale) {
         String message = messageSource.getMessage("appointment.error." + exception.reasonCode(), null, locale);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidActualEndException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidActualEnd(Locale locale) {
+        String message = messageSource.getMessage("appointment.error.actualEndBeforeStart", null, locale);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
     }
 

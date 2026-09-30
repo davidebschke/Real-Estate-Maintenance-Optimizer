@@ -97,6 +97,17 @@ describe('useCalendarAppointments', () => {
     expect(events.value[0]!.end).toBe('2026-08-10 11:00')
   })
 
+  it('clamps a completed event with an actual end before its planned start to the start itself', () => {
+    const store = useAppointmentsStore()
+    store.appointments = [
+      createAppointment({ completed: true, actualEnd: new Date(2026, 7, 10, 7, 0) }),
+    ]
+
+    const { events } = useCalendarAppointments()
+
+    expect(events.value[0]!.end).toBe('2026-08-10 08:30')
+  })
+
   it('returns null for a day without scheduled appointments', () => {
     const { getDaySummary } = useCalendarAppointments()
 

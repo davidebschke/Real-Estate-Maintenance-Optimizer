@@ -65,6 +65,7 @@
       "completeDateLabel": "Date",
       "completeTimeLabel": "Time",
       "confirmCompleteButton": "Confirm",
+      "actualEndBeforeStartError": "The actual end must not lie before the appointment's planned start.",
       "reopenButton": "Revert completed status",
       "descriptionHeading": "Description",
       "noDescription": "No description provided.",

@@ -11,6 +11,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidActualEndException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
@@ -228,12 +229,15 @@ public class AppointmentService {
     }
 
     /**
-     * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null.
+     * Marks an appointment as completed with the given actual end, falling back to the current time when {@code actualEnd} is null, rejecting an actual end that lies before the appointment's planned start.
      */
     public AppointmentResponse complete(String ownerId, String id, LocalDateTime actualEnd) {
         Appointment appointment = loadOrThrow(ownerId, id);
         LocalDateTime resolvedActualEnd =
                 (actualEnd != null ? actualEnd : LocalDateTime.now()).truncatedTo(ChronoUnit.MICROS);
+        if (resolvedActualEnd.isBefore(appointment.start())) {
+            throw new InvalidActualEndException(id);
+        }
         HistoryEntry completedEntry = new HistoryEntry(
                 currentInstant(), HistoryEventType.COMPLETED, List.of(TIME_FORMAT.format(resolvedActualEnd)));
 

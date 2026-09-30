@@ -65,6 +65,7 @@
       "completeDateLabel": "Datum",
       "completeTimeLabel": "Uhrzeit",
       "confirmCompleteButton": "Bestätigen",
+      "actualEndBeforeStartError": "Das tatsächliche Ende darf nicht vor dem geplanten Start des Termins liegen.",
       "reopenButton": "Erledigt-Status zurücksetzen",
       "descriptionHeading": "Beschreibung",
       "noDescription": "Keine Beschreibung hinterlegt.",
