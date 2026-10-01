@@ -9,6 +9,7 @@ import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { usePropertiesStore } from '@/stores/properties'
 import { useDemoQuota } from '@/composables/useDemoQuota'
+import { useTouchedFields } from '@/composables/useTouchedFields'
 import {
   geocodeAddress,
   validateAddress,
@@ -46,14 +47,13 @@ const geocodedPosition = ref<GeocodedPosition | null>(null)
 const isGeocoding = ref(false)
 let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
 
-/** Whether each required field has already been left (blurred) at least once, so its required-field hint may be shown. */
-const touched = reactive({
-  name: false,
-  street: false,
-  houseNumber: false,
-  postalCode: false,
-  city: false,
-})
+const { touched, markTouched, resetTouched } = useTouchedFields([
+  'name',
+  'street',
+  'houseNumber',
+  'postalCode',
+  'city',
+])
 
 /** Whether the dialog is currently editing an existing property rather than creating a new one. */
 const isEditMode = computed(() => store.editingProperty !== null)
@@ -219,11 +219,7 @@ function resetForm() {
   isValidatingAddress.value = false
   validationRequestId += 1
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
-  touched.name = false
-  touched.street = false
-  touched.houseNumber = false
-  touched.postalCode = false
-  touched.city = false
+  resetTouched()
 }
 
 /** Debounces geocoding of the current address so it does not fire on every keystroke. */
@@ -321,7 +317,7 @@ function cancel() {
         aria-required="true"
         :aria-describedby="isNameMissing || isDuplicateName ? 'property-name-error' : undefined"
         :placeholder="t('properties.create.namePlaceholder')"
-        @blur="touched.name = true"
+        @blur="markTouched('name')"
       />
       <p v-if="isNameMissing" id="property-name-error" class="property-form-dialog__field-error">
         {{ t('properties.create.nameRequiredError') }}
@@ -342,7 +338,7 @@ function cancel() {
           aria-required="true"
           :aria-describedby="isStreetMissing || isStreetFormatInvalid ? 'property-street-error' : undefined"
           :placeholder="t('properties.create.streetPlaceholder')"
-          @blur="touched.street = true"
+          @blur="markTouched('street')"
         />
         <p v-if="isStreetMissing" id="property-street-error" class="property-form-dialog__field-error">
           {{ t('properties.create.streetRequiredError') }}
@@ -365,7 +361,7 @@ function cancel() {
             isHouseNumberMissing || isHouseNumberFormatInvalid ? 'property-house-number-error' : undefined
           "
           :placeholder="t('properties.create.houseNumberPlaceholder')"
-          @blur="touched.houseNumber = true"
+          @blur="markTouched('houseNumber')"
         />
         <p v-if="isHouseNumberMissing" id="property-house-number-error" class="property-form-dialog__field-error">
           {{ t('properties.create.houseNumberRequiredError') }}
@@ -405,7 +401,7 @@ function cancel() {
             isPostalCodeMissing || isPostalCodeFormatInvalid ? 'property-postal-code-error' : undefined
           "
           :placeholder="t('properties.create.postalCodePlaceholder')"
-          @blur="touched.postalCode = true"
+          @blur="markTouched('postalCode')"
         />
         <p v-if="isPostalCodeMissing" id="property-postal-code-error" class="property-form-dialog__field-error">
           {{ t('properties.create.postalCodeRequiredError') }}
@@ -429,7 +425,7 @@ function cancel() {
           aria-required="true"
           :aria-describedby="isCityMissing || isCityFormatInvalid ? 'property-city-error' : undefined"
           :placeholder="t('properties.create.cityPlaceholder')"
-          @blur="touched.city = true"
+          @blur="markTouched('city')"
         />
         <p v-if="isCityMissing" id="property-city-error" class="property-form-dialog__field-error">
           {{ t('properties.create.cityRequiredError') }}
