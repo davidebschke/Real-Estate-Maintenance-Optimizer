@@ -15,5 +15,5 @@ export function isValidHouseNumber(value: string): boolean {
 
 /** Returns whether a postal code consists of exactly five digits. */
 export function isValidPostalCode(value: string): boolean {
-  return POSTAL_CODE_PATTERN.test(value.trim())
+  return POSTAL_CODE_PATTERN.test(value)
 }

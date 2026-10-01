@@ -32,5 +32,6 @@ describe('addressFieldValidation', () => {
     expect(isValidPostalCode('5206')).toBe(false)
     expect(isValidPostalCode('520620')).toBe(false)
     expect(isValidPostalCode('5206a')).toBe(false)
+    expect(isValidPostalCode(' 52062')).toBe(false)
   })
 })
