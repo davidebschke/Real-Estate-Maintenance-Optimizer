@@ -43,7 +43,9 @@ Webhook → AI classification (Text Classifier) → Switch/Routing (4 Ausgänge)
 6. **Ende-zu-Ende testen:** Chat öffnen, z. B. „Im Keller ist ein Rohr geplatzt“ senden → Kategorie „Schadensmeldung“ muss erscheinen.
 7. **Board ausfüllen:** Body-Beispiel (Abschnitt 2), Plan (Abschnitt 3) und Screenshot des n8n-Workflows einfügen; alle Import-Fehler samt Fix im Feld „Import to n8n“ dokumentieren (Fehler → Fix). Typische Stellen: Modellname im Anthropic-Node, fehlende Credentials, Webhook nicht aktiv, CORS.
 8. **Finaler Link:** n8n-Workflow teilen bzw. Link zum Repo-Branch einfügen.
-9. **Branch pushen / PR:** auf Wunsch lasse ich committen und pushen (nicht automatisch geschehen).
+9. **Produktion (Oracle-Deploy):** in GitHub unter *Settings → Secrets and variables → Actions → Variables* die Variable `N8N_WEBHOOK_URL` mit der Production-Webhook-URL anlegen, sonst zeigt der Chat im Deploy nur den Fehlerhinweis.
+10. **Kosten absichern:** Die Webhook-URL steckt im Frontend-Bundle und ist ohne Authentifizierung aufrufbar. Setze ein Ausgabenlimit im Anthropic-Account (oder aktiviere im Webhook-Node Header-Auth und passe die Anfrage an).
+11. **Branch pushen / PR:** auf Wunsch lasse ich committen und pushen (nicht automatisch geschehen).
 
 ## 5. Was ich übernehmen kann / was nicht
 

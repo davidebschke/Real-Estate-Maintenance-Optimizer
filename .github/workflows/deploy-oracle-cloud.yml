@@ -77,6 +77,8 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
+        env:
+          VITE_N8N_WEBHOOK_URL: ${{ vars.N8N_WEBHOOK_URL }}
         run: npm run build
 
       - name: Set up SSH access
