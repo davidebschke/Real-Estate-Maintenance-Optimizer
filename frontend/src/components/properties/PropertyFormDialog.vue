@@ -17,6 +17,7 @@ import {
   type GeocodedPosition,
 } from '@/services/geocodingService'
 import { parsePropertyAddress } from '@/utils/propertyAddressParsing'
+import { isValidHouseNumber, isValidPlaceName, isValidPostalCode } from '@/utils/addressFieldValidation'
 
 const NAME_MAX_LENGTH = 50
 const STREET_MAX_LENGTH = 100
@@ -24,10 +25,6 @@ const HOUSE_NUMBER_MAX_LENGTH = 5
 const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const CITY_MAX_LENGTH = 50
 const GEOCODE_DEBOUNCE_MS = 500
-const HOUSE_NUMBER_PATTERN = /^\d{1,5}$/
-const POSTAL_CODE_PATTERN = /^\d{5}$/
-/** Letters (incl. diacritics), digits, spaces, punctuation common to real German street/place names, and the typographic apostrophe/dash/non-breaking-space "smart punctuation" autocorrect commonly substitutes. */
-const PLACE_NAME_PATTERN = /^[\p{L}\d .'’ /–-]+$/u
 
 const visible = defineModel<boolean>('visible', { required: true })
 
@@ -81,12 +78,10 @@ const suggestedAddressLine = computed(() => {
 /** Whether street, house number, postal code and city are all present and match their respective format. */
 const isAddressFormatValid = computed(
   () =>
-    form.street.trim().length > 0 &&
-    PLACE_NAME_PATTERN.test(form.street.trim()) &&
-    HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
-    POSTAL_CODE_PATTERN.test(form.postalCode) &&
-    form.city.trim().length > 0 &&
-    PLACE_NAME_PATTERN.test(form.city.trim()),
+    isValidPlaceName(form.street) &&
+    isValidHouseNumber(form.houseNumber) &&
+    isValidPostalCode(form.postalCode) &&
+    isValidPlaceName(form.city),
 )
 
 const isValid = computed(
@@ -102,25 +97,25 @@ const isValid = computed(
 /** Whether the street has been touched but contains a character that occurs in no real German street name. */
 const isStreetFormatInvalid = computed(() => {
   const street = form.street.trim()
-  return street.length > 0 && !PLACE_NAME_PATTERN.test(street)
+  return street.length > 0 && !isValidPlaceName(street)
 })
 
 /** Whether the city has been touched but contains a character that occurs in no real German place name. */
 const isCityFormatInvalid = computed(() => {
   const city = form.city.trim()
-  return city.length > 0 && !PLACE_NAME_PATTERN.test(city)
+  return city.length > 0 && !isValidPlaceName(city)
 })
 
 /** Whether the house number has been touched but is not purely digits. */
 const isHouseNumberFormatInvalid = computed(() => {
   const houseNumber = form.houseNumber.trim()
-  return houseNumber.length > 0 && !HOUSE_NUMBER_PATTERN.test(houseNumber)
+  return houseNumber.length > 0 && !isValidHouseNumber(houseNumber)
 })
 
 /** Whether the postal code has been touched but is not exactly 5 digits. */
 const isPostalCodeFormatInvalid = computed(() => {
   const postalCode = form.postalCode.trim()
-  return postalCode.length > 0 && !POSTAL_CODE_PATTERN.test(postalCode)
+  return postalCode.length > 0 && !isValidPostalCode(postalCode)
 })
 
 /** Whether the name has been left empty after being touched, i.e. its required-field hint must be shown. */
