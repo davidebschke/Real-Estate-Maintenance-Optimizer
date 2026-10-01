@@ -24,6 +24,13 @@ describe('chatService', () => {
     expect(reply).toEqual({ reply: 'Hallo', category: 'other' })
   })
 
+  it('rejects a response without a reply text', async () => {
+    vi.stubEnv('VITE_N8N_WEBHOOK_URL', 'http://n8n.test/webhook/remo-chat')
+    vi.mocked(axios.post).mockResolvedValue({ data: '<html></html>' })
+
+    await expect(sendChatMessage('Hi')).rejects.toThrow('no reply')
+  })
+
   it('fails fast when the webhook url is not configured', async () => {
     vi.stubEnv('VITE_N8N_WEBHOOK_URL', '')
 

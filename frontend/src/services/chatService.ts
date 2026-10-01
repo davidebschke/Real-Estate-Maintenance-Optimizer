@@ -17,5 +17,8 @@ export async function sendChatMessage(message: string): Promise<ChatReply> {
     { message },
     { withCredentials: false, withXSRFToken: false },
   )
+  if (typeof data?.reply !== 'string' || !data.reply) {
+    throw new Error('Chat webhook returned no reply')
+  }
   return data
 }
