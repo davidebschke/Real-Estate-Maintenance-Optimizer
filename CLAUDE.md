@@ -51,7 +51,7 @@ All persistent data lives in a single relational database:
 ### 2.4 AI / Intelligence
 | Area       | Technology   |
 |------------|--------------|
-| Framework  | LangChain4j  |
+| Framework  | LangChain4j (planned) |
 
 ## 3. Repository Status
 
