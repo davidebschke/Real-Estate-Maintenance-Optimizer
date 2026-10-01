@@ -99,6 +99,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 ### 📋 Backlog & Future Features (`Backlog/Issues`)
 
 - Native mobile porting to **Android** & **iOS**
+- **Voice/Audio** appointment capture: hands-free appointment logging designed for busy work environments
 
 ### ☁️ Deployment
 
@@ -157,6 +158,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 ### 📋 Backlog & Zukünftige Features (`Backlog/Issues`)
 
 - Native App-Portierung für **Android** und **iOS**
+- **Spracheingabe / Audio-Funktion**: freihändige Terminerstellung per Sprachbefehl – ideal, wenn man gerade die Hände voll hat
 
 ### ☁️ Deployment
 
