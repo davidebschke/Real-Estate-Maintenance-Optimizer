@@ -8,6 +8,7 @@ import { useAppointmentsStore } from '@/stores/appointments'
 import { useLocale } from '@/composables/useLocale'
 import { useDurationOptions } from '@/composables/useDurationOptions'
 import { useAppointmentDeleteConfirmation } from '@/composables/useAppointmentDeleteConfirmation'
+import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
   combineDayAndTime,
   generateTimeSlotOptions,
@@ -37,19 +38,14 @@ const scheduleRangeLabel = computed(() => {
     day: '2-digit',
     month: '2-digit',
   })
-  const timeFormatter = new Intl.DateTimeFormat(currentLocale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  return `${dayFormatter.format(appointment.value.start)} · ${timeFormatter.format(appointment.value.start)}–${timeFormatter.format(appointment.value.end)}`
+  const startTime = formatLocalizedTime(appointment.value.start, currentLocale.value)
+  const endTime = formatLocalizedTime(appointment.value.end, currentLocale.value)
+  return `${dayFormatter.format(appointment.value.start)} · ${startTime}–${endTime}`
 })
 
 const actualEndTimeLabel = computed(() => {
   if (!appointment.value?.actualEnd) return ''
-  return new Intl.DateTimeFormat(currentLocale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(appointment.value.actualEnd)
+  return formatLocalizedTime(appointment.value.actualEnd, currentLocale.value)
 })
 
 const timeOptions = generateTimeSlotOptions()
