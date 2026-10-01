@@ -184,7 +184,7 @@ Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Fronten
 ### ☁️ Backend
 * **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
-* **Data Access & Mail:** Spring Data JPA, Spring Mail
+* **Data Access:** Spring Data JPA
 * **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim)
 * **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
