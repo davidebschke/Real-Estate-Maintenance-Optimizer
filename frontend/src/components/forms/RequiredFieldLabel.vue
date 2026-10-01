@@ -1,10 +1,12 @@
 <script setup lang="ts">
-defineProps<{ fieldId: string; label: string }>()
+withDefaults(defineProps<{ fieldId: string; label: string; required?: boolean }>(), {
+  required: true,
+})
 </script>
 
 <template>
   <label :for="fieldId"
-    >{{ label }}<span class="required-field-label__marker" aria-hidden="true"> *</span></label
+    >{{ label }}<span v-if="required" class="required-field-label__marker" aria-hidden="true"> *</span></label
   >
 </template>
 

@@ -20,10 +20,6 @@
   margin: 0;
 }
 
-.appointment-property-select__required-marker {
-  color: #f87171;
-}
-
 .appointment-property-select__error {
   color: #f87171;
   font-size: 0.8rem;

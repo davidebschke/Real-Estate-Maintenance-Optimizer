@@ -1,5 +1,6 @@
 import { reactive, type Ref } from 'vue'
 import { useAppointmentsStore } from '@/stores/appointments'
+import { getDurationMinutes } from '@/utils/appointmentSchedulingOptions'
 import type { VueCalView } from '@/types/vue-cal'
 
 /** Minute-of-day the calendar's time grid starts at (07:00), matching `AppCalendar.vue`'s `time-from` prop. */
@@ -79,7 +80,7 @@ export function useAppointmentDragAndDrop(
       return
     }
 
-    const durationMinutes = (appointment.end.getTime() - appointment.start.getTime()) / 60000
+    const durationMinutes = getDurationMinutes(appointment.start, appointment.end)
     if (durationMinutes >= TIME_TO_MINUTES - TIME_FROM_MINUTES) return
 
     const cardRect = card.getBoundingClientRect()
