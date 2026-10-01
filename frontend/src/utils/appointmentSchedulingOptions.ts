@@ -121,3 +121,8 @@ export function combineDayAndTime(day: string, time: string): Date {
     Number(minute!),
   )
 }
+
+/** Returns the whole minutes between a start and an end date. */
+export function getDurationMinutes(start: Date, end: Date): number {
+  return Math.round((end.getTime() - start.getTime()) / 60000)
+}

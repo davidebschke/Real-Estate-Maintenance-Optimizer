@@ -23,6 +23,7 @@ import {
   formatDayOption,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
+  getDurationMinutes,
   toIsoDate,
   toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
@@ -121,7 +122,7 @@ function fillFormFromEditingAppointment(appointment: NonNullable<typeof store.ed
   form.description = appointment.description
   form.day = toIsoDate(appointment.start)
   form.time = toTimeString(appointment.start)
-  form.durationMinutes = Math.round((appointment.end.getTime() - appointment.start.getTime()) / 60000)
+  form.durationMinutes = getDurationMinutes(appointment.start, appointment.end)
   form.locked = appointment.locked
   form.recurring = appointment.recurring
   form.recurrenceIntervalMonths = appointment.recurrenceIntervalMonths

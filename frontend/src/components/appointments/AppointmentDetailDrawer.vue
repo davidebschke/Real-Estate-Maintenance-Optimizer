@@ -12,6 +12,7 @@ import {
   combineDayAndTime,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
+  getDurationMinutes,
   toIsoDate,
   toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
@@ -76,9 +77,7 @@ watch(appointment, (current) => {
   if (!current) return
   scheduleForm.day = toIsoDate(current.start)
   scheduleForm.time = toTimeString(current.start)
-  scheduleForm.durationMinutes = Math.round(
-    (current.end.getTime() - current.start.getTime()) / 60000,
-  )
+  scheduleForm.durationMinutes = getDurationMinutes(current.start, current.end)
 })
 
 /** Switches the schedule section into edit mode, pre-filled with the current schedule. */
