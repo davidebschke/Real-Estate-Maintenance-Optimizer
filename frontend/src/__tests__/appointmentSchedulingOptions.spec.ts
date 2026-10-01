@@ -5,6 +5,7 @@ import {
   formatDayOption,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
+  getDurationMinutes,
 } from '@/utils/appointmentSchedulingOptions'
 
 describe('appointmentSchedulingOptions', () => {
@@ -47,5 +48,12 @@ describe('appointmentSchedulingOptions', () => {
     expect(DURATION_OPTIONS.length).toBeGreaterThan(0)
     expect(DURATION_OPTIONS).toContainEqual({ key: 'allDay', minutes: 1440 })
     expect(RECURRENCE_INTERVAL_OPTIONS).toContainEqual({ key: 'quarterly', months: 3 })
+  })
+
+  it('returns the whole minutes between start and end', () => {
+    const start = new Date(2026, 7, 11, 9, 0)
+    const end = new Date(2026, 7, 11, 10, 30)
+
+    expect(getDurationMinutes(start, end)).toBe(90)
   })
 })

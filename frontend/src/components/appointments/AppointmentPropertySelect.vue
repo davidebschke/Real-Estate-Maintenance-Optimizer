@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import Select from 'primevue/select'
 import { useI18n } from 'vue-i18n'
+import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import { usePropertiesStore } from '@/stores/properties'
 
 const modelValue = defineModel<string | null>({ required: true })
@@ -30,10 +31,12 @@ onMounted(() => {
 
 <template>
   <div class="appointment-property-select">
-    <label class="appointment-property-select__label" for="appointment-property">
-      {{ t('appointments.form.property.label')
-      }}<span v-if="required" class="appointment-property-select__required-marker" aria-hidden="true"> *</span>
-    </label>
+    <RequiredFieldLabel
+      class="appointment-property-select__label"
+      field-id="appointment-property"
+      :label="t('appointments.form.property.label')"
+      :required="required"
+    />
     <Select
       input-id="appointment-property"
       v-model="modelValue"

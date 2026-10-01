@@ -19,14 +19,15 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard with its edit/delete icon buttons, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog shared by creation and, pre-filled, editing, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
-│   │   │   └── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
+│   │   │   ├── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
+│   │   │   └── forms/             # form building blocks shared by several dialogs (RequiredFieldLabel for a label with its required-field asterisk)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView, LoginView)
 │   │   ├── router/                # Vue Router configuration (route definitions incl. the public /login route, NavigationKey type, authGuard.ts login guard)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts, authService.ts), httpClient.ts for the shared axios defaults (session cookie, CSRF header, expired-session handling), and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts, stores/auth.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useDemoQuota, useAccountPresentation, useMediaQuery)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useDemoQuota, useAccountPresentation, useMediaQuery, useDurationOptions, useTouchedFields)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, auth.ts, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
-│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, safeRedirect.ts for the post-login redirect, initials.ts)
+│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, addressFieldValidation.ts for the street/house number/postal code/city format checks, safeRedirect.ts for the post-login redirect, initials.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
 │   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json, auth.json)
@@ -39,6 +40,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
 │   │   │   ├── auth/              # one CSS file per components/auth building block plus LoginView (login-view.css, auth-card.css, login-form.css, demo-account-panel.css, demo-account-banner.css, demo-quota-hint.css)
+│   │   │   ├── forms/             # one CSS file per components/forms building block (required-field-label.css)
 │   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
 │   │   └── __tests__/             # Vitest unit tests

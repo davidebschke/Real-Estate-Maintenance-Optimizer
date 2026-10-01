@@ -6,12 +6,14 @@ import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useLocale } from '@/composables/useLocale'
+import { useDurationOptions } from '@/composables/useDurationOptions'
 import { useAppointmentDeleteConfirmation } from '@/composables/useAppointmentDeleteConfirmation'
+import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
-  DURATION_OPTIONS,
   combineDayAndTime,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
+  getDurationMinutes,
   toIsoDate,
   toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
@@ -21,6 +23,7 @@ const props = defineProps<{ appointmentId: string | null }>()
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const { durationOptions } = useDurationOptions()
 const store = useAppointmentsStore()
 const { confirmDelete } = useAppointmentDeleteConfirmation()
 
@@ -35,29 +38,18 @@ const scheduleRangeLabel = computed(() => {
     day: '2-digit',
     month: '2-digit',
   })
-  const timeFormatter = new Intl.DateTimeFormat(currentLocale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  return `${dayFormatter.format(appointment.value.start)} · ${timeFormatter.format(appointment.value.start)}–${timeFormatter.format(appointment.value.end)}`
+  const startTime = formatLocalizedTime(appointment.value.start, currentLocale.value)
+  const endTime = formatLocalizedTime(appointment.value.end, currentLocale.value)
+  return `${dayFormatter.format(appointment.value.start)} · ${startTime}–${endTime}`
 })
 
 const actualEndTimeLabel = computed(() => {
   if (!appointment.value?.actualEnd) return ''
-  return new Intl.DateTimeFormat(currentLocale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(appointment.value.actualEnd)
+  return formatLocalizedTime(appointment.value.actualEnd, currentLocale.value)
 })
 
 const timeOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value, 120))
-const durationOptions = computed(() =>
-  DURATION_OPTIONS.map((option) => ({
-    ...option,
-    label: t(`appointments.form.duration.options.${option.key}`),
-  })),
-)
 
 const isEditingSchedule = ref(false)
 const scheduleForm = reactive({ day: '', time: '', durationMinutes: 60 })
@@ -76,9 +68,7 @@ watch(appointment, (current) => {
   if (!current) return
   scheduleForm.day = toIsoDate(current.start)
   scheduleForm.time = toTimeString(current.start)
-  scheduleForm.durationMinutes = Math.round(
-    (current.end.getTime() - current.start.getTime()) / 60000,
-  )
+  scheduleForm.durationMinutes = getDurationMinutes(current.start, current.end)
 })
 
 /** Switches the schedule section into edit mode, pre-filled with the current schedule. */

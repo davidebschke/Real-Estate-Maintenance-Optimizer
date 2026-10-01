@@ -5,9 +5,11 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
+import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { usePropertiesStore } from '@/stores/properties'
 import { useDemoQuota } from '@/composables/useDemoQuota'
+import { useTouchedFields } from '@/composables/useTouchedFields'
 import {
   geocodeAddress,
   validateAddress,
@@ -15,6 +17,7 @@ import {
   type GeocodedPosition,
 } from '@/services/geocodingService'
 import { parsePropertyAddress } from '@/utils/propertyAddressParsing'
+import { isValidHouseNumber, isValidPlaceName, isValidPostalCode } from '@/utils/addressFieldValidation'
 
 const NAME_MAX_LENGTH = 50
 const STREET_MAX_LENGTH = 100
@@ -22,10 +25,6 @@ const HOUSE_NUMBER_MAX_LENGTH = 5
 const ADDRESS_SUPPLEMENT_MAX_LENGTH = 10
 const CITY_MAX_LENGTH = 50
 const GEOCODE_DEBOUNCE_MS = 500
-const HOUSE_NUMBER_PATTERN = /^\d{1,5}$/
-const POSTAL_CODE_PATTERN = /^\d{5}$/
-/** Letters (incl. diacritics), digits, spaces, punctuation common to real German street/place names, and the typographic apostrophe/dash/non-breaking-space "smart punctuation" autocorrect commonly substitutes. */
-const PLACE_NAME_PATTERN = /^[\p{L}\d .'’ /–-]+$/u
 
 const visible = defineModel<boolean>('visible', { required: true })
 
@@ -45,14 +44,13 @@ const geocodedPosition = ref<GeocodedPosition | null>(null)
 const isGeocoding = ref(false)
 let geocodeTimeout: ReturnType<typeof setTimeout> | null = null
 
-/** Whether each required field has already been left (blurred) at least once, so its required-field hint may be shown. */
-const touched = reactive({
-  name: false,
-  street: false,
-  houseNumber: false,
-  postalCode: false,
-  city: false,
-})
+const { touched, markTouched, resetTouched } = useTouchedFields([
+  'name',
+  'street',
+  'houseNumber',
+  'postalCode',
+  'city',
+])
 
 /** Whether the dialog is currently editing an existing property rather than creating a new one. */
 const isEditMode = computed(() => store.editingProperty !== null)
@@ -80,12 +78,10 @@ const suggestedAddressLine = computed(() => {
 /** Whether street, house number, postal code and city are all present and match their respective format. */
 const isAddressFormatValid = computed(
   () =>
-    form.street.trim().length > 0 &&
-    PLACE_NAME_PATTERN.test(form.street.trim()) &&
-    HOUSE_NUMBER_PATTERN.test(form.houseNumber.trim()) &&
-    POSTAL_CODE_PATTERN.test(form.postalCode) &&
-    form.city.trim().length > 0 &&
-    PLACE_NAME_PATTERN.test(form.city.trim()),
+    isValidPlaceName(form.street) &&
+    isValidHouseNumber(form.houseNumber) &&
+    isValidPostalCode(form.postalCode) &&
+    isValidPlaceName(form.city),
 )
 
 const isValid = computed(
@@ -101,25 +97,25 @@ const isValid = computed(
 /** Whether the street has been touched but contains a character that occurs in no real German street name. */
 const isStreetFormatInvalid = computed(() => {
   const street = form.street.trim()
-  return street.length > 0 && !PLACE_NAME_PATTERN.test(street)
+  return street.length > 0 && !isValidPlaceName(street)
 })
 
 /** Whether the city has been touched but contains a character that occurs in no real German place name. */
 const isCityFormatInvalid = computed(() => {
   const city = form.city.trim()
-  return city.length > 0 && !PLACE_NAME_PATTERN.test(city)
+  return city.length > 0 && !isValidPlaceName(city)
 })
 
 /** Whether the house number has been touched but is not purely digits. */
 const isHouseNumberFormatInvalid = computed(() => {
   const houseNumber = form.houseNumber.trim()
-  return houseNumber.length > 0 && !HOUSE_NUMBER_PATTERN.test(houseNumber)
+  return houseNumber.length > 0 && !isValidHouseNumber(houseNumber)
 })
 
 /** Whether the postal code has been touched but is not exactly 5 digits. */
 const isPostalCodeFormatInvalid = computed(() => {
   const postalCode = form.postalCode.trim()
-  return postalCode.length > 0 && !POSTAL_CODE_PATTERN.test(postalCode)
+  return postalCode.length > 0 && !isValidPostalCode(postalCode)
 })
 
 /** Whether the name has been left empty after being touched, i.e. its required-field hint must be shown. */
@@ -218,11 +214,7 @@ function resetForm() {
   isValidatingAddress.value = false
   validationRequestId += 1
   if (geocodeTimeout) clearTimeout(geocodeTimeout)
-  touched.name = false
-  touched.street = false
-  touched.houseNumber = false
-  touched.postalCode = false
-  touched.city = false
+  resetTouched()
 }
 
 /** Debounces geocoding of the current address so it does not fire on every keystroke. */
@@ -311,10 +303,7 @@ function cancel() {
     class="property-form-dialog"
   >
     <div class="property-form-dialog__field">
-      <label for="property-name">
-        {{ t('properties.create.nameLabel')
-        }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-      </label>
+      <RequiredFieldLabel field-id="property-name" :label="t('properties.create.nameLabel')" />
       <InputText
         id="property-name"
         v-model="form.name"
@@ -323,7 +312,7 @@ function cancel() {
         aria-required="true"
         :aria-describedby="isNameMissing || isDuplicateName ? 'property-name-error' : undefined"
         :placeholder="t('properties.create.namePlaceholder')"
-        @blur="touched.name = true"
+        @blur="markTouched('name')"
       />
       <p v-if="isNameMissing" id="property-name-error" class="property-form-dialog__field-error">
         {{ t('properties.create.nameRequiredError') }}
@@ -335,10 +324,7 @@ function cancel() {
 
     <div class="property-form-dialog__grid property-form-dialog__grid--address">
       <div class="property-form-dialog__field">
-        <label for="property-street">
-          {{ t('properties.create.streetLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-street" :label="t('properties.create.streetLabel')" />
         <InputText
           id="property-street"
           v-model="form.street"
@@ -347,7 +333,7 @@ function cancel() {
           aria-required="true"
           :aria-describedby="isStreetMissing || isStreetFormatInvalid ? 'property-street-error' : undefined"
           :placeholder="t('properties.create.streetPlaceholder')"
-          @blur="touched.street = true"
+          @blur="markTouched('street')"
         />
         <p v-if="isStreetMissing" id="property-street-error" class="property-form-dialog__field-error">
           {{ t('properties.create.streetRequiredError') }}
@@ -358,10 +344,7 @@ function cancel() {
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-house-number">
-          {{ t('properties.create.houseNumberLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-house-number" :label="t('properties.create.houseNumberLabel')" />
         <InputText
           id="property-house-number"
           v-model="form.houseNumber"
@@ -373,7 +356,7 @@ function cancel() {
             isHouseNumberMissing || isHouseNumberFormatInvalid ? 'property-house-number-error' : undefined
           "
           :placeholder="t('properties.create.houseNumberPlaceholder')"
-          @blur="touched.houseNumber = true"
+          @blur="markTouched('houseNumber')"
         />
         <p v-if="isHouseNumberMissing" id="property-house-number-error" class="property-form-dialog__field-error">
           {{ t('properties.create.houseNumberRequiredError') }}
@@ -401,10 +384,7 @@ function cancel() {
 
     <div class="property-form-dialog__grid">
       <div class="property-form-dialog__field">
-        <label for="property-postal-code">
-          {{ t('properties.create.postalCodeLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-postal-code" :label="t('properties.create.postalCodeLabel')" />
         <InputText
           id="property-postal-code"
           v-model="form.postalCode"
@@ -416,7 +396,7 @@ function cancel() {
             isPostalCodeMissing || isPostalCodeFormatInvalid ? 'property-postal-code-error' : undefined
           "
           :placeholder="t('properties.create.postalCodePlaceholder')"
-          @blur="touched.postalCode = true"
+          @blur="markTouched('postalCode')"
         />
         <p v-if="isPostalCodeMissing" id="property-postal-code-error" class="property-form-dialog__field-error">
           {{ t('properties.create.postalCodeRequiredError') }}
@@ -431,10 +411,7 @@ function cancel() {
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-city">
-          {{ t('properties.create.cityLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-city" :label="t('properties.create.cityLabel')" />
         <InputText
           id="property-city"
           v-model="form.city"
@@ -443,7 +420,7 @@ function cancel() {
           aria-required="true"
           :aria-describedby="isCityMissing || isCityFormatInvalid ? 'property-city-error' : undefined"
           :placeholder="t('properties.create.cityPlaceholder')"
-          @blur="touched.city = true"
+          @blur="markTouched('city')"
         />
         <p v-if="isCityMissing" id="property-city-error" class="property-form-dialog__field-error">
           {{ t('properties.create.cityRequiredError') }}

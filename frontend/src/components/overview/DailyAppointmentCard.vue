@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
 import { useCardTilt } from '@/composables/useCardTilt'
 import { formatDurationMinutes } from '@/utils/dateFormat'
+import { getDurationMinutes } from '@/utils/appointmentSchedulingOptions'
 import type { Appointment } from '@/types/appointment'
 
 const props = defineProps<{
@@ -24,9 +25,7 @@ const startTimeLabel = computed(() =>
 )
 
 const durationLabel = computed(() => {
-  const durationMinutes = Math.round(
-    (props.appointment.end.getTime() - props.appointment.start.getTime()) / 60000,
-  )
+  const durationMinutes = getDurationMinutes(props.appointment.start, props.appointment.end)
   return formatDurationMinutes(durationMinutes, currentLocale.value)
 })
 
