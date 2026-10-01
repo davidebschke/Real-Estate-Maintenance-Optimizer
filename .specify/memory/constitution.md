@@ -1,15 +1,10 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 → 1.2.0 (MINOR: process scope reduced/clarified, no Core Principle redefined or removed)
-Modified principles:
-  - VI. Structured Git Workflow — clarified that the post-implementation code review's effort level now
-    matches the change's own Low/Medium/High assessment instead of always running at High, with a
-    security-relevant floor
+Version change: 1.2.0 → 1.2.1 (PATCH: Technology Constraints snapshot aligned with CLAUDE.md Section 2)
+Modified principles: none
 Added sections: none
-Removed sections:
-  - Documentation Sync Obligations: the GitHub Wiki clause (the Wiki was removed as a documentation
-    surface; .claude/rules/wiki.md and the wiki-sync skill no longer exist)
-  - Governance: wiki.md dropped from the list of underlying rule files
+Removed sections: none
+Technology Constraints: Spring Mail removed, Spring Boot 3 → 4, LangChain4j marked as planned
 Templates requiring updates: none (constitution is a derived summary; dependent templates read it at runtime, not modified here)
 Follow-up TODOs: none
 -->
@@ -51,10 +46,10 @@ Every content-relevant change (not a pure typo/formatting fix) triggers a review
 
 ## Technology Constraints
 
-Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 3, Spring Security/JJWT, Spring Data JPA, Spring Mail. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
+Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 4, Spring Security/JJWT, Spring Data JPA. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j (planned). See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
 
 ## Governance
 
 This constitution distills the binding rules already defined under `.claude/rules/` (`coding-conventions.md`, `documentation.md`, `error-handling.md`, `folder-structure.md`, `git-workflow.md`, `linting.md`, `refactoring.md`, `testing.md`) and in `CLAUDE.md`; those files remain the authoritative source. An amendment here is only valid once the corresponding underlying rule file is updated first — this file is a derived summary, not an independent source of truth. Every spec, plan, and PR produced through the spec-kit workflow must comply with these principles; deviations must be justified in the plan's Complexity Tracking section.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-09-29
+**Version**: 1.2.1 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-10-01
