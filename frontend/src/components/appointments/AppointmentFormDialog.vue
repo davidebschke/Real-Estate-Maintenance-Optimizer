@@ -15,6 +15,7 @@ import { useDemoQuota } from '@/composables/useDemoQuota'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useLocale } from '@/composables/useLocale'
+import { useDurationOptions } from '@/composables/useDurationOptions'
 import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
   DURATION_OPTIONS,
@@ -35,6 +36,7 @@ const visible = defineModel<boolean>('visible', { required: true })
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const { durationOptions } = useDurationOptions()
 const store = useAppointmentsStore()
 const propertiesStore = usePropertiesStore()
 const { isExhausted: isQuotaExhausted } = useDemoQuota('appointments')
@@ -55,12 +57,6 @@ const dayOptions = computed(() => {
   if (upcomingOptions.some((option) => option.value === editingDayValue)) return upcomingOptions
   return [formatDayOption(editingStart, currentLocale.value), ...upcomingOptions]
 })
-const durationOptions = computed(() =>
-  DURATION_OPTIONS.map((option) => ({
-    ...option,
-    label: t(`appointments.form.duration.options.${option.key}`),
-  })),
-)
 const recurrenceIntervalOptions = computed(() =>
   RECURRENCE_INTERVAL_OPTIONS.map((option) => ({
     ...option,

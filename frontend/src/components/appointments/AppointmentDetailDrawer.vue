@@ -6,9 +6,9 @@ import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useLocale } from '@/composables/useLocale'
+import { useDurationOptions } from '@/composables/useDurationOptions'
 import { useAppointmentDeleteConfirmation } from '@/composables/useAppointmentDeleteConfirmation'
 import {
-  DURATION_OPTIONS,
   combineDayAndTime,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
@@ -22,6 +22,7 @@ const props = defineProps<{ appointmentId: string | null }>()
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
+const { durationOptions } = useDurationOptions()
 const store = useAppointmentsStore()
 const { confirmDelete } = useAppointmentDeleteConfirmation()
 
@@ -53,12 +54,6 @@ const actualEndTimeLabel = computed(() => {
 
 const timeOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value, 120))
-const durationOptions = computed(() =>
-  DURATION_OPTIONS.map((option) => ({
-    ...option,
-    label: t(`appointments.form.duration.options.${option.key}`),
-  })),
-)
 
 const isEditingSchedule = ref(false)
 const scheduleForm = reactive({ day: '', time: '', durationMinutes: 60 })
