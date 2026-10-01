@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
+      e2e: ${{ steps.filter.outputs.e2e }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,6 +32,12 @@ jobs:
           filters: |
             frontend:
               - "frontend/**"
+              - ".github/workflows/frontend-tests.yml"
+            e2e:
+              - "frontend/**"
+              - "backend/**"
+              - "!frontend/**/*.md"
+              - "!backend/**/*.md"
               - ".github/workflows/frontend-tests.yml"
 
   test:
@@ -63,6 +70,8 @@ jobs:
 
   e2e:
     name: Run frontend e2e tests (Playwright)
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     env:
       # CI-only credentials for the throwaway database of this job; never used anywhere else
