@@ -192,5 +192,5 @@ Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Fronten
 * **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
-* **Framework:** LangChain4j
+* **Framework:** LangChain4j (geplant / planned)
 
