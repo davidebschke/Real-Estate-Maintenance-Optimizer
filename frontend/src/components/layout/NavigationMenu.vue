@@ -6,7 +6,7 @@ import type { NavigationKey } from '@/router'
 
 /** List of top-level navigation entries rendered in a fixed, reusable order, hiding the still-placeholder statistics page outside development. */
 const navigationEntries: NavigationKey[] = (
-  ['overview', 'calendar', 'statistics', 'properties'] satisfies NavigationKey[]
+  ['overview', 'calendar', 'statistics', 'properties', 'chat'] satisfies NavigationKey[]
 ).filter((entry) => entry !== 'statistics' || import.meta.env.DEV)
 
 const { t } = useI18n()

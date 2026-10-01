@@ -1,0 +1,16 @@
+{
+  "chat": {
+    "heading": "Chat-Assistent",
+    "empty": "Stelle eine Frage oder melde ein Anliegen, z. B. einen Schaden, einen Terminwunsch oder eine Materialfrage.",
+    "placeholder": "Nachricht eingeben …",
+    "send": "Senden",
+    "sending": "Der Assistent antwortet …",
+    "error": "Die Nachricht konnte nicht gesendet werden. Bitte versuche es erneut.",
+    "categories": {
+      "damage_report": "Schadensmeldung",
+      "appointment_request": "Terminanfrage",
+      "material_question": "Materialfrage",
+      "other": "Sonstiges"
+    }
+  }
+}

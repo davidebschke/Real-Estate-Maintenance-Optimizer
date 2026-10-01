@@ -1,0 +1,16 @@
+{
+  "chat": {
+    "heading": "Chat assistant",
+    "empty": "Ask a question or report a concern, e.g. damage, an appointment request or a material question.",
+    "placeholder": "Type a message …",
+    "send": "Send",
+    "sending": "The assistant is replying …",
+    "error": "The message could not be sent. Please try again.",
+    "categories": {
+      "damage_report": "Damage report",
+      "appointment_request": "Appointment request",
+      "material_question": "Material question",
+      "other": "Other"
+    }
+  }
+}

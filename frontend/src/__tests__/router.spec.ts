@@ -12,6 +12,7 @@ describe('router', () => {
     ['calendar', '/calendar'],
     ['statistics', '/statistics'],
     ['properties', '/properties'],
+    ['chat', '/chat'],
   ])('resolves the %s route to path %s', async (name, path) => {
     const router = createTestRouter()
     await router.push({ name })

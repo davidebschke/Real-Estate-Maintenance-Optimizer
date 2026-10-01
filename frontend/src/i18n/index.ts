@@ -15,6 +15,8 @@ import appointmentsDe from '@/locales/de/appointments.json'
 import appointmentsEn from '@/locales/en/appointments.json'
 import authDe from '@/locales/de/auth.json'
 import authEn from '@/locales/en/auth.json'
+import chatDe from '@/locales/de/chat.json'
+import chatEn from '@/locales/en/chat.json'
 
 /** Merges all namespaced message files into one locale bundle. */
 const messages = {
@@ -27,6 +29,7 @@ const messages = {
     ...propertiesDe,
     ...appointmentsDe,
     ...authDe,
+    ...chatDe,
   },
   en: {
     ...headerEn,
@@ -37,6 +40,7 @@ const messages = {
     ...propertiesEn,
     ...appointmentsEn,
     ...authEn,
+    ...chatEn,
   },
 }
 

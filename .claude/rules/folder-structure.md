@@ -19,6 +19,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard with its edit/delete icon buttons, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog shared by creation and, pre-filled, editing, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
+│   │   │   ├── chat/              # chat assistant building blocks (ChatMessageList, ChatMessageInput), data flows through composables/useChat.ts and services/chatService.ts to the n8n webhook
 │   │   │   ├── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
 │   │   │   └── forms/             # form building blocks shared by several dialogs (RequiredFieldLabel for a label with its required-field asterisk)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView, LoginView)
@@ -40,6 +41,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
 │   │   │   ├── auth/              # one CSS file per components/auth building block plus LoginView (login-view.css, auth-card.css, login-form.css, demo-account-panel.css, demo-account-banner.css, demo-quota-hint.css)
+│   │   │   ├── chat/              # one CSS file per components/chat building block plus ChatView (chat-view.css, chat-message-list.css, chat-message-input.css)
 │   │   │   ├── forms/             # one CSS file per components/forms building block (required-field-label.css)
 │   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
@@ -69,6 +71,7 @@ Real-Estate-Maintenance-Optimizer/
 │   ├── src/test/resources/          # application.properties with the test-only JWT secret
 │   ├── pmd-exclusions.properties    # PMD baseline (see .claude/rules/linting.md), grandfathers the violations that existed when the linter was introduced
 │   └── pom.xml                     # holds the single source of truth for the app version (<version>), exposed via GET /api/version; also configures the maven-pmd-plugin (bound to the verify phase)
+├── n8n/                           # n8n bootcamp task: remo-chat-classifier.workflow.json (importable workflow behind the chat assistant) and ANLEITUNG_n8n_Aufgabe.md (setup guide)
 ├── .claude/
 │   ├── rules/                      # binding rules extracted from CLAUDE.md (coding conventions, git workflow, ...)
 │   └── skills/                     # project-specific Claude skills, plus the GitHub spec-kit skills (speckit-constitution, speckit-specify, speckit-plan, speckit-tasks, speckit-clarify, speckit-checklist, speckit-analyze, speckit-implement, speckit-converge, speckit-taskstoissues)
