@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import AppointmentPropertySelect from '@/components/appointments/AppointmentPropertySelect.vue'
 import AppointmentMaterialInput from '@/components/appointments/AppointmentMaterialInput.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
+import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { useDemoQuota } from '@/composables/useDemoQuota'
 import { useAppointmentsStore } from '@/stores/appointments'
@@ -201,10 +202,7 @@ function cancel() {
   >
     <div class="appointment-form-dialog__grid">
       <div class="appointment-form-dialog__field">
-        <label for="appointment-title">
-          {{ t('appointments.form.titleLabel')
-          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="appointment-title" :label="t('appointments.form.titleLabel')" />
         <InputText
           id="appointment-title"
           v-model="form.title"
@@ -236,10 +234,7 @@ function cancel() {
 
     <div class="appointment-form-dialog__grid appointment-form-dialog__grid--schedule">
       <div class="appointment-form-dialog__field">
-        <label for="appointment-day">
-          {{ t('appointments.form.dayLabel')
-          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="appointment-day" :label="t('appointments.form.dayLabel')" />
         <Select
           input-id="appointment-day"
           v-model="form.day"
@@ -250,10 +245,7 @@ function cancel() {
         />
       </div>
       <div class="appointment-form-dialog__field">
-        <label for="appointment-time">
-          {{ t('appointments.form.timeLabel')
-          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="appointment-time" :label="t('appointments.form.timeLabel')" />
         <Select
           input-id="appointment-time"
           v-model="form.time"
@@ -264,10 +256,7 @@ function cancel() {
         />
       </div>
       <div class="appointment-form-dialog__field">
-        <label for="appointment-duration">
-          {{ t('appointments.form.durationLabel')
-          }}<span class="appointment-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="appointment-duration" :label="t('appointments.form.durationLabel')" />
         <Select
           input-id="appointment-duration"
           v-model="form.durationMinutes"

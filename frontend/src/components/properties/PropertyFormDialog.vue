@@ -5,6 +5,7 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import PropertyLocationPreviewMap from '@/components/properties/PropertyLocationPreviewMap.vue'
+import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { usePropertiesStore } from '@/stores/properties'
 import { useDemoQuota } from '@/composables/useDemoQuota'
@@ -311,10 +312,7 @@ function cancel() {
     class="property-form-dialog"
   >
     <div class="property-form-dialog__field">
-      <label for="property-name">
-        {{ t('properties.create.nameLabel')
-        }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-      </label>
+      <RequiredFieldLabel field-id="property-name" :label="t('properties.create.nameLabel')" />
       <InputText
         id="property-name"
         v-model="form.name"
@@ -335,10 +333,7 @@ function cancel() {
 
     <div class="property-form-dialog__grid property-form-dialog__grid--address">
       <div class="property-form-dialog__field">
-        <label for="property-street">
-          {{ t('properties.create.streetLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-street" :label="t('properties.create.streetLabel')" />
         <InputText
           id="property-street"
           v-model="form.street"
@@ -358,10 +353,7 @@ function cancel() {
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-house-number">
-          {{ t('properties.create.houseNumberLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-house-number" :label="t('properties.create.houseNumberLabel')" />
         <InputText
           id="property-house-number"
           v-model="form.houseNumber"
@@ -401,10 +393,7 @@ function cancel() {
 
     <div class="property-form-dialog__grid">
       <div class="property-form-dialog__field">
-        <label for="property-postal-code">
-          {{ t('properties.create.postalCodeLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-postal-code" :label="t('properties.create.postalCodeLabel')" />
         <InputText
           id="property-postal-code"
           v-model="form.postalCode"
@@ -431,10 +420,7 @@ function cancel() {
       </div>
 
       <div class="property-form-dialog__field">
-        <label for="property-city">
-          {{ t('properties.create.cityLabel')
-          }}<span class="property-form-dialog__required-marker" aria-hidden="true"> *</span>
-        </label>
+        <RequiredFieldLabel field-id="property-city" :label="t('properties.create.cityLabel')" />
         <InputText
           id="property-city"
           v-model="form.city"

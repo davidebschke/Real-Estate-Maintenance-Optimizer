@@ -111,10 +111,6 @@
   margin: 0;
 }
 
-.appointment-form-dialog__required-marker {
-  color: #f87171;
-}
-
 .appointment-form-dialog__field-error {
   color: #f87171;
   font-size: 0.8rem;
