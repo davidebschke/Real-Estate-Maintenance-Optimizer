@@ -4,7 +4,7 @@
 Contains the complete Spring Boot application of the Real-Estate-Maintenance-Optimizer (REST API, appointment logic, route optimization, AI-supported duration estimation).
 
 ## Technologies
-Java 25 (LTS), Spring Boot 3, Spring Security, JJWT (JSON Web Token), Spring Data JPA, Spring Mail, Flyway, PostgreSQL (appointments, objects & user/auth; Supabase in production), Testcontainers, LangChain4j (AI integration)
+Java 25 (LTS), Spring Boot 4, Spring Security, JJWT (JSON Web Token), Spring Data JPA, Flyway, PostgreSQL (appointments, objects & user/auth; Supabase in production), Testcontainers, LangChain4j (AI integration, planned)
 
 ## Folder Structure
 

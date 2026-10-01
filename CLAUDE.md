@@ -33,10 +33,9 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 ### 2.2 Backend
 | Area                     | Technology                  |
 |--------------------------|-----------------------------|
-| Language / Framework     | Java 25 (LTS), Spring Boot 3 |
+| Language / Framework     | Java 25 (LTS), Spring Boot 4 |
 | Authentication           | Spring Security, JJWT (JSON Web Token) |
 | Data Access              | Spring Data JPA             |
-| Mail Sending             | Spring Mail                 |
 | External HTTP Client     | Spring `RestClient` (address geocoding) |
 
 ### 2.3 Databases
@@ -52,7 +51,7 @@ All persistent data lives in a single relational database:
 ### 2.4 AI / Intelligence
 | Area       | Technology   |
 |------------|--------------|
-| Framework  | LangChain4j  |
+| Framework  | LangChain4j (planned) |
 
 ## 3. Repository Status
 

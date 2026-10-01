@@ -68,10 +68,11 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 - **Short View:** Clean calendar overview displaying all scheduled tasks.
 - **Detailed View:** Full job context and addresses available upon selection.
 - **Completion Tracking:** Mark a job as done directly from the detail view; it is recolored and its calendar block is drawn to the actual end time.
+- **Daily Overview:** Today's appointments as a sorted list next to a map with numbered, connected markers.
 
 #### 2. ➕ Appointment Creation (`Term creation`)
 - **Standard Input Form:** Fast manual entry interface.
-- **Voice/Audio Feature:** Hands-free appointment logging designed for busy work environments.
+- **Conflict Detection:** Overlapping appointments are rejected and the next free slot of the same duration is suggested.
 
 #### 3. 🗺️ Location-Based Planning (`Automatic planning Place`)
 - Smart location grouping to **minimize driving time** between service calls.
@@ -98,6 +99,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 ### 📋 Backlog & Future Features (`Backlog/Issues`)
 
 - Native mobile porting to **Android** & **iOS**
+- **Voice/Audio** appointment capture: hands-free appointment logging designed for busy work environments
 
 ### ☁️ Deployment
 
@@ -126,10 +128,11 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 - **Kurzansicht:** Übersichtliche Kalenderdarstellung aller anstehenden Termine.
 - **Detailansicht:** Ein Klick öffnet sämtliche Kunden- und Auftragsdetails.
 - **Erledigt-Status:** Ein Auftrag kann direkt in der Detailansicht als erledigt markiert werden; er wird daraufhin farblich hervorgehoben und im Kalender bis zur tatsächlichen Endzeit dargestellt.
+- **Tagesübersicht:** Die heutigen Termine als sortierte Liste neben einer Karte mit nummerierten, verbundenen Markern.
 
 #### 2. ➕ Terminerstellung
 - **Eingabemaske:** Schnelle manuelle Erstellung von Aufträgen.
-- **Spracheingabe / Audio-Funktion:** Freihändige Terminerstellung per Sprachbefehl – ideal, wenn man gerade die Hände voll hat.
+- **Konflikterkennung:** Sich überschneidende Termine werden abgelehnt und der nächste freie Zeitraum gleicher Dauer wird vorgeschlagen.
 
 #### 3. 🗺️ Ortsabhängige Planung
 - Intelligent abgestimmte Routen zur **Reduzierung von Fahrzeiten** zwischen Einsatzorten.
@@ -155,6 +158,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 ### 📋 Backlog & Zukünftige Features (`Backlog/Issues`)
 
 - Native App-Portierung für **Android** und **iOS**
+- **Spracheingabe / Audio-Funktion**: freihändige Terminerstellung per Sprachbefehl – ideal, wenn man gerade die Hände voll hat
 
 ### ☁️ Deployment
 
@@ -170,19 +174,23 @@ Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Fronten
 ## 🧰 Tech Stack
 
 ### 🖥️ Frontend
-* **Framework:** Vue.js 3
+* **Framework:** Vue.js 3 mit TypeScript, Vite
 * **UI Components:** PrimeVue 4
 * **Calendar:** Vue.cal
-* **State & Routing:** Vue Router, Axios
+* **Map:** Leaflet
+* **State, Routing & i18n:** Pinia, Vue Router, vue-i18n, Axios
+* **Tests:** Vitest, Playwright
 
 ### ☁️ Backend
-* **Language & Framework:** Java, Spring Boot 3
+* **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
-* **Data Access & Mail:** Spring Data JPA, Spring Mail
+* **Data Access:** Spring Data JPA
+* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim)
+* **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
 ### 🗄️ Datenbank
-* **Database:** PostgreSQL on Supabase (Termine & Objekte, später User/Auth / Appointments & Objects, later User/Auth), Flyway migrations
+* **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
-* **Framework:** LangChain4j
+* **Framework:** LangChain4j (geplant / planned)
 

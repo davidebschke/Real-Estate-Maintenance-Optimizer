@@ -4,7 +4,7 @@
 Enthaelt die komplette Spring-Boot-Anwendung des Real-Estate-Maintenance-Optimizers (REST-API, Terminlogik, Routenoptimierung, KI-gestuetzte Dauerabschaetzung).
 
 ## Technologien
-Java 25 (LTS), Spring Boot 3, Spring Security, JJWT (JSON Web Token), Spring Data JPA, Spring Mail, Flyway, PostgreSQL (Termine, Objekte & User/Auth; in Produktion Supabase), Testcontainers, LangChain4j (KI-Integration)
+Java 25 (LTS), Spring Boot 4, Spring Security, JJWT (JSON Web Token), Spring Data JPA, Flyway, PostgreSQL (Termine, Objekte & User/Auth; in Produktion Supabase), Testcontainers, LangChain4j (KI-Integration, geplant)
 
 ## Ordnerstruktur
 
