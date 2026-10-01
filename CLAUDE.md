@@ -36,7 +36,6 @@ https://github.com/davidebschke/Real-Estate-Maintenance-Optimizer-Prototype
 | Language / Framework     | Java 25 (LTS), Spring Boot 3 |
 | Authentication           | Spring Security, JJWT (JSON Web Token) |
 | Data Access              | Spring Data JPA             |
-| Mail Sending             | Spring Mail                 |
 | External HTTP Client     | Spring `RestClient` (address geocoding) |
 
 ### 2.3 Databases
