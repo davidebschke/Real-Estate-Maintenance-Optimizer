@@ -72,7 +72,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 #### 2. ➕ Appointment Creation (`Term creation`)
 - **Standard Input Form:** Fast manual entry interface.
-- **Voice/Audio Feature:** Hands-free appointment logging designed for busy work environments.
+- **Conflict Detection:** Overlapping appointments are rejected and the next free slot of the same duration is suggested.
 
 #### 3. 🗺️ Location-Based Planning (`Automatic planning Place`)
 - Smart location grouping to **minimize driving time** between service calls.
@@ -131,7 +131,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 #### 2. ➕ Terminerstellung
 - **Eingabemaske:** Schnelle manuelle Erstellung von Aufträgen.
-- **Spracheingabe / Audio-Funktion:** Freihändige Terminerstellung per Sprachbefehl – ideal, wenn man gerade die Hände voll hat.
+- **Konflikterkennung:** Sich überschneidende Termine werden abgelehnt und der nächste freie Zeitraum gleicher Dauer wird vorgeschlagen.
 
 #### 3. 🗺️ Ortsabhängige Planung
 - Intelligent abgestimmte Routen zur **Reduzierung von Fahrzeiten** zwischen Einsatzorten.
