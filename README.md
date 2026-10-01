@@ -170,18 +170,22 @@ Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Fronten
 ## 🧰 Tech Stack
 
 ### 🖥️ Frontend
-* **Framework:** Vue.js 3
+* **Framework:** Vue.js 3 mit TypeScript, Vite
 * **UI Components:** PrimeVue 4
 * **Calendar:** Vue.cal
-* **State & Routing:** Vue Router, Axios
+* **Map:** Leaflet
+* **State, Routing & i18n:** Pinia, Vue Router, vue-i18n, Axios
+* **Tests:** Vitest, Playwright
 
 ### ☁️ Backend
-* **Language & Framework:** Java, Spring Boot 3
+* **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
 * **Data Access & Mail:** Spring Data JPA, Spring Mail
+* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim)
+* **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
 ### 🗄️ Datenbank
-* **Database:** PostgreSQL on Supabase (Termine & Objekte, später User/Auth / Appointments & Objects, later User/Auth), Flyway migrations
+* **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
 * **Framework:** LangChain4j
