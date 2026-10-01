@@ -45,7 +45,7 @@ Webhook → AI classification (Text Classifier) → Switch/Routing (4 Ausgänge)
 8. **Finaler Link:** n8n-Workflow teilen bzw. Link zum Repo-Branch einfügen.
 9. **Produktion (Oracle-Deploy):** in GitHub unter *Settings → Secrets and variables → Actions → Variables* die Variable `N8N_WEBHOOK_URL` mit der Production-Webhook-URL anlegen, sonst zeigt der Chat im Deploy nur den Fehlerhinweis.
 10. **Kosten absichern:** Die Webhook-URL steckt im Frontend-Bundle und ist ohne Authentifizierung aufrufbar. Setze ein Ausgabenlimit im Anthropic-Account (oder aktiviere im Webhook-Node Header-Auth und passe die Anfrage an).
-11. **Branch pushen / PR:** auf Wunsch lasse ich committen und pushen (nicht automatisch geschehen).
+11. **Branch:** `Main-n8nTaskBootcamp-20261001-120014` ist bereits gepusht und dient nur der Aufgabe, es gibt keinen Pull Request.
 
 ## 5. Was ich übernehmen kann / was nicht
 
