@@ -101,6 +101,18 @@
   background-color: #374151;
 }
 
+.user-account-dropdown__menu-item:disabled {
+  background-color: transparent;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.user-account-dropdown__menu-hint {
+  color: #9ca3af;
+  display: block;
+  font-size: 0.75rem;
+}
+
 .user-account-dropdown__logout {
   background: transparent;
   border: none;

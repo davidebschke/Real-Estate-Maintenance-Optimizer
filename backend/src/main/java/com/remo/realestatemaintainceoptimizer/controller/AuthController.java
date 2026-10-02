@@ -1,5 +1,6 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
+import com.remo.realestatemaintainceoptimizer.config.AppointmentSchedulingProperties;
 import com.remo.realestatemaintainceoptimizer.dto.CurrentUserResponse;
 import com.remo.realestatemaintainceoptimizer.dto.LoginRequest;
 import com.remo.realestatemaintainceoptimizer.entity.User;
@@ -32,16 +33,19 @@ public class AuthController {
     private final DemoAccountService demoAccountService;
     private final JwtService jwtService;
     private final SessionCookieManager sessionCookieManager;
+    private final AppointmentSchedulingProperties schedulingProperties;
 
     public AuthController(
             AuthService authService,
             DemoAccountService demoAccountService,
             JwtService jwtService,
-            SessionCookieManager sessionCookieManager) {
+            SessionCookieManager sessionCookieManager,
+            AppointmentSchedulingProperties schedulingProperties) {
         this.authService = authService;
         this.demoAccountService = demoAccountService;
         this.jwtService = jwtService;
         this.sessionCookieManager = sessionCookieManager;
+        this.schedulingProperties = schedulingProperties;
     }
 
     /**
@@ -81,13 +85,13 @@ public class AuthController {
      */
     @GetMapping("/me")
     public CurrentUserResponse currentUser(@AuthenticationPrincipal AuthenticatedUser user) {
-        return CurrentUserResponse.from(authService.getAccount(user.id()));
+        return CurrentUserResponse.from(authService.getAccount(user.id()), schedulingProperties);
     }
 
     private ResponseEntity<CurrentUserResponse> withNewSession(HttpStatus status, User account) {
         String token = jwtService.issueToken(account.id(), Instant.now());
         return ResponseEntity.status(status)
                 .header(HttpHeaders.SET_COOKIE, sessionCookieManager.createSessionCookie(token).toString())
-                .body(CurrentUserResponse.from(account));
+                .body(CurrentUserResponse.from(account, schedulingProperties));
     }
 }

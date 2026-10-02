@@ -7,11 +7,15 @@ import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictExcep
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.DemoAccountRestrictedException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidActualEndException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidCurrentPasswordException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidNewPasswordException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.UsernameAlreadyTakenException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -94,6 +98,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCreationQuotaExceeded(CreationQuotaExceededException exception, Locale locale) {
         String message = messageSource.getMessage("demo.error." + exception.resource() + "QuotaExceeded", null, locale);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(DemoAccountRestrictedException.class)
+    public ResponseEntity<ErrorResponse> handleDemoAccountRestricted(Locale locale) {
+        String message = messageSource.getMessage("account.error.demoAccountRestricted", null, locale);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(UsernameAlreadyTakenException.class)
+    public ResponseEntity<ErrorResponse> handleUsernameAlreadyTaken(Locale locale) {
+        String message = messageSource.getMessage("account.error.usernameTaken", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidCurrentPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCurrentPassword(Locale locale) {
+        String message = messageSource.getMessage("account.error.currentPasswordIncorrect", null, locale);
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidNewPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidNewPassword(InvalidNewPasswordException exception, Locale locale) {
+        String message = messageSource.getMessage("account.error." + exception.reasonCode(), null, locale);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.doThrow;
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.User;
+import com.remo.realestatemaintainceoptimizer.security.UsernamePolicy;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
@@ -63,7 +64,7 @@ class DemoAccountServiceTest {
         User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
 
         assertThat(demo.demoAccount()).isTrue();
-        assertThat(demo.username()).startsWith(DemoAccountService.DEMO_USERNAME_PREFIX);
+        assertThat(demo.username()).startsWith(UsernamePolicy.DEMO_PREFIX);
         assertThat(demo.passwordHash()).isNull();
         assertThat(demo.displayName()).isEqualTo(DemoAccountService.DEMO_DISPLAY_NAME);
         assertThat(Duration.between(demo.createdAt(), demo.expiresAt())).isEqualTo(Duration.ofHours(8));

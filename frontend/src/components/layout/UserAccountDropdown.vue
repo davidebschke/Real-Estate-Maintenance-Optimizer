@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useAccountPresentation } from '@/composables/useAccountPresentation'
+import ProfileSettingsDialog from '@/components/profile/ProfileSettingsDialog.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -12,10 +13,18 @@ const authStore = useAuthStore()
 const { displayName, initials, roleLabel } = useAccountPresentation()
 const popoverRef = ref<InstanceType<typeof Popover> | null>(null)
 const isLoggingOut = ref(false)
+const isProfileOpen = ref(false)
 
 /** Opens or closes the account menu popover from the trigger button. */
 function toggle(event: MouseEvent): void {
   popoverRef.value?.toggle(event)
+}
+
+/** Closes the account menu and opens the profile and settings dialog, which demo accounts cannot reach. */
+function openProfile(): void {
+  if (authStore.isDemoAccount) return
+  popoverRef.value?.hide()
+  isProfileOpen.value = true
 }
 
 /** Ends the session (deleting a demo account) and returns to the login screen, even if the backend could not be reached, since the store forgets the session locally either way. */
@@ -53,8 +62,14 @@ async function logout(): Promise<void> {
 
       <ul class="user-account-dropdown__menu">
         <li>
-          <button type="button" class="user-account-dropdown__menu-item">
+          <button
+            type="button"
+            class="user-account-dropdown__menu-item"
+            :disabled="authStore.isDemoAccount"
+            @click="openProfile"
+          >
             {{ t('header.account.menu.profile') }}
+            <span v-if="authStore.isDemoAccount" class="user-account-dropdown__menu-hint">{{ t('profile.demoUnavailable') }}</span>
           </button>
         </li>
       </ul>
@@ -65,6 +80,8 @@ async function logout(): Promise<void> {
         {{ t('header.account.menu.logout') }}
       </button>
     </Popover>
+
+    <ProfileSettingsDialog v-if="!authStore.isDemoAccount" v-model:visible="isProfileOpen" />
   </div>
 </template>
 

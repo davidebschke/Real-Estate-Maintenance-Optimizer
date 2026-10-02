@@ -23,6 +23,7 @@ function logInAs(overrides: Partial<CurrentUser> = {}) {
     expiresAt: null,
     remainingPropertyCreations: null,
     remainingAppointmentCreations: null,
+    appointmentBufferMinutes: 15,
     ...overrides,
   }
 }
@@ -105,5 +106,31 @@ describe('UserAccountDropdown', () => {
 
     expect(useAuthStore().isAuthenticated).toBe(false)
     expect(router.currentRoute.value.name).toBe('login')
+  })
+
+  it('opens the profile and settings dialog from the menu for a regular account', async () => {
+    logInAs()
+    const { wrapper } = await mountDropdown()
+    await wrapper.find('.user-account-dropdown__trigger').trigger('click')
+
+    await new DOMWrapper(document.body.querySelector('.user-account-dropdown__menu-item') as Element).trigger('click')
+    await flushPromises()
+
+    expect(document.body.querySelector('.profile-settings-dialog')).not.toBeNull()
+    expect(document.body.textContent).toContain('Pufferzeit zwischen Terminen')
+  })
+
+  it('makes the profile and settings entry unreachable for a demo account', async () => {
+    logInAs({ displayName: 'Demo', demoAccount: true, expiresAt: new Date(2026, 8, 29, 16, 30) })
+    const { wrapper } = await mountDropdown()
+    await wrapper.find('.user-account-dropdown__trigger').trigger('click')
+
+    const menuItem = document.body.querySelector('.user-account-dropdown__menu-item') as HTMLButtonElement
+    await new DOMWrapper(menuItem).trigger('click')
+    await flushPromises()
+
+    expect(menuItem.disabled).toBe(true)
+    expect(menuItem.textContent).toContain('Im Demo-Account nicht verfügbar')
+    expect(document.body.querySelector('.profile-settings-dialog')).toBeNull()
   })
 })

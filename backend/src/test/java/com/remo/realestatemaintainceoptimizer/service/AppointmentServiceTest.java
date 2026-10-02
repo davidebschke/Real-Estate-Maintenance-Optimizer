@@ -46,7 +46,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 @Import(TestcontainersConfiguration.class)
 class AppointmentServiceTest {
 
-    private static final int BUFFER_MINUTES = 15;
+    private static final int BUFFER_MINUTES = 5;
 
     @Autowired
     private AppointmentService service;
@@ -107,8 +107,8 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 30));
-                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 30));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 20));
+                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 20));
                 });
     }
 
@@ -120,6 +120,28 @@ class AppointmentServiceTest {
 
         assertThat(service.create(owner.id(), afterBuffer)).isNotNull();
         assertThat(service.listAll(owner.id())).hasSize(2);
+    }
+
+    @Test
+    void anAccountWithAZeroBufferMayScheduleAnAppointmentDirectlyAfterAnother() {
+        setBufferMinutes(owner, 0);
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest directlyAfter = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.end(), 60, false, false, null, List.of());
+
+        assertThat(service.create(owner.id(), directlyAfter)).isNotNull();
+    }
+
+    @Test
+    void anAccountsLongerBufferBlocksAnAppointmentThatTheDefaultBufferWouldAllow() {
+        setBufferMinutes(owner, 60);
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest tooCloseForTheLongBuffer = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.end().plusMinutes(BUFFER_MINUTES), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), tooCloseForTheLongBuffer))
+                .isInstanceOfSatisfying(AppointmentConflictException.class, exception ->
+                        assertThat(exception.suggestedStart()).isEqualTo(created.end().plusMinutes(60)));
     }
 
     @Test
@@ -211,7 +233,7 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 15));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 5));
                     assertThat(exception.suggestedStart().getDayOfWeek()).isNotEqualTo(DayOfWeek.SUNDAY);
                 });
     }
@@ -663,6 +685,12 @@ class AppointmentServiceTest {
     private CreateAppointmentRequest updateRequest(AppointmentResponse appointment, String propertyId) {
         return new CreateAppointmentRequest(
                 appointment.title(), propertyId, appointment.description(), appointment.start(), 60, false, false, null, List.of());
+    }
+
+    private void setBufferMinutes(User account, int bufferMinutes) {
+        User stored = userRepository.findById(account.id()).orElseThrow();
+        stored.changeAppointmentBufferMinutes(bufferMinutes);
+        userRepository.save(stored);
     }
 
     private CreateAppointmentRequest createRequestFor(String propertyId, boolean recurring, Integer recurrenceIntervalMonths) {

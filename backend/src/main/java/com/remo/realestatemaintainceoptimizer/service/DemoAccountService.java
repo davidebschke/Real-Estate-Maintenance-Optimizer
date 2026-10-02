@@ -2,6 +2,7 @@ package com.remo.realestatemaintainceoptimizer.service;
 
 import com.remo.realestatemaintainceoptimizer.config.AuthProperties;
 import com.remo.realestatemaintainceoptimizer.entity.User;
+import com.remo.realestatemaintainceoptimizer.security.UsernamePolicy;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import com.remo.realestatemaintainceoptimizer.security.SlidingWindowRateLimiter;
@@ -22,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class DemoAccountService {
 
-    static final String DEMO_USERNAME_PREFIX = "demo-";
     static final String DEMO_DISPLAY_NAME = "Demo";
     static final int DEMO_PROPERTY_CREATIONS = 3;
     static final int DEMO_APPOINTMENT_CREATIONS = 3;
@@ -64,7 +64,7 @@ public class DemoAccountService {
             Instant createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
             User account = userRepository.save(new User(
                     UUID.randomUUID().toString(),
-                    DEMO_USERNAME_PREFIX + randomSuffix(),
+                    UsernamePolicy.DEMO_PREFIX + randomSuffix(),
                     null,
                     DEMO_DISPLAY_NAME,
                     true,

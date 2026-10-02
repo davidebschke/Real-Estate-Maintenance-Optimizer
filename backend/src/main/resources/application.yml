@@ -53,4 +53,4 @@ remo:
     max-active-demo-accounts: 100
   appointments:
     # Minimum gap in minutes between two appointments of the same account (creation and rescheduling), e.g. for travel and tools
-    buffer-minutes: 15
+    buffer-minutes: 5

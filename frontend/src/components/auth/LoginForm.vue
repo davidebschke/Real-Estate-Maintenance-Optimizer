@@ -7,9 +7,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { toAuthFailureReason } from '@/services/authService'
 import type { AuthFailureReason } from '@/types/auth'
-
-const USERNAME_MAX_LENGTH = 50
-const PASSWORD_MAX_LENGTH = 128
+import { PASSWORD_MAX_LENGTH, USERNAME_MAX_LENGTH } from '@/utils/accountFieldValidation'
 
 const emit = defineEmits<{ authenticated: [] }>()
 

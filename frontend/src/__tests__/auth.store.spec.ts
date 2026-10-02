@@ -4,9 +4,11 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import * as authService from '@/services/authService'
+import * as accountService from '@/services/accountService'
 import type { CurrentUser } from '@/types/auth'
 
 vi.mock('@/services/authService')
+vi.mock('@/services/accountService')
 
 /** Builds a sample account for tests, with overridable fields. */
 function createUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
@@ -17,6 +19,7 @@ function createUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
     expiresAt: null,
     remainingPropertyCreations: null,
     remainingAppointmentCreations: null,
+    appointmentBufferMinutes: 15,
     ...overrides,
   }
 }
@@ -28,6 +31,7 @@ const demoUser = createUser({
   expiresAt: new Date('2026-09-29T16:00:00Z'),
   remainingPropertyCreations: 3,
   remainingAppointmentCreations: 3,
+  appointmentBufferMinutes: 15,
 })
 
 beforeEach(() => {
@@ -36,6 +40,9 @@ beforeEach(() => {
   vi.mocked(authService.login).mockReset()
   vi.mocked(authService.createDemoAccount).mockReset()
   vi.mocked(authService.logout).mockReset()
+  vi.mocked(accountService.changeUsername).mockReset()
+  vi.mocked(accountService.changePassword).mockReset()
+  vi.mocked(accountService.changeAppointmentBuffer).mockReset()
 })
 
 /** Fills both data stores as if a previous account had loaded its data. */
@@ -171,5 +178,50 @@ describe('useAuthStore', () => {
     expect(store.isSessionChecked).toBe(true)
     expect(usePropertiesStore().properties).toEqual([])
     expect(authService.logout).not.toHaveBeenCalled()
+  })
+
+  it('takes over the renamed account without dropping its cached data', async () => {
+    vi.mocked(accountService.changeUsername).mockResolvedValue(createUser({ username: 'neuer-name' }))
+    const store = useAuthStore()
+    store.currentUser = createUser()
+    fillDataStoresOfPreviousAccount()
+
+    await store.changeUsername('neuer-name', 'geheim')
+
+    expect(accountService.changeUsername).toHaveBeenCalledWith('neuer-name', 'geheim')
+    expect(store.currentUser?.username).toBe('neuer-name')
+    expect(usePropertiesStore().properties).toHaveLength(1)
+  })
+
+  it('keeps the account unchanged when renaming is rejected', async () => {
+    vi.mocked(accountService.changeUsername).mockRejectedValue(new Error('taken'))
+    const store = useAuthStore()
+    store.currentUser = createUser()
+
+    await expect(store.changeUsername('vergeben', 'geheim')).rejects.toThrow('taken')
+
+    expect(store.currentUser?.username).toBe('debschke')
+  })
+
+  it('stays logged in after changing the password', async () => {
+    vi.mocked(accountService.changePassword).mockResolvedValue(createUser())
+    const store = useAuthStore()
+    store.currentUser = createUser()
+
+    await store.changePassword('alt', 'neu')
+
+    expect(accountService.changePassword).toHaveBeenCalledWith('alt', 'neu')
+    expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('takes over the changed appointment buffer', async () => {
+    vi.mocked(accountService.changeAppointmentBuffer).mockResolvedValue(createUser({ appointmentBufferMinutes: 40 }))
+    const store = useAuthStore()
+    store.currentUser = createUser()
+
+    await store.changeAppointmentBuffer(40)
+
+    expect(accountService.changeAppointmentBuffer).toHaveBeenCalledWith(40)
+    expect(store.currentUser?.appointmentBufferMinutes).toBe(40)
   })
 })

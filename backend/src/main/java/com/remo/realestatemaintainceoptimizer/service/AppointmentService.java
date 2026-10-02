@@ -9,6 +9,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
@@ -98,11 +99,9 @@ public class AppointmentService {
         Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
 
-        requireFreeSchedule(ownerId, null, firstStart, request.durationMinutes());
-
-        userRepository.findById(ownerId)
-                .orElseThrow(() -> new AccountNotFoundException(ownerId))
-                .consumeAppointmentCreation();
+        User owner = loadOwner(ownerId);
+        requireFreeSchedule(owner, null, firstStart, request.durationMinutes());
+        owner.consumeAppointmentCreation();
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
         List<String> materials = normalizeMaterials(request.materials());
         String description = normalizeDescription(request.description());
@@ -152,7 +151,7 @@ public class AppointmentService {
         LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
         LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
         if (!newStart.equals(appointment.start()) || !newEnd.equals(appointment.end())) {
-            requireFreeSchedule(ownerId, id, newStart, request.durationMinutes());
+            requireFreeSchedule(loadOwner(ownerId), id, newStart, request.durationMinutes());
         }
         HistoryEntry moveEntry = new HistoryEntry(
                 currentInstant(),
@@ -293,31 +292,33 @@ public class AppointmentService {
 
     /**
      * Throws an {@link AppointmentConflictException} carrying the next free slot of the given duration if the given
-     * schedule overlaps with or comes closer than the configured buffer to any of the account's appointments other
+     * schedule overlaps with or comes closer than the account's buffer (its own setting or else the configured default) to any of its appointments other
      * than {@code ignoredAppointmentId} (null to ignore none), holding the account's transaction lock so two requests
      * racing for the same slot cannot both pass this check before either has persisted its change.
      */
     private void requireFreeSchedule(
-            String ownerId, String ignoredAppointmentId, LocalDateTime start, int durationMinutes) {
+            User owner, String ignoredAppointmentId, LocalDateTime start, int durationMinutes) {
+        String ownerId = owner.id();
         userRepository.acquireTransactionLock(ownerId.hashCode());
+        int bufferMinutes = schedulingProperties.bufferMinutesFor(owner.appointmentBufferMinutes());
         List<Appointment> otherAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId).stream()
                 .filter(existing -> !existing.id().equals(ignoredAppointmentId))
                 .toList();
         LocalDateTime end = start.plusMinutes(durationMinutes);
-        if (otherAppointments.stream().noneMatch(existing -> isTooCloseTo(existing, start, end))) {
+        if (otherAppointments.stream().noneMatch(existing -> isTooCloseTo(existing, start, end, bufferMinutes))) {
             return;
         }
-        LocalDateTime suggestedStart = findNextAvailableStart(otherAppointments, start, durationMinutes);
+        LocalDateTime suggestedStart = findNextAvailableStart(otherAppointments, start, durationMinutes, bufferMinutes);
         throw new AppointmentConflictException(suggestedStart, suggestedStart.plusMinutes(durationMinutes));
     }
 
     /**
-     * Returns the earliest start at or after the given start at which the given duration keeps the configured buffer
+     * Returns the earliest start at or after the given start at which the given duration keeps the given buffer
      * to every given appointment's occupied range, never suggesting a Sunday since the company schedules no
      * appointments then.
      */
     private LocalDateTime findNextAvailableStart(
-            List<Appointment> existingAppointments, LocalDateTime requestedStart, int durationMinutes) {
+            List<Appointment> existingAppointments, LocalDateTime requestedStart, int durationMinutes, int bufferMinutes) {
         LocalDateTime candidateStart = requestedStart;
         boolean candidateChanged;
         do {
@@ -329,8 +330,8 @@ public class AppointmentService {
             }
             LocalDateTime candidateEnd = candidateStart.plusMinutes(durationMinutes);
             for (Appointment existing : existingAppointments) {
-                if (isTooCloseTo(existing, candidateStart, candidateEnd)) {
-                    candidateStart = occupiedEnd(existing).plusMinutes(schedulingProperties.bufferMinutes());
+                if (isTooCloseTo(existing, candidateStart, candidateEnd, bufferMinutes)) {
+                    candidateStart = occupiedEnd(existing).plusMinutes(bufferMinutes);
                     candidateChanged = true;
                     break;
                 }
@@ -341,12 +342,15 @@ public class AppointmentService {
 
     /**
      * Returns whether the given range overlaps with the existing appointment's occupied range widened by the
-     * configured buffer on both sides.
+     * given buffer on both sides.
      */
-    private boolean isTooCloseTo(Appointment existing, LocalDateTime start, LocalDateTime end) {
-        int bufferMinutes = schedulingProperties.bufferMinutes();
+    private boolean isTooCloseTo(Appointment existing, LocalDateTime start, LocalDateTime end, int bufferMinutes) {
         return rangesOverlap(
                 existing.start().minusMinutes(bufferMinutes), occupiedEnd(existing).plusMinutes(bufferMinutes), start, end);
+    }
+
+    private User loadOwner(String ownerId) {
+        return userRepository.findById(ownerId).orElseThrow(() -> new AccountNotFoundException(ownerId));
     }
 
     /**
