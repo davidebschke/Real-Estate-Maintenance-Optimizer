@@ -1,0 +1,138 @@
+/* Same reasoning as the appointment form dialog: PrimeVue injects its own `.p-dialog` rule after this
+   stylesheet, so the doubled class selector keeps this surface override winning regardless of order */
+.profile-settings-dialog.p-dialog {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
+  border-color: var(--remo-calendar-border-color, #24282e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  overflow: hidden;
+  width: min(48rem, 94vw);
+}
+
+.profile-settings-dialog .p-dialog-header,
+.profile-settings-dialog .p-dialog-content,
+.profile-settings-dialog .p-dialog-footer {
+  background: transparent;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  position: relative;
+  z-index: 1;
+}
+
+.profile-settings-dialog .p-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding-block: 1.5rem;
+}
+
+.profile-settings-dialog .p-dialog-close-button {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.profile-settings-dialog .p-dialog-close-button:hover {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.profile-settings-dialog .p-inputtext,
+.profile-settings-dialog .p-inputnumber-input {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-color: var(--remo-calendar-border-color, #3a3f47);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.profile-settings-dialog .p-inputtext.p-invalid,
+.profile-settings-dialog .p-inputnumber.p-invalid .p-inputnumber-input {
+  border-color: #f87171;
+}
+
+.profile-settings-dialog__section {
+  border-bottom: 1px solid var(--remo-calendar-border-color, #24282e);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1.75rem;
+}
+
+.profile-settings-dialog__heading {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.profile-settings-dialog__description {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.profile-settings-dialog__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-settings-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-settings-dialog__field--narrow {
+  max-width: 14rem;
+}
+
+.profile-settings-dialog__field label {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.profile-settings-dialog__field-error {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.profile-settings-dialog__success {
+  color: #4ade80;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.profile-settings-dialog__submit {
+  align-self: flex-start;
+}
+
+.profile-settings-dialog__required-legend {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.profile-settings-dialog__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.profile-settings-dialog__close {
+  background: none;
+  border: none;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 40rem) {
+  .profile-settings-dialog.p-dialog {
+    width: 100vw;
+  }
+
+  .profile-settings-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+}

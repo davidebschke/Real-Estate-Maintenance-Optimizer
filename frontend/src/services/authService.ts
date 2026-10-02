@@ -9,6 +9,7 @@ export interface CurrentUserResponseDto {
   expiresAt: string | null
   remainingPropertyCreations: number | null
   remainingAppointmentCreations: number | null
+  appointmentBufferMinutes: number
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
@@ -53,7 +54,7 @@ export function toAuthFailureReason(error: unknown): AuthFailureReason {
 }
 
 /** Converts the backend DTO into the frontend's domain shape. */
-function toCurrentUser(dto: CurrentUserResponseDto): CurrentUser {
+export function toCurrentUser(dto: CurrentUserResponseDto): CurrentUser {
   return {
     username: dto.username,
     displayName: dto.displayName,
@@ -61,5 +62,6 @@ function toCurrentUser(dto: CurrentUserResponseDto): CurrentUser {
     expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
     remainingPropertyCreations: dto.remainingPropertyCreations,
     remainingAppointmentCreations: dto.remainingAppointmentCreations,
+    appointmentBufferMinutes: dto.appointmentBufferMinutes,
   }
 }

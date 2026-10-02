@@ -39,4 +39,13 @@ class AppointmentSchedulingPropertiesTest {
         assertThat(new AppointmentSchedulingProperties(1440).bufferMinutes()).isEqualTo(1440);
         assertThatThrownBy(() -> new AppointmentSchedulingProperties(1441)).isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void anAccountsOwnBufferTakesPrecedenceOverTheConfiguredDefault() {
+        AppointmentSchedulingProperties properties = new AppointmentSchedulingProperties(15);
+
+        assertThat(properties.bufferMinutesFor(30)).isEqualTo(30);
+        assertThat(properties.bufferMinutesFor(0)).isZero();
+        assertThat(properties.bufferMinutesFor(null)).isEqualTo(15);
+    }
 }

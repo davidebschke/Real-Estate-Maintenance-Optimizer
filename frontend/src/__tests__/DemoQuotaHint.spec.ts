@@ -15,6 +15,7 @@ function logInDemoAccount(remainingProperties: number, remainingAppointments: nu
     expiresAt: new Date(),
     remainingPropertyCreations: remainingProperties,
     remainingAppointmentCreations: remainingAppointments,
+    appointmentBufferMinutes: 15,
   }
 }
 
@@ -58,6 +59,7 @@ describe('DemoQuotaHint', () => {
       expiresAt: null,
       remainingPropertyCreations: null,
       remainingAppointmentCreations: null,
+      appointmentBufferMinutes: 15,
     }
 
     expect(mountHint('properties').find('.demo-quota-hint').exists()).toBe(false)

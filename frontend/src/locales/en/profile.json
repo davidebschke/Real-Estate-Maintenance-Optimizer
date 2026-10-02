@@ -1,0 +1,48 @@
+{
+  "profile": {
+    "title": "Profile & Settings",
+    "requiredFieldsLegend": "* Required field",
+    "close": "Close",
+    "demoUnavailable": "Not available for demo accounts",
+    "saving": "Saving …",
+    "username": {
+      "heading": "Username",
+      "description": "You log in with this name. It is not case-sensitive.",
+      "label": "Username",
+      "invalidError": "Please use 3 to 50 characters: letters, digits, dots, hyphens or underscores.",
+      "submit": "Save username",
+      "success": "Your username was changed."
+    },
+    "password": {
+      "heading": "Change password",
+      "description": "For security, you need to enter your current password. After the change you are logged out on all other devices.",
+      "currentLabel": "Current password",
+      "newLabel": "New password",
+      "confirmLabel": "Repeat new password",
+      "problems": {
+        "tooShort": "The new password must have at least 8 characters.",
+        "tooLong": "The new password is too long.",
+        "unchanged": "The new password must differ from the current one.",
+        "mismatch": "The passwords do not match."
+      },
+      "submit": "Change password",
+      "success": "Your password was changed."
+    },
+    "buffer": {
+      "heading": "Buffer time between appointments",
+      "description": "Minimum gap that has to stay free between two appointments when creating or moving them, e.g. for travel and material.",
+      "label": "Buffer time in minutes",
+      "unit": "min.",
+      "invalidError": "Please enter a whole number from 0 to 1440.",
+      "submit": "Save buffer time",
+      "success": "The buffer time was saved."
+    },
+    "errors": {
+      "usernameTaken": "This username is already taken.",
+      "currentPasswordIncorrect": "The current password is incorrect.",
+      "invalidInput": "The input is invalid. Please check it and try again.",
+      "tooManyRequests": "Too many failed attempts. Please try again in a few minutes.",
+      "generic": "The change could not be saved. Please try again."
+    }
+  }
+}

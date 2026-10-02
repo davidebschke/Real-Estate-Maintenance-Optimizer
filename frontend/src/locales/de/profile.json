@@ -1,0 +1,48 @@
+{
+  "profile": {
+    "title": "Profil & Einstellungen",
+    "requiredFieldsLegend": "* Pflichtfeld",
+    "close": "Schließen",
+    "demoUnavailable": "Im Demo-Account nicht verfügbar",
+    "saving": "Wird gespeichert …",
+    "username": {
+      "heading": "Benutzername",
+      "description": "Mit diesem Namen melden Sie sich an. Groß- und Kleinschreibung wird nicht unterschieden.",
+      "label": "Benutzername",
+      "invalidError": "Bitte 3 bis 50 Zeichen verwenden: Buchstaben, Ziffern, Punkt, Bindestrich oder Unterstrich.",
+      "submit": "Benutzernamen speichern",
+      "success": "Der Benutzername wurde geändert."
+    },
+    "password": {
+      "heading": "Passwort ändern",
+      "description": "Zur Sicherheit ist die Eingabe des bisherigen Passworts nötig. Nach der Änderung werden Sie auf allen anderen Geräten abgemeldet.",
+      "currentLabel": "Bisheriges Passwort",
+      "newLabel": "Neues Passwort",
+      "confirmLabel": "Neues Passwort wiederholen",
+      "problems": {
+        "tooShort": "Das neue Passwort muss mindestens 8 Zeichen lang sein.",
+        "tooLong": "Das neue Passwort ist zu lang.",
+        "unchanged": "Das neue Passwort muss sich vom bisherigen unterscheiden.",
+        "mismatch": "Die Passwörter stimmen nicht überein."
+      },
+      "submit": "Passwort ändern",
+      "success": "Das Passwort wurde geändert."
+    },
+    "buffer": {
+      "heading": "Pufferzeit zwischen Terminen",
+      "description": "Mindestabstand, der beim Anlegen und Verschieben von Terminen zwischen zwei Terminen frei bleiben muss, z. B. für Anfahrt und Material.",
+      "label": "Pufferzeit in Minuten",
+      "unit": "Min.",
+      "invalidError": "Bitte eine ganze Zahl von 0 bis 1440 eingeben.",
+      "submit": "Pufferzeit speichern",
+      "success": "Die Pufferzeit wurde gespeichert."
+    },
+    "errors": {
+      "usernameTaken": "Dieser Benutzername ist bereits vergeben.",
+      "currentPasswordIncorrect": "Das bisherige Passwort ist falsch.",
+      "invalidInput": "Die Eingaben sind ungültig. Bitte prüfen Sie sie und versuchen Sie es erneut.",
+      "tooManyRequests": "Zu viele fehlgeschlagene Versuche. Bitte versuchen Sie es in einigen Minuten erneut.",
+      "generic": "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
+    }
+  }
+}

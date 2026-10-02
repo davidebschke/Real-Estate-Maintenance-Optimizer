@@ -47,6 +47,9 @@ public class User {
     @Column(name = "sessions_valid_from")
     private Instant sessionsValidFrom;
 
+    @Column(name = "appointment_buffer_minutes")
+    private Integer appointmentBufferMinutes;
+
     @Version
     private Long version;
 
@@ -117,6 +120,20 @@ public class User {
     }
 
     /**
+     * Replaces the username with the given one, stored in its normalized form.
+     */
+    public void changeUsername(String newUsername) {
+        this.username = normalizeUsername(newUsername);
+    }
+
+    /**
+     * Sets this account's own minimum gap between appointments, overriding the configured default.
+     */
+    public void changeAppointmentBufferMinutes(int newAppointmentBufferMinutes) {
+        this.appointmentBufferMinutes = newAppointmentBufferMinutes;
+    }
+
+    /**
      * Uses up one property creation, rejecting it when this account's limit is already exhausted.
      */
     public void consumePropertyCreation() {
@@ -168,6 +185,10 @@ public class User {
 
     public Instant expiresAt() {
         return expiresAt;
+    }
+
+    public Integer appointmentBufferMinutes() {
+        return appointmentBufferMinutes;
     }
 
     public Integer remainingPropertyCreations() {

@@ -8,6 +8,7 @@ public class RateLimitExceededException extends RuntimeException {
     public static final String REASON_TOO_MANY_LOGIN_ATTEMPTS = "tooManyLoginAttempts";
     public static final String REASON_TOO_MANY_DEMO_ACCOUNTS = "tooManyDemoAccounts";
     public static final String REASON_DEMO_CAPACITY_REACHED = "demoCapacityReached";
+    public static final String REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS = "tooManyPasswordChangeAttempts";
 
     private final String reasonCode;
 

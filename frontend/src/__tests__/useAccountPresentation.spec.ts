@@ -31,6 +31,7 @@ function logInAs(overrides: Partial<CurrentUser> = {}) {
     expiresAt: null,
     remainingPropertyCreations: null,
     remainingAppointmentCreations: null,
+    appointmentBufferMinutes: 15,
     ...overrides,
   }
 }

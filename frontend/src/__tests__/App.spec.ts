@@ -25,6 +25,7 @@ function logIn() {
     expiresAt: null,
     remainingPropertyCreations: null,
     remainingAppointmentCreations: null,
+    appointmentBufferMinutes: 15,
   }
 }
 

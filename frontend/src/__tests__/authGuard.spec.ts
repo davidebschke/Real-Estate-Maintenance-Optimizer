@@ -15,6 +15,7 @@ const loggedInUser = {
   expiresAt: null,
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
+  appointmentBufferMinutes: 15,
 }
 
 /** Creates a router with the app's routes and the auth guard, backed by in-memory history. */

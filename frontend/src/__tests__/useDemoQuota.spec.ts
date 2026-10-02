@@ -13,6 +13,7 @@ function logInAs(overrides: Partial<CurrentUser>) {
     expiresAt: new Date(),
     remainingPropertyCreations: 3,
     remainingAppointmentCreations: 3,
+    appointmentBufferMinutes: 15,
     ...overrides,
   }
 }

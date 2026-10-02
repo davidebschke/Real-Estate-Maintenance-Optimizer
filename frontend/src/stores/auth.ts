@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as authService from '@/services/authService'
+import * as accountService from '@/services/accountService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import type { CurrentUser } from '@/types/auth'
@@ -57,6 +58,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /** Renames the logged-in account; rejects with the backend error when the name is taken or invalid. */
+  async function changeUsername(username: string) {
+    currentUser.value = await accountService.changeUsername(username)
+  }
+
+  /** Changes the password; the backend ends all other sessions and keeps this one with a fresh cookie, rejecting with its error when the current password is wrong. */
+  async function changePassword(currentPassword: string, newPassword: string) {
+    currentUser.value = await accountService.changePassword(currentPassword, newPassword)
+  }
+
+  /** Changes the minimum gap kept between appointments of the logged-in account. */
+  async function changeAppointmentBuffer(appointmentBufferMinutes: number) {
+    currentUser.value = await accountService.changeAppointmentBuffer(appointmentBufferMinutes)
+  }
+
   /** Forgets the account and all of its locally cached properties and appointments, e.g. once the session expired. */
   function clearSession() {
     currentUser.value = null
@@ -83,6 +99,9 @@ export const useAuthStore = defineStore('auth', () => {
     startDemoSession,
     logout,
     refreshDemoQuota,
+    changeUsername,
+    changePassword,
+    changeAppointmentBuffer,
     clearSession,
   }
 })

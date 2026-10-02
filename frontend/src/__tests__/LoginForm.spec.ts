@@ -79,6 +79,7 @@ describe('LoginForm', () => {
       expiresAt: null,
       remainingPropertyCreations: null,
       remainingAppointmentCreations: null,
+      appointmentBufferMinutes: 15,
     })
     const wrapper = mountForm()
     await enterCredentials(wrapper, ' debschke ', 'geheim')

@@ -87,4 +87,23 @@ class UserTest {
 
         assertThat(user.passwordHash()).isEqualTo("new-hash");
     }
+
+    @Test
+    void changingTheUsernameStoresItTrimmedAndInLowerCase() {
+        User user = User.regular("id", "debschke", null, "David Ebschke", NOW);
+
+        user.changeUsername("  New-NAME ");
+
+        assertThat(user.username()).isEqualTo("new-name");
+    }
+
+    @Test
+    void anAccountHasNoOwnAppointmentBufferUntilItSetsOne() {
+        User user = User.regular("id", "debschke", null, "David Ebschke", NOW);
+        assertThat(user.appointmentBufferMinutes()).isNull();
+
+        user.changeAppointmentBufferMinutes(30);
+
+        assertThat(user.appointmentBufferMinutes()).isEqualTo(30);
+    }
 }
