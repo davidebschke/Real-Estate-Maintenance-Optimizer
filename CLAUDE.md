@@ -114,6 +114,7 @@ Backlog (native Android/iOS app, voice/audio appointment capture) is tracked in 
 ## 7. Build & Run
 
 Backend: `docker compose up -d` (local PostgreSQL) then `mvn spring-boot:run` (requires Java 25 and Maven; Spring Boot 4.1.1 via `pom.xml`) with `REMO_AUTH_JWT_SECRET` set (plus `REMO_AUTH_INITIAL_USER_PASSWORD` and `REMO_AUTH_COOKIE_SECURE=false` locally, e.g. in `backend/.env`, see `backend/.env.example`); `mvn test` needs a running Docker daemon (Testcontainers).
+A step-by-step guide (English & German, incl. a Visual Studio Code example and troubleshooting) is in the root `README.md`, section "Running the Project Locally" / "Projekt lokal starten".
 Frontend: `npm install` then `npm run dev` (Vite dev server). `npm run build` for a production build, `npm run test:unit` (Vitest) and `npm run test:e2e` (Playwright, needs the backend and `E2E_PASSWORD`) for tests.
 
 ## 8. Tests
