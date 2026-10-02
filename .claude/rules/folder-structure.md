@@ -20,17 +20,18 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
 │   │   │   ├── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
+│   │   │   ├── profile/           # profile and settings dialog building blocks (ProfileSettingsDialog, ProfileUsernameSection, ProfilePasswordSection, ProfileAppointmentBufferSection)
 │   │   │   └── forms/             # form building blocks shared by several dialogs (RequiredFieldLabel for a label with its required-field asterisk)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView, LoginView)
 │   │   ├── router/                # Vue Router configuration (route definitions incl. the public /login route, NavigationKey type, authGuard.ts login guard)
-│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts, authService.ts), httpClient.ts for the shared axios defaults (session cookie, CSRF header, expired-session handling), and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
+│   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts, authService.ts, accountService.ts), httpClient.ts for the shared axios defaults (session cookie, CSRF header, expired-session handling), and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts, stores/auth.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useSuggestedSlotLabel, useDemoQuota, useAccountPresentation, useMediaQuery, useDurationOptions, useTouchedFields)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useSuggestedSlotLabel, useDemoQuota, useAccountPresentation, useMediaQuery, useDurationOptions, useTouchedFields, useSettingsSubmission)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, auth.ts, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
-│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, addressFieldValidation.ts for the street/house number/postal code/city format checks, safeRedirect.ts for the post-login redirect, initials.ts)
+│   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, addressFieldValidation.ts for the street/house number/postal code/city format checks, safeRedirect.ts for the post-login redirect, initials.ts, accountFieldValidation.ts for the username/password/appointment buffer checks of the profile dialog)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
 │   │   ├── locales/
-│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json, auth.json)
+│   │   │   ├── de/                # German UI texts, one file per feature namespace (e.g. header.json, footer.json, overview.json, calendar.json, statistics.json, properties.json, appointments.json, auth.json, profile.json)
 │   │   │   └── en/                # English UI texts, mirrors the de/ structure
 │   │   ├── styles/
 │   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
@@ -40,19 +41,20 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
 │   │   │   ├── auth/              # one CSS file per components/auth building block plus LoginView (login-view.css, auth-card.css, login-form.css, demo-account-panel.css, demo-account-banner.css, demo-quota-hint.css)
+│   │   │   ├── profile/           # one CSS file per components/profile building block set (profile-settings-dialog.css)
 │   │   │   ├── forms/             # one CSS file per components/forms building block (required-field-label.css)
 │   │   │   ├── view-placeholder.css # styling for the shared ViewPlaceholder component
 │   │   │   └── confirm-dialog.css # styling for the globally-mounted PrimeVue ConfirmDialog (appointment and property delete confirmations)
 │   │   └── __tests__/             # Vitest unit tests
-│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts, auth.spec.ts), auth.setup.ts logs in once and stores the session in the git-ignored .auth/, support/apiSession.ts provides e2e credentials and CSRF headers, support/testProperty.ts creates/deletes a per-test property via the API
+│   ├── e2e/                       # Playwright end-to-end tests (e.g. navigation.spec.ts, calendar.spec.ts, appointments.spec.ts, overview-map.spec.ts, properties.spec.ts, auth.spec.ts, profile.spec.ts), auth.setup.ts logs in once and stores the session in the git-ignored .auth/, support/apiSession.ts provides e2e credentials and CSRF headers, support/testProperty.ts creates/deletes a per-test property via the API
 │   ├── public/
 │   ├── .env.example                # documents frontend runtime env vars (e.g. VITE_API_BASE_URL)
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig, AuthProperties, AppointmentSchedulingProperties for the appointment buffer time, SchedulingConfig)
-│   │   ├── controller/             # REST endpoints (e.g. VersionController, AuthController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
-│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme —, AuthService, DemoAccountService, DemoDataSeeder, DemoAccountCleanupScheduler, InitialAccountPasswordService)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig, AuthProperties, AppointmentSchedulingProperties for the default appointment buffer time, SchedulingConfig)
+│   │   ├── controller/             # REST endpoints (e.g. VersionController, AuthController, AppointmentController, PropertyController, AccountController for the profile settings, GeocodingController, GlobalExceptionHandler)
+│   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme —, AuthService, AccountService for username/password/appointment buffer changes, DemoAccountService, DemoDataSeeder, DemoAccountCleanupScheduler, InitialAccountPasswordService)
 │   │   ├── repository/             # persistence via Spring Data JPA (e.g. AppointmentRepository, PropertyRepository, UserRepository, see backend readme)
 │   │   ├── entity/                  # JPA entities (e.g. Appointment, HistoryEntry as @Embeddable record, Property with ownerId and latitude/longitude, User)
 │   │   ├── exception/               # domain exceptions mapped to HTTP responses by GlobalExceptionHandler
