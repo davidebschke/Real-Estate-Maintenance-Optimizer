@@ -46,7 +46,7 @@ jobs:
             exit 1
           fi
           if [ -z "$REMO_AUTH_INITIAL_USER_PASSWORD" ]; then
-            echo "::warning::REMO_AUTH_INITIAL_USER_PASSWORD is not set; the debschke account cannot log in until it has a password"
+            echo "::warning::REMO_AUTH_INITIAL_USER_PASSWORD is not set; the account_default account cannot log in until it has a password"
           fi
 
       - name: Set up JDK 25

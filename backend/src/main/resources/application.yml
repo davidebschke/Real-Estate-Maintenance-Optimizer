@@ -43,7 +43,7 @@ remo:
     session-duration: 8h
     # Must stay true wherever the app is served over HTTPS; only plain-HTTP local development may turn it off
     cookie-secure: ${REMO_AUTH_COOKIE_SECURE:true}
-    # Sets the password of the "debschke" account on startup while it has none yet; never logged or stored in plain text
+    # Sets the password of the "account_default" account on startup while it has none yet; never logged or stored in plain text
     initial-user-password: ${REMO_AUTH_INITIAL_USER_PASSWORD:}
     max-failed-logins-per-username-and-client: 5
     max-failed-logins-per-client: 20

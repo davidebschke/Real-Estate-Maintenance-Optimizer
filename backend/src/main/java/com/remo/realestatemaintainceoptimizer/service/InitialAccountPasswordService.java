@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class InitialAccountPasswordService {
 
-    static final String INITIAL_USERNAME = "debschke";
+    static final String INITIAL_USERNAME = "account_default";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialAccountPasswordService.class);
 
