@@ -149,7 +149,7 @@ docker compose exec postgres pg_isready -U remo -d remo
 
 #### 4. Configure the backend (`backend/.env`)
 
-The backend only starts with a secret signing key for the login. Locally it reads its values from the file `backend/.env` (listed in `.gitignore`, never committed). **Create the file anew** with exactly these three lines (do not copy `.env.example`: it additionally contains the production Supabase credentials):
+The backend only starts with a secret signing key for the login. Locally it reads its values from the file `backend/.env` (listed in `.gitignore`, never committed). **Create the file anew** with exactly these three lines (do not copy `.env.example`: it additionally contains placeholders for the production database connection, which would override the local Docker database):
 
 ```properties
 REMO_AUTH_JWT_SECRET=<random-value-of-at-least-32-characters>
@@ -228,7 +228,7 @@ The project is now fully running locally.
 | Backend aborts with `remo.auth.jwt-secret … must be set to at least 32 bytes` | `backend/.env` is missing, in the wrong folder or the value is too short; run `mvn spring-boot:run` in the `backend` folder. |
 | Backend reports `Connection refused` to the database | The container is not ready yet; check `docker compose ps` and `pg_isready` and start the backend again. |
 | `release version 25 not supported` or similar | An older JDK is in use; point `java -version` and `JAVA_HOME` to JDK 25. |
-| Login fails with wrong credentials | The password differs from `REMO_AUTH_INITIAL_USER_PASSWORD`. It is stored after the first login; to reset it run `docker compose down -v` (deletes the local database) and start again. |
+| Login fails with wrong credentials | The password differs from `REMO_AUTH_INITIAL_USER_PASSWORD`. It is stored as a hash on the first backend start and never overwritten; to reset it run `docker compose down -v` (deletes the local database) and start again. |
 | Login seems to work but you end up on the login page again | Check that `REMO_AUTH_COOKIE_SECURE=false` is in `backend/.env`; restart the backend after changing it. |
 | Vite prints "Port 5173 is in use, trying another one" and the page loads no data | The backend only allows the origin `http://localhost:5173` (CORS). Stop the program on port 5173 and restart `npm run dev`. |
 
@@ -330,7 +330,7 @@ docker compose exec postgres pg_isready -U remo -d remo
 
 #### 4. Backend konfigurieren (`backend/.env`)
 
-Das Backend startet nur mit einem geheimen Signaturschlüssel für die Anmeldung. Lokal liest es die Werte aus der Datei `backend/.env` (liegt in `.gitignore` und wird nie committet). Die Datei **neu anlegen** mit genau diesen drei Zeilen (nicht `.env.example` kopieren: dort stehen zusätzlich die Produktions-Zugangsdaten von Supabase):
+Das Backend startet nur mit einem geheimen Signaturschlüssel für die Anmeldung. Lokal liest es die Werte aus der Datei `backend/.env` (liegt in `.gitignore` und wird nie committet). Die Datei **neu anlegen** mit genau diesen drei Zeilen (nicht `.env.example` kopieren: dort stehen zusätzlich Platzhalter für die Produktions-Datenbankverbindung, die die lokale Docker-Datenbank überschreiben würden):
 
 ```properties
 REMO_AUTH_JWT_SECRET=<mindestens-32-zeichen-langer-zufallswert>
@@ -409,7 +409,7 @@ Damit läuft das Projekt vollständig lokal.
 | Backend bricht mit `remo.auth.jwt-secret … must be set to at least 32 bytes` ab | `backend/.env` fehlt, liegt im falschen Ordner oder der Wert ist zu kurz; `mvn spring-boot:run` im Ordner `backend` starten. |
 | Backend meldet `Connection refused` zur Datenbank | Container läuft noch nicht bereit; `docker compose ps` und `pg_isready` prüfen und das Backend erneut starten. |
 | `release version 25 not supported` o. ä. | Es läuft ein älteres JDK; `java -version` und `JAVA_HOME` auf JDK 25 stellen. |
-| Anmeldung schlägt mit „falsche Zugangsdaten" fehl | Das Passwort entspricht nicht `REMO_AUTH_INITIAL_USER_PASSWORD`. Nach der ersten Anmeldung wird es gespeichert; zum Zurücksetzen `docker compose down -v` ausführen (löscht die lokale Datenbank) und neu starten. |
+| Anmeldung schlägt mit „falsche Zugangsdaten" fehl | Das Passwort entspricht nicht `REMO_AUTH_INITIAL_USER_PASSWORD`. Es wird beim ersten Backend-Start als Hash gespeichert und nie überschrieben; zum Zurücksetzen `docker compose down -v` ausführen (löscht die lokale Datenbank) und neu starten. |
 | Anmeldung scheint zu klappen, aber man landet wieder auf der Anmeldeseite | Prüfen, ob `REMO_AUTH_COOKIE_SECURE=false` in `backend/.env` steht; Backend nach einer Änderung neu starten. |
 | Vite meldet „Port 5173 is in use, trying another one" und die Seite lädt keine Daten | Das Backend erlaubt als Herkunft nur `http://localhost:5173` (CORS). Das Programm auf Port 5173 beenden und `npm run dev` neu starten. |
 
