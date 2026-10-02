@@ -87,6 +87,25 @@ describe('ProfilePasswordConfirmDialog', () => {
     expect(bodyElement('#profile-confirm-current-password').element.value).toBe('')
   })
 
+  it('ignores the enter key while a save is running', async () => {
+    const wrapper = await mountDialog({ isSaving: true })
+
+    await bodyElement('#profile-confirm-current-password').setValue('mein passwort')
+    await bodyElement('#profile-confirm-current-password').trigger('keydown.enter')
+
+    expect(wrapper.emitted('confirm')).toBeUndefined()
+  })
+
+  it('forgets the typed password once it was closed', async () => {
+    const wrapper = await mountDialog()
+    await bodyElement('#profile-confirm-current-password').setValue('mein passwort')
+
+    await wrapper.setProps({ visible: false })
+    await flushPromises()
+
+    expect((wrapper.vm as unknown as { password: string }).password).toBe('')
+  })
+
   it('closes via the cancel button', async () => {
     const wrapper = await mountDialog()
 

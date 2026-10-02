@@ -48,7 +48,7 @@
       "usernameTaken": "Dieser Benutzername ist bereits vergeben.",
       "currentPasswordIncorrect": "Das bisherige Passwort ist falsch.",
       "invalidInput": "Die Eingaben sind ungültig. Bitte prüfen Sie sie und versuchen Sie es erneut.",
-      "tooManyRequests": "Zu viele fehlgeschlagene Versuche. Bitte versuchen Sie es in einigen Minuten erneut.",
+      "tooManyRequests": "Zu viele Versuche. Bitte versuchen Sie es in einigen Minuten erneut.",
       "generic": "Die Änderung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut."
     }
   }

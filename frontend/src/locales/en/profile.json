@@ -48,7 +48,7 @@
       "usernameTaken": "This username is already taken.",
       "currentPasswordIncorrect": "The current password is incorrect.",
       "invalidInput": "The input is invalid. Please check it and try again.",
-      "tooManyRequests": "Too many failed attempts. Please try again in a few minutes.",
+      "tooManyRequests": "Too many attempts. Please try again in a few minutes.",
       "generic": "The change could not be saved. Please try again."
     }
   }

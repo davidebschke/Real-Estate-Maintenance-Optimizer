@@ -6,20 +6,20 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 
-defineProps<{ isSaving: boolean; errorMessage: string | null }>()
+const props = defineProps<{ isSaving: boolean; errorMessage: string | null }>()
 const emit = defineEmits<{ confirm: [password: string] }>()
 
 const { t } = useI18n()
 const visible = defineModel<boolean>('visible', { required: true })
 const password = ref('')
 
-watch(visible, (isVisible) => {
-  if (isVisible) password.value = ''
+watch(visible, () => {
+  password.value = ''
 })
 
-/** Hands the entered current password to the caller once something was typed. */
+/** Hands the entered current password to the caller once something was typed and no save is running. */
 function confirm(): void {
-  if (password.value.length === 0) return
+  if (password.value.length === 0 || props.isSaving) return
   emit('confirm', password.value)
 }
 </script>

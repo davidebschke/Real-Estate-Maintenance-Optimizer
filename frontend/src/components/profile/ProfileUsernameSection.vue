@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -28,10 +28,6 @@ const confirmErrorMessage = computed(() =>
   failureReason.value === 'currentPasswordIncorrect' ? t('profile.errors.currentPasswordIncorrect') : null,
 )
 
-watch(isConfirming, (isOpen) => {
-  if (!isOpen && failureReason.value === 'currentPasswordIncorrect') clearFeedback()
-})
-
 /** Asks for the current password before the entered username is saved. */
 function requestSave(): void {
   if (isInvalid.value || isUnchanged.value) return
@@ -41,6 +37,7 @@ function requestSave(): void {
 
 /** Saves the entered username with the confirmed password; only a wrong password keeps the confirmation open for another try. */
 async function save(currentPassword: string): Promise<void> {
+  if (isSaving.value) return
   if (await submit(trimmedUsername.value, currentPassword)) {
     username.value = authStore.currentUser?.username ?? username.value
     isConfirming.value = false
@@ -74,7 +71,7 @@ async function save(currentPassword: string): Promise<void> {
       </p>
     </div>
 
-    <p v-if="failureReason && !isConfirming" class="profile-settings-dialog__field-error" role="alert">
+    <p v-if="failureReason && failureReason !== 'currentPasswordIncorrect'" class="profile-settings-dialog__field-error" role="alert">
       {{ t(`profile.errors.${failureReason}`) }}
     </p>
     <p v-if="isSaved" class="profile-settings-dialog__success" role="status">{{ t('profile.username.success') }}</p>
