@@ -46,7 +46,7 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL('/calendar')
     await expect(page.locator('.calendar-toolbar')).toBeVisible()
     await expect(page.locator('.user-account-dropdown__trigger')).toContainText(
-      process.env.E2E_DISPLAY_NAME ?? 'David Ebschke',
+      process.env.E2E_DISPLAY_NAME ?? 'Account_Default',
     )
   })
 
