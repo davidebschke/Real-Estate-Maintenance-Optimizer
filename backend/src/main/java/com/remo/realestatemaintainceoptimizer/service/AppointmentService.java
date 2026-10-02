@@ -27,6 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
+@EnableConfigurationProperties(AppointmentSchedulingProperties.class)
 public class AppointmentService {
 
     static final String SCOPE_SERIES = "series";

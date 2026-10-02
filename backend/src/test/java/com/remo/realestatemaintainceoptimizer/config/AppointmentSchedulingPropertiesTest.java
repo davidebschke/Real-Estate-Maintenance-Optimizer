@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * Verifies that {@code remo.appointments.*} properties bind from application.yml and that a negative buffer is rejected.
+ * Verifies that {@code remo.appointments.*} properties bind from application.yml and that a negative buffer or one longer than a day is rejected.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -32,5 +32,11 @@ class AppointmentSchedulingPropertiesTest {
     @Test
     void rejectsANegativeBuffer() {
         assertThatThrownBy(() -> new AppointmentSchedulingProperties(-1)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rejectsABufferLongerThanADay() {
+        assertThat(new AppointmentSchedulingProperties(1440).bufferMinutes()).isEqualTo(1440);
+        assertThatThrownBy(() -> new AppointmentSchedulingProperties(1441)).isInstanceOf(IllegalArgumentException.class);
     }
 }

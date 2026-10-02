@@ -9,9 +9,12 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "remo.appointments")
 public record AppointmentSchedulingProperties(@DefaultValue("15") int bufferMinutes) {
 
+    static final int MAX_BUFFER_MINUTES = 24 * 60;
+
     public AppointmentSchedulingProperties {
-        if (bufferMinutes < 0) {
-            throw new IllegalArgumentException("remo.appointments.buffer-minutes must not be negative");
+        if (bufferMinutes < 0 || bufferMinutes > MAX_BUFFER_MINUTES) {
+            throw new IllegalArgumentException(
+                    "remo.appointments.buffer-minutes must be between 0 and " + MAX_BUFFER_MINUTES);
         }
     }
 }
