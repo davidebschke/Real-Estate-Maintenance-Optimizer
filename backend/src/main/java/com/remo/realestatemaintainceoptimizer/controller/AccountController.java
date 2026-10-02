@@ -44,12 +44,12 @@ public class AccountController {
     }
 
     /**
-     * Changes the username of the logged-in account.
+     * Changes the username of the logged-in account after verifying its current password.
      */
     @PutMapping("/username")
     public CurrentUserResponse changeUsername(
             @AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody ChangeUsernameRequest request) {
-        return CurrentUserResponse.from(accountService.changeUsername(user.id(), request.username()), schedulingProperties);
+        return CurrentUserResponse.from(accountService.changeUsername(user.id(), request.username(), request.currentPassword()), schedulingProperties);
     }
 
     /**

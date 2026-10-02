@@ -49,11 +49,12 @@ describe('accountService', () => {
   it('changes the username and returns the updated account', async () => {
     vi.mocked(axios.put).mockResolvedValue({ data: userDto })
 
-    const user = await changeUsername('neuer-name')
+    const user = await changeUsername('neuer-name', 'geheimes passwort')
 
     expect(user.username).toBe('neuer-name')
     expect(axios.put).toHaveBeenCalledWith(expect.stringContaining('/api/account/username'), {
       username: 'neuer-name',
+      currentPassword: 'geheimes passwort',
     })
   })
 

@@ -114,28 +114,96 @@ describe('ProfileSettingsDialog', () => {
       expect(sectionButton('profile-username-heading').attributes('disabled')).toBeDefined()
     })
 
-    it('saves the trimmed username and reports success', async () => {
+    /** Types the given password into the confirmation dialog and confirms it. */
+    async function confirmWithPassword(password: string) {
+      await bodyInput('#profile-confirm-current-password').setValue(password)
+      await new DOMWrapper(
+        document.body.querySelector('.profile-password-confirm-dialog__submit') as HTMLButtonElement,
+      ).trigger('click')
+      await flushPromises()
+    }
+
+    it('asks for the current password when saving and does not save before it was confirmed', async () => {
+      await mountDialog()
+
+      await bodyInput('#profile-username').setValue('neuer-name')
+      await sectionButton('profile-username-heading').trigger('click')
+      await flushPromises()
+
+      expect(document.body.querySelector('.profile-password-confirm-dialog')).not.toBeNull()
+      expect(document.body.textContent).toContain('Bitte geben Sie zur Bestätigung Ihr aktuelles Passwort ein.')
+      expect(accountService.changeUsername).not.toHaveBeenCalled()
+    })
+
+    it('cannot confirm without a typed password', async () => {
+      await mountDialog()
+      await bodyInput('#profile-username').setValue('neuer-name')
+      await sectionButton('profile-username-heading').trigger('click')
+      await flushPromises()
+
+      const confirmButton = document.body.querySelector(
+        '.profile-password-confirm-dialog__submit',
+      ) as HTMLButtonElement
+
+      expect(confirmButton.disabled).toBe(true)
+    })
+
+    it('saves the trimmed username with the confirmed password and reports success', async () => {
       vi.mocked(accountService.changeUsername).mockResolvedValue({ ...baseUser, username: 'neuer-name' })
       await mountDialog()
 
       await bodyInput('#profile-username').setValue('  Neuer-Name ')
       await sectionButton('profile-username-heading').trigger('click')
       await flushPromises()
+      await confirmWithPassword('mein passwort')
 
-      expect(accountService.changeUsername).toHaveBeenCalledWith('Neuer-Name')
+      expect(accountService.changeUsername).toHaveBeenCalledWith('Neuer-Name', 'mein passwort')
       expect(useAuthStore().currentUser?.username).toBe('neuer-name')
       expect(bodyInput('#profile-username').element.value).toBe('neuer-name')
       expect(document.body.textContent).toContain('Der Benutzername wurde geändert.')
+      expect(document.body.querySelector('.profile-password-confirm-dialog')).toBeNull()
     })
 
-    it('tells the user when the username is already taken', async () => {
+    it('keeps the confirmation open with an error when the password is wrong', async () => {
+      vi.mocked(accountService.changeUsername).mockRejectedValue(httpError(422))
+      await mountDialog()
+
+      await bodyInput('#profile-username').setValue('neuer-name')
+      await sectionButton('profile-username-heading').trigger('click')
+      await flushPromises()
+      await confirmWithPassword('falsches passwort')
+
+      expect(document.body.querySelector('.profile-password-confirm-dialog')).not.toBeNull()
+      expect(document.body.textContent).toContain('Das bisherige Passwort ist falsch.')
+      expect(useAuthStore().currentUser?.username).toBe('debschke')
+    })
+
+    it('does not rename when the confirmation is cancelled', async () => {
+      await mountDialog()
+      await bodyInput('#profile-username').setValue('neuer-name')
+      await sectionButton('profile-username-heading').trigger('click')
+      await flushPromises()
+
+      const cancelButton = document.body.querySelector(
+        '.profile-password-confirm-dialog .profile-settings-dialog__close',
+      ) as HTMLButtonElement
+      await new DOMWrapper(cancelButton).trigger('click')
+      await flushPromises()
+
+      expect(accountService.changeUsername).not.toHaveBeenCalled()
+      expect(document.body.querySelector('.profile-password-confirm-dialog')).toBeNull()
+    })
+
+    it('closes the confirmation and tells the user when the username is already taken', async () => {
       vi.mocked(accountService.changeUsername).mockRejectedValue(httpError(409))
       await mountDialog()
 
       await bodyInput('#profile-username').setValue('vergeben')
       await sectionButton('profile-username-heading').trigger('click')
       await flushPromises()
+      await confirmWithPassword('mein passwort')
 
+      expect(document.body.querySelector('.profile-password-confirm-dialog')).toBeNull()
       expect(document.body.textContent).toContain('Dieser Benutzername ist bereits vergeben.')
       expect(useAuthStore().currentUser?.username).toBe('debschke')
     })

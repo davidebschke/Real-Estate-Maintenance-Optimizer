@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import ProfilePasswordConfirmDialog from '@/components/profile/ProfilePasswordConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsSubmission } from '@/composables/useSettingsSubmission'
 import { useTouchedFields } from '@/composables/useTouchedFields'
@@ -12,9 +13,10 @@ import { isValidUsername } from '@/utils/accountFieldValidation'
 const { t } = useI18n()
 const authStore = useAuthStore()
 const username = ref(authStore.currentUser?.username ?? '')
+const isConfirming = ref(false)
 const { touched, markTouched } = useTouchedFields(['username'])
 const { isSaving, isSaved, failureReason, submit, clearFeedback } = useSettingsSubmission(
-  (name: string) => authStore.changeUsername(name),
+  (name: string, currentPassword: string) => authStore.changeUsername(name, currentPassword),
   'usernameTaken',
 )
 
@@ -22,13 +24,29 @@ const trimmedUsername = computed(() => username.value.trim())
 const isInvalid = computed(() => !isValidUsername(trimmedUsername.value))
 const isUnchanged = computed(() => trimmedUsername.value.toLowerCase() === authStore.currentUser?.username)
 const isUsernameErrorShown = computed(() => touched.username && isInvalid.value)
+const confirmErrorMessage = computed(() =>
+  failureReason.value === 'currentPasswordIncorrect' ? t('profile.errors.currentPasswordIncorrect') : null,
+)
 
-/** Saves the entered username and shows the normalized one the backend stored. */
-async function save(): Promise<void> {
+watch(isConfirming, (isOpen) => {
+  if (!isOpen && failureReason.value === 'currentPasswordIncorrect') clearFeedback()
+})
+
+/** Asks for the current password before the entered username is saved. */
+function requestSave(): void {
   if (isInvalid.value || isUnchanged.value) return
-  if (await submit(trimmedUsername.value)) {
+  clearFeedback()
+  isConfirming.value = true
+}
+
+/** Saves the entered username with the confirmed password; only a wrong password keeps the confirmation open for another try. */
+async function save(currentPassword: string): Promise<void> {
+  if (await submit(trimmedUsername.value, currentPassword)) {
     username.value = authStore.currentUser?.username ?? username.value
+    isConfirming.value = false
+    return
   }
+  if (failureReason.value !== 'currentPasswordIncorrect') isConfirming.value = false
 }
 </script>
 
@@ -49,23 +67,30 @@ async function save(): Promise<void> {
         :aria-describedby="isUsernameErrorShown ? 'profile-username-error' : undefined"
         @blur="markTouched('username')"
         @input="clearFeedback"
-        @keydown.enter.prevent="save"
+        @keydown.enter.prevent="requestSave"
       />
       <p v-if="isUsernameErrorShown" id="profile-username-error" class="profile-settings-dialog__field-error">
         {{ t('profile.username.invalidError') }}
       </p>
     </div>
 
-    <p v-if="failureReason" class="profile-settings-dialog__field-error" role="alert">
+    <p v-if="failureReason && !isConfirming" class="profile-settings-dialog__field-error" role="alert">
       {{ t(`profile.errors.${failureReason}`) }}
     </p>
     <p v-if="isSaved" class="profile-settings-dialog__success" role="status">{{ t('profile.username.success') }}</p>
 
     <Button
       class="profile-settings-dialog__submit"
-      :label="isSaving ? t('profile.saving') : t('profile.username.submit')"
+      :label="t('profile.username.submit')"
       :disabled="isInvalid || isUnchanged || isSaving"
-      @click="save"
+      @click="requestSave"
+    />
+
+    <ProfilePasswordConfirmDialog
+      v-model:visible="isConfirming"
+      :is-saving="isSaving"
+      :error-message="confirmErrorMessage"
+      @confirm="save"
     />
   </section>
 </template>

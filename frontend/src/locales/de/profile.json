@@ -5,6 +5,13 @@
     "close": "Schließen",
     "demoUnavailable": "Im Demo-Account nicht verfügbar",
     "saving": "Wird gespeichert …",
+    "confirm": {
+      "title": "Passwort bestätigen",
+      "description": "Bitte geben Sie zur Bestätigung Ihr aktuelles Passwort ein.",
+      "label": "Aktuelles Passwort",
+      "submit": "Bestätigen und speichern",
+      "cancel": "Abbrechen"
+    },
     "username": {
       "heading": "Benutzername",
       "description": "Mit diesem Namen melden Sie sich an. Groß- und Kleinschreibung wird nicht unterschieden.",

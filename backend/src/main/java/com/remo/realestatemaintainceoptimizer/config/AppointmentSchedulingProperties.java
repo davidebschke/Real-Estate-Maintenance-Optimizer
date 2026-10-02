@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * Binds appointment scheduling configuration, i.e. the minimum gap kept between two appointments, under the {@code remo.appointments} prefix.
  */
 @ConfigurationProperties(prefix = "remo.appointments")
-public record AppointmentSchedulingProperties(@DefaultValue("15") int bufferMinutes) {
+public record AppointmentSchedulingProperties(@DefaultValue("5") int bufferMinutes) {
 
     public static final int MAX_BUFFER_MINUTES = 24 * 60;
 

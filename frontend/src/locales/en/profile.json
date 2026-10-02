@@ -5,6 +5,13 @@
     "close": "Close",
     "demoUnavailable": "Not available for demo accounts",
     "saving": "Saving …",
+    "confirm": {
+      "title": "Confirm password",
+      "description": "Please enter your current password to confirm.",
+      "label": "Current password",
+      "submit": "Confirm and save",
+      "cancel": "Cancel"
+    },
     "username": {
       "heading": "Username",
       "description": "You log in with this name. It is not case-sensitive.",

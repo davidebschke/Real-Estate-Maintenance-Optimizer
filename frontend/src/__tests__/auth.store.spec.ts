@@ -186,9 +186,9 @@ describe('useAuthStore', () => {
     store.currentUser = createUser()
     fillDataStoresOfPreviousAccount()
 
-    await store.changeUsername('neuer-name')
+    await store.changeUsername('neuer-name', 'geheim')
 
-    expect(accountService.changeUsername).toHaveBeenCalledWith('neuer-name')
+    expect(accountService.changeUsername).toHaveBeenCalledWith('neuer-name', 'geheim')
     expect(store.currentUser?.username).toBe('neuer-name')
     expect(usePropertiesStore().properties).toHaveLength(1)
   })
@@ -198,7 +198,7 @@ describe('useAuthStore', () => {
     const store = useAuthStore()
     store.currentUser = createUser()
 
-    await expect(store.changeUsername('vergeben')).rejects.toThrow('taken')
+    await expect(store.changeUsername('vergeben', 'geheim')).rejects.toThrow('taken')
 
     expect(store.currentUser?.username).toBe('debschke')
   })

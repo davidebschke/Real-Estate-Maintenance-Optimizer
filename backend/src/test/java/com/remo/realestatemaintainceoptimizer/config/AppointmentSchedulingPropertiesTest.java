@@ -21,7 +21,7 @@ class AppointmentSchedulingPropertiesTest {
 
     @Test
     void bindsTheConfiguredBufferMinutes() {
-        assertThat(schedulingProperties.bufferMinutes()).isEqualTo(15);
+        assertThat(schedulingProperties.bufferMinutes()).isEqualTo(5);
     }
 
     @Test
@@ -42,10 +42,10 @@ class AppointmentSchedulingPropertiesTest {
 
     @Test
     void anAccountsOwnBufferTakesPrecedenceOverTheConfiguredDefault() {
-        AppointmentSchedulingProperties properties = new AppointmentSchedulingProperties(15);
+        AppointmentSchedulingProperties properties = new AppointmentSchedulingProperties(5);
 
         assertThat(properties.bufferMinutesFor(30)).isEqualTo(30);
         assertThat(properties.bufferMinutesFor(0)).isZero();
-        assertThat(properties.bufferMinutesFor(null)).isEqualTo(15);
+        assertThat(properties.bufferMinutesFor(null)).isEqualTo(5);
     }
 }

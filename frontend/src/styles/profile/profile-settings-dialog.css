@@ -136,3 +136,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.profile-settings-dialog.profile-password-confirm-dialog.p-dialog {
+  width: min(28rem, 94vw);
+}
+
+.profile-password-confirm-dialog__actions {
+  align-items: center;
+  gap: 1rem;
+}

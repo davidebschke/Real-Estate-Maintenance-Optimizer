@@ -67,7 +67,7 @@ class AccountControllerTest {
 
     @Test
     void changingTheUsernameStoresItNormalizedAndReturnsTheUpdatedAccount() throws Exception {
-        putJson("/api/account/username", "{\"username\":\"New.Name_1\"}")
+        putJson("/api/account/username", usernameBody("New.Name_1", PASSWORD))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username", equalTo("new.name_1")));
 
@@ -76,7 +76,7 @@ class AccountControllerTest {
 
     @Test
     void theSessionStaysValidAfterChangingTheUsername() throws Exception {
-        putJson("/api/account/username", "{\"username\":\"renamed-user\"}").andExpect(status().isOk());
+        putJson("/api/account/username", usernameBody("renamed-user", PASSWORD)).andExpect(status().isOk());
 
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isOk())
@@ -84,17 +84,31 @@ class AccountControllerTest {
     }
 
     @Test
+    void aWrongPasswordRejectsTheUsernameChangeAndKeepsTheName() throws Exception {
+        putJson("/api/account/username", usernameBody("brand-new-name", "wrong password"), "de")
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.message", equalTo("Das aktuelle Passwort ist falsch.")));
+
+        assertThat(userRepository.findById(account.id()).orElseThrow().username()).isEqualTo(account.username());
+    }
+
+    @Test
+    void aMissingPasswordRejectsTheUsernameChange() throws Exception {
+        putJson("/api/account/username", "{\"username\":\"brand-new-name\"}").andExpect(status().isBadRequest());
+    }
+
+    @Test
     void aUsernameOfAnotherAccountIsRejectedWithALocalizedConflict() throws Exception {
         User other = TestAccounts.saveRegularAccount(userRepository);
 
-        putJson("/api/account/username", "{\"username\":\"" + other.username() + "\"}", "de")
+        putJson("/api/account/username", usernameBody(other.username(), PASSWORD), "de")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message", equalTo("Dieser Benutzername ist bereits vergeben.")));
     }
 
     @Test
     void keepingTheCurrentUsernameSucceeds() throws Exception {
-        putJson("/api/account/username", "{\"username\":\"" + account.username().toUpperCase() + "\"}")
+        putJson("/api/account/username", usernameBody(account.username().toUpperCase(), PASSWORD))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username", equalTo(account.username())));
     }
@@ -102,7 +116,7 @@ class AccountControllerTest {
     @Test
     void invalidUsernamesAreRejected() throws Exception {
         for (String invalid : new String[] {"ab", "with space", "ümlaut", "", "a".repeat(51), "demo-abc", "DEMO-abc"}) {
-            putJson("/api/account/username", "{\"username\":\"" + invalid + "\"}").andExpect(status().isBadRequest());
+            putJson("/api/account/username", usernameBody(invalid, PASSWORD)).andExpect(status().isBadRequest());
         }
     }
 
@@ -160,7 +174,7 @@ class AccountControllerTest {
 
         putJson("/api/account/password", passwordBody(PASSWORD, NEW_PASSWORD), "en")
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.message", equalTo("Too many failed password changes. Please try again in a few minutes.")));
+                .andExpect(jsonPath("$.message", equalTo("Too many incorrect password entries. Please try again in a few minutes.")));
     }
 
     @Test
@@ -182,7 +196,7 @@ class AccountControllerTest {
 
     @Test
     void anAccountWithoutItsOwnBufferReportsTheConfiguredDefault() throws Exception {
-        mockMvc.perform(get("/api/auth/me")).andExpect(jsonPath("$.appointmentBufferMinutes", equalTo(15)));
+        mockMvc.perform(get("/api/auth/me")).andExpect(jsonPath("$.appointmentBufferMinutes", equalTo(5)));
     }
 
     @Test
@@ -198,7 +212,7 @@ class AccountControllerTest {
         MockMvc demoMockMvc = TestAccounts.mockMvcAs(context, jwtService, demo);
 
         demoMockMvc.perform(put("/api/account/username").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"free-name\"}").header("Accept-Language", "de"))
+                        .content(usernameBody("free-name", PASSWORD)).header("Accept-Language", "de"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", equalTo("Demo-Accounts können keine Profileinstellungen ändern.")));
         demoMockMvc.perform(put("/api/account/password").contentType(MediaType.APPLICATION_JSON)
@@ -228,6 +242,10 @@ class AccountControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Accept-Language", language)
                 .content(body));
+    }
+
+    private static String usernameBody(String username, String currentPassword) {
+        return "{\"username\":\"" + username + "\",\"currentPassword\":\"" + currentPassword + "\"}";
     }
 
     private static String passwordBody(String currentPassword, String newPassword) {

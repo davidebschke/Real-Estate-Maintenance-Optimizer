@@ -63,7 +63,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.displayName", equalTo("Test User")))
                 .andExpect(jsonPath("$.demoAccount", equalTo(false)))
                 .andExpect(jsonPath("$.remainingPropertyCreations", nullValue()))
-                .andExpect(jsonPath("$.appointmentBufferMinutes", equalTo(15)))
+                .andExpect(jsonPath("$.appointmentBufferMinutes", equalTo(5)))
                 .andReturn();
 
         String setCookie = sessionSetCookieHeader(result);

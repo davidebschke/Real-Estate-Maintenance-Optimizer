@@ -4,9 +4,12 @@ import type { AccountFailureReason, CurrentUser } from '@/types/auth'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
-/** Changes the username of the logged-in account and returns the updated account. */
-export async function changeUsername(username: string): Promise<CurrentUser> {
-  const { data } = await axios.put<CurrentUserResponseDto>(`${apiBaseUrl}/api/account/username`, { username })
+/** Changes the username of the logged-in account after confirming its current password and returns the updated account. */
+export async function changeUsername(username: string, currentPassword: string): Promise<CurrentUser> {
+  const { data } = await axios.put<CurrentUserResponseDto>(`${apiBaseUrl}/api/account/username`, {
+    username,
+    currentPassword,
+  })
   return toCurrentUser(data)
 }
 

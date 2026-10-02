@@ -204,8 +204,8 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath(
                         "$.message",
                         equalTo("The selected time range overlaps with an existing appointment of the same account or leaves less than the required buffer time to it.")))
-                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:15:00")))
-                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:15:00")));
+                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:05:00")))
+                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:05:00")));
 
         mockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(1)));
     }
@@ -300,8 +300,8 @@ class AppointmentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"start\": \"2026-08-11T14:00:00\", \"durationMinutes\": 60}"))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:15:00")))
-                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:15:00")));
+                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:05:00")))
+                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:05:00")));
 
         mockMvc.perform(get("/api/appointments/{id}", id))
                 .andExpect(jsonPath("$.start", equalTo("2026-08-12T09:00:00")));

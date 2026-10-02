@@ -51,32 +51,55 @@ class AccountServiceTest {
 
     @Test
     void changingTheUsernameTrimsAndLowercasesIt() {
-        User renamed = service.changeUsername(account.id(), "  Fresh-Name ");
+        User renamed = service.changeUsername(account.id(), "  Fresh-Name ", PASSWORD);
 
         assertThat(renamed.username()).isEqualTo("fresh-name");
         assertThat(userRepository.findByUsername("fresh-name")).isPresent();
     }
 
     @Test
+    void changingTheUsernameWithAWrongPasswordIsRejected() {
+        assertThatThrownBy(() -> service.changeUsername(account.id(), "fresh-name", "wrong password"))
+                .isInstanceOf(InvalidCurrentPasswordException.class);
+        assertThat(userRepository.findById(account.id()).orElseThrow().username()).isEqualTo(account.username());
+    }
+
+    @Test
+    void wrongPasswordsOfUsernameAndPasswordChangesShareOneLimit() {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            assertThatThrownBy(() -> service.changeUsername(account.id(), "fresh-name", "wrong password"))
+                    .isInstanceOf(InvalidCurrentPasswordException.class);
+        }
+        for (int attempt = 0; attempt < 2; attempt++) {
+            assertThatThrownBy(() -> service.changePassword(account.id(), "wrong password", NEW_PASSWORD))
+                    .isInstanceOf(InvalidCurrentPasswordException.class);
+        }
+
+        assertThatThrownBy(() -> service.changeUsername(account.id(), "fresh-name", PASSWORD))
+                .isInstanceOfSatisfying(RateLimitExceededException.class, exception -> assertThat(exception.reasonCode())
+                        .isEqualTo(RateLimitExceededException.REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS));
+    }
+
+    @Test
     void changingTheUsernameToTheOwnOneIsANoOp() {
-        assertThat(service.changeUsername(account.id(), account.username()).username()).isEqualTo(account.username());
+        assertThat(service.changeUsername(account.id(), account.username(), PASSWORD).username()).isEqualTo(account.username());
     }
 
     @Test
     void changingTheUsernameToOneOfAnotherAccountIsRejected() {
         User other = TestAccounts.saveRegularAccount(userRepository);
 
-        assertThatThrownBy(() -> service.changeUsername(account.id(), other.username().toUpperCase()))
+        assertThatThrownBy(() -> service.changeUsername(account.id(), other.username().toUpperCase(), PASSWORD))
                 .isInstanceOf(UsernameAlreadyTakenException.class);
     }
 
     @Test
     void tooManyUsernameChangesAreRateLimitedSoTakenNamesCannotBeEnumerated() {
         for (int attempt = 0; attempt < 10; attempt++) {
-            service.changeUsername(account.id(), "name-" + attempt);
+            service.changeUsername(account.id(), "name-" + attempt, PASSWORD);
         }
 
-        assertThatThrownBy(() -> service.changeUsername(account.id(), "name-final"))
+        assertThatThrownBy(() -> service.changeUsername(account.id(), "name-final", PASSWORD))
                 .isInstanceOfSatisfying(RateLimitExceededException.class, exception -> assertThat(exception.reasonCode())
                         .isEqualTo(RateLimitExceededException.REASON_TOO_MANY_USERNAME_CHANGES));
     }
@@ -156,7 +179,7 @@ class AccountServiceTest {
     void demoAccountsAreRejectedForEveryChange() {
         User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 3, 3);
 
-        assertThatThrownBy(() -> service.changeUsername(demo.id(), "free-name")).isInstanceOf(DemoAccountRestrictedException.class);
+        assertThatThrownBy(() -> service.changeUsername(demo.id(), "free-name", PASSWORD)).isInstanceOf(DemoAccountRestrictedException.class);
         assertThatThrownBy(() -> service.changePassword(demo.id(), PASSWORD, NEW_PASSWORD))
                 .isInstanceOf(DemoAccountRestrictedException.class);
         assertThatThrownBy(() -> service.changeAppointmentBufferMinutes(demo.id(), 30))

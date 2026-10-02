@@ -46,7 +46,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 @Import(TestcontainersConfiguration.class)
 class AppointmentServiceTest {
 
-    private static final int BUFFER_MINUTES = 15;
+    private static final int BUFFER_MINUTES = 5;
 
     @Autowired
     private AppointmentService service;
@@ -107,8 +107,8 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 30));
-                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 30));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 20));
+                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 20));
                 });
     }
 
@@ -233,7 +233,7 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 15));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 5));
                     assertThat(exception.suggestedStart().getDayOfWeek()).isNotEqualTo(DayOfWeek.SUNDAY);
                 });
     }

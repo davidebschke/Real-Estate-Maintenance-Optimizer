@@ -44,11 +44,12 @@ public class AccountService {
     }
 
     /**
-     * Renames the given regular account, rejecting a username that already belongs to another account; the running session stays valid since it identifies the account by id.
+     * Renames the given regular account after verifying its current password, rejecting a username that already belongs to another account; the running session stays valid since it identifies the account by id.
      * Attempts are limited per account, so the rejection of a taken name cannot be used to enumerate usernames at will.
      */
-    public User changeUsername(String userId, String newUsername) {
+    public User changeUsername(String userId, String newUsername, String currentPassword) {
         User account = loadRegularAccount(userId);
+        requireCurrentPassword(account, currentPassword);
         String normalizedUsername = User.normalizeUsername(newUsername);
         if (normalizedUsername.equals(account.username())) {
             return account;
@@ -69,14 +70,7 @@ public class AccountService {
      */
     public User changePassword(String userId, String currentPassword, String newPassword) {
         User account = loadRegularAccount(userId);
-        if (!failedPasswordChangesPerAccount.tryAcquire(userId)) {
-            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS);
-        }
-        String storedHash = account.passwordHash();
-        if (storedHash == null || !passwordEncoder.matches(currentPassword, storedHash)) {
-            throw new InvalidCurrentPasswordException();
-        }
-        failedPasswordChangesPerAccount.reset(userId);
+        requireCurrentPassword(account, currentPassword);
         requireAcceptableNewPassword(currentPassword, newPassword);
 
         account.changePasswordHash(passwordEncoder.encode(newPassword));
@@ -99,6 +93,21 @@ public class AccountService {
             throw new DemoAccountRestrictedException();
         }
         return account;
+    }
+
+    /**
+     * Throws unless the given password is the account's current one; wrong passwords of both the username and the
+     * password change count against one per-account limit, so the password cannot be guessed through either operation.
+     */
+    private void requireCurrentPassword(User account, String currentPassword) {
+        if (!failedPasswordChangesPerAccount.tryAcquire(account.id())) {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS);
+        }
+        String storedHash = account.passwordHash();
+        if (storedHash == null || !passwordEncoder.matches(currentPassword, storedHash)) {
+            throw new InvalidCurrentPasswordException();
+        }
+        failedPasswordChangesPerAccount.reset(account.id());
     }
 
     private static void requireAcceptableNewPassword(String currentPassword, String newPassword) {

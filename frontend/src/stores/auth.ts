@@ -58,9 +58,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** Renames the logged-in account; rejects with the backend error when the name is taken or invalid. */
-  async function changeUsername(username: string) {
-    currentUser.value = await accountService.changeUsername(username)
+  /** Renames the logged-in account after confirming its current password; rejects with the backend error when the name is taken or invalid or the password is wrong. */
+  async function changeUsername(username: string, currentPassword: string) {
+    currentUser.value = await accountService.changeUsername(username, currentPassword)
   }
 
   /** Changes the password; the backend ends all other sessions and keeps this one with a fresh cookie, rejecting with its error when the current password is wrong. */
