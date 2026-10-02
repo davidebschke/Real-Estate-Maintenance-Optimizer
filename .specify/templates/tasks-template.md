@@ -152,11 +152,12 @@ Examples of foundational tasks (adjust based on your project):
 **Purpose**: Improvements that affect multiple user stories
 
 - [ ] TXXX [P] Documentation updates in docs/
-- [ ] TXXX Code cleanup and refactoring
+- [ ] TXXX Refactoring review of every file this feature added or changed (`refactoring-review` skill, `.claude/rules/refactoring.md`), applied moves committed as separate `refactor:` commits
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX Code review of the finished feature (`code-review` skill at the effort level from `.claude/rules/git-workflow.md`), confirmed findings fixed in a separate commit
 
 ---
 
