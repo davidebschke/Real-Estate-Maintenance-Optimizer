@@ -2,8 +2,11 @@ import { ref } from 'vue'
 import { toAccountFailureReason } from '@/services/accountService'
 import type { AccountFailureReason } from '@/types/auth'
 
-/** Tracks the saving state, success and failure reason of one profile settings form around the given save action. */
-export function useSettingsSubmission<Input extends unknown[]>(save: (...input: Input) => Promise<unknown>) {
+/** Tracks the saving state, success and failure reason of one profile settings form around the given save action, mapping a 409 to the given conflict reason. */
+export function useSettingsSubmission<Input extends unknown[]>(
+  save: (...input: Input) => Promise<unknown>,
+  conflictReason: AccountFailureReason = 'generic',
+) {
   const isSaving = ref(false)
   const isSaved = ref(false)
   const failureReason = ref<AccountFailureReason | null>(null)
@@ -19,7 +22,7 @@ export function useSettingsSubmission<Input extends unknown[]>(save: (...input: 
       isSaved.value = true
       return true
     } catch (error) {
-      failureReason.value = toAccountFailureReason(error)
+      failureReason.value = toAccountFailureReason(error, conflictReason)
       return false
     } finally {
       isSaving.value = false

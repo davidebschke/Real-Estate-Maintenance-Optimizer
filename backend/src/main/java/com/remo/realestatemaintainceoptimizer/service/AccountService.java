@@ -1,6 +1,5 @@
 package com.remo.realestatemaintainceoptimizer.service;
 
-import com.remo.realestatemaintainceoptimizer.config.AuthProperties;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.DemoAccountRestrictedException;
@@ -13,6 +12,7 @@ import com.remo.realestatemaintainceoptimizer.security.JwtService;
 import com.remo.realestatemaintainceoptimizer.security.SlidingWindowRateLimiter;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,25 +25,36 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AccountService {
 
+    static final int MAX_FAILED_PASSWORD_CHANGES = 5;
+    static final int MAX_USERNAME_CHANGES = 10;
+    static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(15);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SlidingWindowRateLimiter passwordChangeAttemptsPerAccount;
+    private final SlidingWindowRateLimiter failedPasswordChangesPerAccount;
+    private final SlidingWindowRateLimiter usernameChangesPerAccount;
 
-    public AccountService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthProperties authProperties) {
+    public AccountService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.passwordChangeAttemptsPerAccount = new SlidingWindowRateLimiter(
-                authProperties.maxFailedLoginsPerUsernameAndClient(), authProperties.failedLoginWindow(), Clock.systemUTC());
+        this.failedPasswordChangesPerAccount =
+                new SlidingWindowRateLimiter(MAX_FAILED_PASSWORD_CHANGES, RATE_LIMIT_WINDOW, Clock.systemUTC());
+        this.usernameChangesPerAccount =
+                new SlidingWindowRateLimiter(MAX_USERNAME_CHANGES, RATE_LIMIT_WINDOW, Clock.systemUTC());
     }
 
     /**
      * Renames the given regular account, rejecting a username that already belongs to another account; the running session stays valid since it identifies the account by id.
+     * Attempts are limited per account, so the rejection of a taken name cannot be used to enumerate usernames at will.
      */
     public User changeUsername(String userId, String newUsername) {
         User account = loadRegularAccount(userId);
         String normalizedUsername = User.normalizeUsername(newUsername);
         if (normalizedUsername.equals(account.username())) {
             return account;
+        }
+        if (!usernameChangesPerAccount.tryAcquire(userId)) {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_USERNAME_CHANGES);
         }
         if (userRepository.findByUsername(normalizedUsername).isPresent()) {
             throw new UsernameAlreadyTakenException(normalizedUsername);
@@ -58,14 +69,14 @@ public class AccountService {
      */
     public User changePassword(String userId, String currentPassword, String newPassword) {
         User account = loadRegularAccount(userId);
-        if (!passwordChangeAttemptsPerAccount.tryAcquire(userId)) {
+        if (!failedPasswordChangesPerAccount.tryAcquire(userId)) {
             throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS);
         }
         String storedHash = account.passwordHash();
         if (storedHash == null || !passwordEncoder.matches(currentPassword, storedHash)) {
             throw new InvalidCurrentPasswordException();
         }
-        passwordChangeAttemptsPerAccount.reset(userId);
+        failedPasswordChangesPerAccount.reset(userId);
         requireAcceptableNewPassword(currentPassword, newPassword);
 
         account.changePasswordHash(passwordEncoder.encode(newPassword));

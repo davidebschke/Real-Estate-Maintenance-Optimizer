@@ -9,7 +9,7 @@
       "heading": "Username",
       "description": "You log in with this name. It is not case-sensitive.",
       "label": "Username",
-      "invalidError": "Please use 3 to 50 characters: letters, digits, dots, hyphens or underscores.",
+      "invalidError": "Please use 3 to 50 characters: letters, digits, dots, hyphens or underscores. The name must not start with \"demo-\".",
       "submit": "Save username",
       "success": "Your username was changed."
     },

@@ -9,6 +9,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEntry;
 import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
@@ -98,11 +99,9 @@ public class AppointmentService {
         Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
 
-        requireFreeSchedule(ownerId, null, firstStart, request.durationMinutes());
-
-        userRepository.findById(ownerId)
-                .orElseThrow(() -> new AccountNotFoundException(ownerId))
-                .consumeAppointmentCreation();
+        User owner = loadOwner(ownerId);
+        requireFreeSchedule(owner, null, firstStart, request.durationMinutes());
+        owner.consumeAppointmentCreation();
         String seriesId = request.recurring() ? UUID.randomUUID().toString() : null;
         List<String> materials = normalizeMaterials(request.materials());
         String description = normalizeDescription(request.description());
@@ -152,7 +151,7 @@ public class AppointmentService {
         LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
         LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
         if (!newStart.equals(appointment.start()) || !newEnd.equals(appointment.end())) {
-            requireFreeSchedule(ownerId, id, newStart, request.durationMinutes());
+            requireFreeSchedule(loadOwner(ownerId), id, newStart, request.durationMinutes());
         }
         HistoryEntry moveEntry = new HistoryEntry(
                 currentInstant(),
@@ -298,10 +297,10 @@ public class AppointmentService {
      * racing for the same slot cannot both pass this check before either has persisted its change.
      */
     private void requireFreeSchedule(
-            String ownerId, String ignoredAppointmentId, LocalDateTime start, int durationMinutes) {
+            User owner, String ignoredAppointmentId, LocalDateTime start, int durationMinutes) {
+        String ownerId = owner.id();
         userRepository.acquireTransactionLock(ownerId.hashCode());
-        int bufferMinutes = schedulingProperties.bufferMinutesFor(userRepository.findById(ownerId)
-                .orElseThrow(() -> new AccountNotFoundException(ownerId)).appointmentBufferMinutes());
+        int bufferMinutes = schedulingProperties.bufferMinutesFor(owner.appointmentBufferMinutes());
         List<Appointment> otherAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId).stream()
                 .filter(existing -> !existing.id().equals(ignoredAppointmentId))
                 .toList();
@@ -348,6 +347,10 @@ public class AppointmentService {
     private boolean isTooCloseTo(Appointment existing, LocalDateTime start, LocalDateTime end, int bufferMinutes) {
         return rangesOverlap(
                 existing.start().minusMinutes(bufferMinutes), occupiedEnd(existing).plusMinutes(bufferMinutes), start, end);
+    }
+
+    private User loadOwner(String ownerId) {
+        return userRepository.findById(ownerId).orElseThrow(() -> new AccountNotFoundException(ownerId));
     }
 
     /**

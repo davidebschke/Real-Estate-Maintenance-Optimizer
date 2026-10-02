@@ -71,6 +71,17 @@ class AccountServiceTest {
     }
 
     @Test
+    void tooManyUsernameChangesAreRateLimitedSoTakenNamesCannotBeEnumerated() {
+        for (int attempt = 0; attempt < 10; attempt++) {
+            service.changeUsername(account.id(), "name-" + attempt);
+        }
+
+        assertThatThrownBy(() -> service.changeUsername(account.id(), "name-final"))
+                .isInstanceOfSatisfying(RateLimitExceededException.class, exception -> assertThat(exception.reasonCode())
+                        .isEqualTo(RateLimitExceededException.REASON_TOO_MANY_USERNAME_CHANGES));
+    }
+
+    @Test
     void changingThePasswordReplacesTheHashAndRevokesEarlierSessions() {
         Instant before = Instant.now();
 

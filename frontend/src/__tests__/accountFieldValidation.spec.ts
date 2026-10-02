@@ -10,7 +10,7 @@ describe('isValidUsername', () => {
     expect(isValidUsername(username)).toBe(true)
   })
 
-  it.each(['ab', '', 'with space', 'ümlaut', 'a'.repeat(51), 'semi;colon'])('rejects "%s"', (username) => {
+  it.each(['ab', '', 'with space', 'ümlaut', 'a'.repeat(51), 'semi;colon', 'demo-abc', 'DEMO-abc'])('rejects "%s"', (username) => {
     expect(isValidUsername(username)).toBe(false)
   })
 })

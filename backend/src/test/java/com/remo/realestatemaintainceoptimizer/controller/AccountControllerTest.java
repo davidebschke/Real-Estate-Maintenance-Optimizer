@@ -101,7 +101,7 @@ class AccountControllerTest {
 
     @Test
     void invalidUsernamesAreRejected() throws Exception {
-        for (String invalid : new String[] {"ab", "with space", "ümlaut", "", "a".repeat(51)}) {
+        for (String invalid : new String[] {"ab", "with space", "ümlaut", "", "a".repeat(51), "demo-abc", "DEMO-abc"}) {
             putJson("/api/account/username", "{\"username\":\"" + invalid + "\"}").andExpect(status().isBadRequest());
         }
     }

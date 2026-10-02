@@ -29,7 +29,7 @@ describe('useSettingsSubmission', () => {
   })
 
   it('maps a rejected save action to a failure reason', async () => {
-    const { isSaved, failureReason, submit } = useSettingsSubmission(() => Promise.reject(httpError(409)))
+    const { isSaved, failureReason, submit } = useSettingsSubmission(() => Promise.reject(httpError(409)), 'usernameTaken')
 
     const succeeded = await submit()
 

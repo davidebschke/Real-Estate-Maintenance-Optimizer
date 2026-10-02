@@ -27,12 +27,15 @@ export async function changeAppointmentBuffer(appointmentBufferMinutes: number):
   return toCurrentUser(data)
 }
 
-/** Maps a failed profile setting request to the reason shown to the user. */
-export function toAccountFailureReason(error: unknown): AccountFailureReason {
+/** Maps a failed profile setting request to the reason shown to the user; a 409 means the given conflict reason of the form that sent it, since only that form knows what it conflicted with. */
+export function toAccountFailureReason(
+  error: unknown,
+  conflictReason: AccountFailureReason = 'generic',
+): AccountFailureReason {
   if (!axios.isAxiosError(error)) return 'generic'
   switch (error.response?.status) {
     case 409:
-      return 'usernameTaken'
+      return conflictReason
     case 422:
       return 'currentPasswordIncorrect'
     case 400:

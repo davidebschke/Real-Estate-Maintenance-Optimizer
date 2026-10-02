@@ -13,8 +13,9 @@ const { t } = useI18n()
 const authStore = useAuthStore()
 const username = ref(authStore.currentUser?.username ?? '')
 const { touched, markTouched } = useTouchedFields(['username'])
-const { isSaving, isSaved, failureReason, submit, clearFeedback } = useSettingsSubmission((name: string) =>
-  authStore.changeUsername(name),
+const { isSaving, isSaved, failureReason, submit, clearFeedback } = useSettingsSubmission(
+  (name: string) => authStore.changeUsername(name),
+  'usernameTaken',
 )
 
 const trimmedUsername = computed(() => username.value.trim())

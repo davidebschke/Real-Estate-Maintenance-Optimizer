@@ -7,12 +7,12 @@ export const PASSWORD_MIN_LENGTH = 8
 /** Longest accepted password, in UTF-8 bytes (the limit of BCrypt). */
 export const PASSWORD_MAX_BYTES = 72
 
-const USERNAME_PATTERN = /^[A-Za-z0-9._-]{3,50}$/
+const USERNAME_PATTERN = /^(?!demo-)[A-Za-z0-9._-]{3,50}$/i
 
 /** Why a new password is not acceptable. */
 export type NewPasswordProblem = 'tooShort' | 'tooLong' | 'unchanged'
 
-/** Whether the given username consists of 3 to 50 letters, digits, dots, hyphens or underscores. */
+/** Whether the given username consists of 3 to 50 letters, digits, dots, hyphens or underscores and does not start with the prefix reserved for demo accounts. */
 export function isValidUsername(username: string): boolean {
   return USERNAME_PATTERN.test(username)
 }

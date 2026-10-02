@@ -80,7 +80,7 @@ describe('accountService', () => {
   })
 
   it.each([
-    [409, 'usernameTaken'],
+    [409, 'generic'],
     [422, 'currentPasswordIncorrect'],
     [400, 'invalidInput'],
     [429, 'tooManyRequests'],
@@ -88,6 +88,10 @@ describe('accountService', () => {
     [500, 'generic'],
   ])('maps an HTTP %i failure to the reason %s', (status, reason) => {
     expect(toAccountFailureReason(httpError(status))).toBe(reason)
+  })
+
+  it('maps a 409 to the conflict reason of the form that sent the request', () => {
+    expect(toAccountFailureReason(httpError(409), 'usernameTaken')).toBe('usernameTaken')
   })
 
   it('maps a failure without HTTP response to a generic reason', () => {
