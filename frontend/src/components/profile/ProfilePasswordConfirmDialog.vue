@@ -5,6 +5,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import { PASSWORD_MAX_LENGTH } from '@/utils/accountFieldValidation'
 
 const props = defineProps<{ isSaving: boolean; errorMessage: string | null }>()
 const emit = defineEmits<{ confirm: [password: string] }>()
@@ -39,7 +40,7 @@ function confirm(): void {
         id="profile-confirm-current-password"
         v-model="password"
         type="password"
-        maxlength="128"
+        :maxlength="PASSWORD_MAX_LENGTH"
         autocomplete="current-password"
         aria-required="true"
         :invalid="errorMessage !== null"

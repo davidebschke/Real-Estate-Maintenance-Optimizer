@@ -3,12 +3,12 @@ import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import InputNumber from 'primevue/inputnumber'
-import { AxiosError, AxiosHeaders } from 'axios'
 import { i18n } from '@/i18n'
 import ProfileSettingsDialog from '@/components/profile/ProfileSettingsDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import * as accountService from '@/services/accountService'
 import type { CurrentUser } from '@/types/auth'
+import { httpError } from '@/__tests__/httpError'
 
 vi.mock('@/services/accountService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/accountService')>()
@@ -28,18 +28,6 @@ const baseUser: CurrentUser = {
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
   appointmentBufferMinutes: 15,
-}
-
-/** Builds the axios error a request rejects with for the given HTTP status. */
-function httpError(status: number): AxiosError {
-  const config = { headers: new AxiosHeaders() }
-  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
-    status,
-    statusText: '',
-    headers: {},
-    config,
-    data: {},
-  })
 }
 
 beforeEach(() => {

@@ -3,27 +3,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import Button from 'primevue/button'
-import { AxiosError, AxiosHeaders } from 'axios'
 import { i18n } from '@/i18n'
 import LoginForm from '@/components/auth/LoginForm.vue'
 import * as authService from '@/services/authService'
+import { httpError } from '@/__tests__/httpError'
 
 vi.mock('@/services/authService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/authService')>()
   return { ...actual, login: vi.fn<typeof actual.login>() }
 })
-
-/** Builds the axios error a request rejects with for the given HTTP status. */
-function httpError(status: number): AxiosError {
-  const config = { headers: new AxiosHeaders() }
-  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
-    status,
-    statusText: '',
-    headers: {},
-    config,
-    data: {},
-  })
-}
 
 beforeEach(() => {
   setActivePinia(createPinia())

@@ -1,13 +1,17 @@
 /** Longest appointment buffer in minutes the backend accepts (one day). */
 export const MAX_APPOINTMENT_BUFFER_MINUTES = 24 * 60
 
-/** Shortest accepted password, in characters. */
-export const PASSWORD_MIN_LENGTH = 8
+/** Shortest and longest accepted username, in characters. */
+const USERNAME_MIN_LENGTH = 3
+export const USERNAME_MAX_LENGTH = 50
 
-/** Longest accepted password, in UTF-8 bytes (the limit of BCrypt). */
-export const PASSWORD_MAX_BYTES = 72
+/** Longest password the backend accepts as input, in characters. */
+export const PASSWORD_MAX_LENGTH = 128
 
-const USERNAME_PATTERN = /^(?!demo-)[A-Za-z0-9._-]{3,50}$/i
+const PASSWORD_MIN_LENGTH = 8
+const PASSWORD_MAX_BYTES = 72
+
+const USERNAME_PATTERN = new RegExp(`^(?!demo-)[A-Za-z0-9._-]{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}$`, 'i')
 
 /** Why a new password is not acceptable. */
 export type NewPasswordProblem = 'tooShort' | 'tooLong' | 'unchanged'

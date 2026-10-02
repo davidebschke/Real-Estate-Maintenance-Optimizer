@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import axios, { AxiosError, AxiosHeaders } from 'axios'
+import axios from 'axios'
 import {
   completeAppointment,
   createAppointment,
@@ -11,6 +11,7 @@ import {
   updateAppointment,
 } from '@/services/appointmentService'
 import type { AppointmentResponseDto } from '@/services/appointmentService'
+import { httpError } from '@/__tests__/httpError'
 
 vi.mock('axios', async (importOriginal) => {
   const actual = await importOriginal<typeof import('axios')>()
@@ -27,18 +28,6 @@ vi.mock('axios', async (importOriginal) => {
     },
   }
 })
-
-/** Builds the axios error a request rejects with for the given HTTP status and body. */
-function httpError(status: number, data: unknown = {}): AxiosError {
-  const config = { headers: new AxiosHeaders() }
-  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
-    status,
-    statusText: '',
-    headers: {},
-    config,
-    data,
-  })
-}
 
 /** Builds a sample backend appointment DTO for tests, with overridable fields. */
 function createDto(overrides: Partial<AppointmentResponseDto> = {}): AppointmentResponseDto {

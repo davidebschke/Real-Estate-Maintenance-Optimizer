@@ -1,18 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { AxiosError, AxiosHeaders } from 'axios'
 import { useSettingsSubmission } from '@/composables/useSettingsSubmission'
-
-/** Builds the axios error a request rejects with for the given HTTP status. */
-function httpError(status: number): AxiosError {
-  const config = { headers: new AxiosHeaders() }
-  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
-    status,
-    statusText: '',
-    headers: {},
-    config,
-    data: {},
-  })
-}
+import { httpError } from '@/__tests__/httpError'
 
 describe('useSettingsSubmission', () => {
   it('reports success after the save action resolved', async () => {

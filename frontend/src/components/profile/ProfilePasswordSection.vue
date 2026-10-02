@@ -4,10 +4,11 @@ import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import ProfileSection from '@/components/profile/ProfileSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsSubmission } from '@/composables/useSettingsSubmission'
 import { useTouchedFields } from '@/composables/useTouchedFields'
-import { findNewPasswordProblem } from '@/utils/accountFieldValidation'
+import { findNewPasswordProblem, PASSWORD_MAX_LENGTH } from '@/utils/accountFieldValidation'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -38,17 +39,20 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <section class="profile-settings-dialog__section" aria-labelledby="profile-password-heading">
-    <h3 id="profile-password-heading" class="profile-settings-dialog__heading">{{ t('profile.password.heading') }}</h3>
-    <p class="profile-settings-dialog__description">{{ t('profile.password.description') }}</p>
-
+  <ProfileSection
+    heading-id="profile-password-heading"
+    :heading="t('profile.password.heading')"
+    :description="t('profile.password.description')"
+    :failure-message="failureReason ? t('profile.errors.' + failureReason) : null"
+    :success-message="isSaved ? t('profile.password.success') : null"
+  >
     <div class="profile-settings-dialog__field">
       <RequiredFieldLabel field-id="profile-current-password" :label="t('profile.password.currentLabel')" />
       <InputText
         id="profile-current-password"
         v-model="form.currentPassword"
         type="password"
-        maxlength="128"
+        :maxlength="PASSWORD_MAX_LENGTH"
         autocomplete="current-password"
         aria-required="true"
         @input="clearFeedback"
@@ -62,7 +66,7 @@ async function save(): Promise<void> {
           id="profile-new-password"
           v-model="form.newPassword"
           type="password"
-          maxlength="128"
+          :maxlength="PASSWORD_MAX_LENGTH"
           autocomplete="new-password"
           :invalid="isNewPasswordErrorShown"
           aria-required="true"
@@ -85,7 +89,7 @@ async function save(): Promise<void> {
           id="profile-confirm-password"
           v-model="form.confirmPassword"
           type="password"
-          maxlength="128"
+          :maxlength="PASSWORD_MAX_LENGTH"
           autocomplete="new-password"
           :invalid="isConfirmErrorShown"
           aria-required="true"
@@ -100,16 +104,13 @@ async function save(): Promise<void> {
       </div>
     </div>
 
-    <p v-if="failureReason" class="profile-settings-dialog__field-error" role="alert">
-      {{ t(`profile.errors.${failureReason}`) }}
-    </p>
-    <p v-if="isSaved" class="profile-settings-dialog__success" role="status">{{ t('profile.password.success') }}</p>
-
-    <Button
-      class="profile-settings-dialog__submit"
-      :label="isSaving ? t('profile.saving') : t('profile.password.submit')"
-      :disabled="!canSubmit || isSaving"
-      @click="save"
-    />
-  </section>
+    <template #actions>
+      <Button
+        class="profile-settings-dialog__submit"
+        :label="isSaving ? t('profile.saving') : t('profile.password.submit')"
+        :disabled="!canSubmit || isSaving"
+        @click="save"
+      />
+    </template>
+  </ProfileSection>
 </template>

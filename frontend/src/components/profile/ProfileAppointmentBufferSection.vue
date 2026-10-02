@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import ProfileSection from '@/components/profile/ProfileSection.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsSubmission } from '@/composables/useSettingsSubmission'
 import { useTouchedFields } from '@/composables/useTouchedFields'
@@ -29,10 +30,13 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <section class="profile-settings-dialog__section" aria-labelledby="profile-buffer-heading">
-    <h3 id="profile-buffer-heading" class="profile-settings-dialog__heading">{{ t('profile.buffer.heading') }}</h3>
-    <p class="profile-settings-dialog__description">{{ t('profile.buffer.description') }}</p>
-
+  <ProfileSection
+    heading-id="profile-buffer-heading"
+    :heading="t('profile.buffer.heading')"
+    :description="t('profile.buffer.description')"
+    :failure-message="failureReason ? t('profile.errors.' + failureReason) : null"
+    :success-message="isSaved ? t('profile.buffer.success') : null"
+  >
     <div class="profile-settings-dialog__field profile-settings-dialog__field--narrow">
       <RequiredFieldLabel field-id="profile-buffer" :label="t('profile.buffer.label')" />
       <InputNumber
@@ -53,16 +57,13 @@ async function save(): Promise<void> {
       </p>
     </div>
 
-    <p v-if="failureReason" class="profile-settings-dialog__field-error" role="alert">
-      {{ t(`profile.errors.${failureReason}`) }}
-    </p>
-    <p v-if="isSaved" class="profile-settings-dialog__success" role="status">{{ t('profile.buffer.success') }}</p>
-
-    <Button
-      class="profile-settings-dialog__submit"
-      :label="isSaving ? t('profile.saving') : t('profile.buffer.submit')"
-      :disabled="isInvalid || isUnchanged || isSaving"
-      @click="save"
-    />
-  </section>
+    <template #actions>
+      <Button
+        class="profile-settings-dialog__submit"
+        :label="isSaving ? t('profile.saving') : t('profile.buffer.submit')"
+        :disabled="isInvalid || isUnchanged || isSaving"
+        @click="save"
+      />
+    </template>
+  </ProfileSection>
 </template>

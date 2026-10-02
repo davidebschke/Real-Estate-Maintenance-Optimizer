@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import axios, { AxiosError, AxiosHeaders } from 'axios'
+import axios from 'axios'
 import {
   changeAppointmentBuffer,
   changePassword,
   changeUsername,
   toAccountFailureReason,
 } from '@/services/accountService'
+import { httpError } from '@/__tests__/httpError'
 
 vi.mock('axios', async (importOriginal) => {
   const actual = await importOriginal<typeof import('axios')>()
@@ -18,18 +19,6 @@ vi.mock('axios', async (importOriginal) => {
     },
   }
 })
-
-/** Builds the axios error a request rejects with for the given HTTP status. */
-function httpError(status: number): AxiosError {
-  const config = { headers: new AxiosHeaders() }
-  return new AxiosError('failed', 'ERR_BAD_REQUEST', config, null, {
-    status,
-    statusText: '',
-    headers: {},
-    config,
-    data: {},
-  })
-}
 
 const userDto = {
   username: 'neuer-name',

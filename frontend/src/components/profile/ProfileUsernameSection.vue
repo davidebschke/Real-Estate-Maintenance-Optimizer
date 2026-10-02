@@ -4,11 +4,12 @@ import { useI18n } from 'vue-i18n'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import ProfileSection from '@/components/profile/ProfileSection.vue'
 import ProfilePasswordConfirmDialog from '@/components/profile/ProfilePasswordConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSettingsSubmission } from '@/composables/useSettingsSubmission'
 import { useTouchedFields } from '@/composables/useTouchedFields'
-import { isValidUsername } from '@/utils/accountFieldValidation'
+import { isValidUsername, USERNAME_MAX_LENGTH } from '@/utils/accountFieldValidation'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -24,6 +25,9 @@ const trimmedUsername = computed(() => username.value.trim())
 const isInvalid = computed(() => !isValidUsername(trimmedUsername.value))
 const isUnchanged = computed(() => trimmedUsername.value.toLowerCase() === authStore.currentUser?.username)
 const isUsernameErrorShown = computed(() => touched.username && isInvalid.value)
+const failureMessage = computed(() =>
+  failureReason.value && failureReason.value !== 'currentPasswordIncorrect' ? t('profile.errors.' + failureReason.value) : null,
+)
 const confirmErrorMessage = computed(() =>
   failureReason.value === 'currentPasswordIncorrect' ? t('profile.errors.currentPasswordIncorrect') : null,
 )
@@ -48,16 +52,19 @@ async function save(currentPassword: string): Promise<void> {
 </script>
 
 <template>
-  <section class="profile-settings-dialog__section" aria-labelledby="profile-username-heading">
-    <h3 id="profile-username-heading" class="profile-settings-dialog__heading">{{ t('profile.username.heading') }}</h3>
-    <p class="profile-settings-dialog__description">{{ t('profile.username.description') }}</p>
-
+  <ProfileSection
+    heading-id="profile-username-heading"
+    :heading="t('profile.username.heading')"
+    :description="t('profile.username.description')"
+    :failure-message="failureMessage"
+    :success-message="isSaved ? t('profile.username.success') : null"
+  >
     <div class="profile-settings-dialog__field">
       <RequiredFieldLabel field-id="profile-username" :label="t('profile.username.label')" />
       <InputText
         id="profile-username"
         v-model="username"
-        maxlength="50"
+        :maxlength="USERNAME_MAX_LENGTH"
         autocomplete="username"
         :invalid="isUsernameErrorShown"
         aria-required="true"
@@ -71,23 +78,20 @@ async function save(currentPassword: string): Promise<void> {
       </p>
     </div>
 
-    <p v-if="failureReason && failureReason !== 'currentPasswordIncorrect'" class="profile-settings-dialog__field-error" role="alert">
-      {{ t(`profile.errors.${failureReason}`) }}
-    </p>
-    <p v-if="isSaved" class="profile-settings-dialog__success" role="status">{{ t('profile.username.success') }}</p>
-
-    <Button
-      class="profile-settings-dialog__submit"
-      :label="t('profile.username.submit')"
-      :disabled="isInvalid || isUnchanged || isSaving"
-      @click="requestSave"
-    />
-
     <ProfilePasswordConfirmDialog
       v-model:visible="isConfirming"
       :is-saving="isSaving"
       :error-message="confirmErrorMessage"
       @confirm="save"
     />
-  </section>
+
+    <template #actions>
+      <Button
+        class="profile-settings-dialog__submit"
+        :label="t('profile.username.submit')"
+        :disabled="isInvalid || isUnchanged || isSaving"
+        @click="requestSave"
+      />
+    </template>
+  </ProfileSection>
 </template>
