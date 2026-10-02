@@ -31,11 +31,16 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     appointments.value = fetched
   }
 
-  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit; returns `null` and records the conflict if its schedule overlaps with an existing appointment of the same account. */
+  /** Records the conflict that blocked a creation or move, dropping the result's `status` discriminator. */
+  function recordConflict({ message, suggestedStart, suggestedEnd }: AppointmentConflict) {
+    appointmentConflict.value = { message, suggestedStart, suggestedEnd }
+  }
+
+  /** Creates a new appointment, refreshes the local list and, for a demo account, its remaining creation limit; returns `null` and records the conflict if its schedule overlaps with, or comes too close to, an existing appointment of the same account. */
   async function createAppointment(payload: CreateAppointmentPayload): Promise<Appointment | null> {
     const result = await appointmentService.createAppointment(payload)
     if (result.status === 'conflict') {
-      appointmentConflict.value = { message: result.message, suggestedStart: result.suggestedStart, suggestedEnd: result.suggestedEnd }
+      recordConflict(result)
       return null
     }
 
@@ -45,7 +50,7 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     return result.appointment
   }
 
-  /** Clears a previously recorded creation conflict, e.g. once the user changes the form or reopens it. */
+  /** Clears a previously recorded creation or move conflict, e.g. once the user changes the form or reopens it. */
   function clearAppointmentConflict() {
     appointmentConflict.value = null
   }
@@ -63,11 +68,17 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     }
   }
 
-  /** Reschedules an appointment and refreshes the local list from the backend. */
-  async function moveAppointment(id: string, payload: MoveAppointmentPayload) {
-    const moved = await appointmentService.moveAppointment(id, payload)
+  /** Reschedules an appointment and refreshes the local list from the backend; returns `null` and records the conflict if the new schedule overlaps with, or comes too close to, another appointment of the same account. */
+  async function moveAppointment(id: string, payload: MoveAppointmentPayload): Promise<Appointment | null> {
+    const result = await appointmentService.moveAppointment(id, payload)
+    if (result.status === 'conflict') {
+      recordConflict(result)
+      return null
+    }
+
+    appointmentConflict.value = null
     await fetchAppointments()
-    return moved
+    return result.appointment
   }
 
   /** Marks an appointment as completed with the given actual end time, and refreshes the local list. */
@@ -112,8 +123,9 @@ export const useAppointmentsStore = defineStore('appointments', () => {
     editingAppointment.value = null
   }
 
-  /** Opens the detail view for the given appointment id. */
+  /** Opens the detail view for the given appointment id, clearing a previous move conflict. */
   function openDetail(id: string) {
+    appointmentConflict.value = null
     activeDetailAppointmentId.value = id
   }
 

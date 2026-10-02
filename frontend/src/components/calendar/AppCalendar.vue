@@ -15,12 +15,14 @@ import { useCalendarNavigation } from '@/composables/useCalendarNavigation'
 import { useCalendarAppointments } from '@/composables/useCalendarAppointments'
 import { useAppointmentDragAndDrop } from '@/composables/useAppointmentDragAndDrop'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useSuggestedSlotLabel } from '@/composables/useSuggestedSlotLabel'
 import { useAppointmentsStore } from '@/stores/appointments'
 import type { VueCalEventClickEvent, VueCalSlotEvent, VueCalWeekdayHeading } from '@/types/vue-cal'
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
 const toast = useToast()
+const { formatSuggestedSlot } = useSuggestedSlotLabel()
 const {
   vueCalRef,
   activeView,
@@ -42,6 +44,9 @@ const isListView = computed(() => activeView.value === 'list')
 /** Milliseconds the "this appointment can't be dragged" toast stays visible before it dismisses itself. */
 const TOAST_LIFE_MS = 3000
 
+/** Milliseconds the "this appointment conflicts with another" toast stays visible, long enough to read its message and suggested slot. */
+const CONFLICT_TOAST_LIFE_MS = 8000
+
 let isLockedDragToastVisible = false
 
 /** Shows the "this appointment can't be dragged" toast, ignoring a repeat attempt while one is already visible so they don't stack. */
@@ -54,6 +59,15 @@ function showLockedDragToast() {
   }, TOAST_LIFE_MS)
 }
 
+/** Shows the conflict that blocked a drag-and-drop move, including the suggested next free slot, and clears it from the store since the calendar has no form to apply it to. */
+function showMoveConflictToast() {
+  const conflict = appointmentsStore.appointmentConflict
+  if (!conflict) return
+  const suggestion = t('appointments.conflict.suggestion', { slot: formatSuggestedSlot(conflict) })
+  toast.add({ severity: 'warn', detail: `${conflict.message} ${suggestion}`, life: CONFLICT_TOAST_LIFE_MS })
+  appointmentsStore.clearAppointmentConflict()
+}
+
 const calendarGridRef = ref<HTMLElement | null>(null)
 const {
   preview: dragPreview,
@@ -64,7 +78,8 @@ const {
   gridView,
   visibleRange,
   async (appointmentId, newStart, durationMinutes) => {
-    await appointmentsStore.moveAppointment(appointmentId, { start: newStart, durationMinutes })
+    const moved = await appointmentsStore.moveAppointment(appointmentId, { start: newStart, durationMinutes })
+    if (!moved) showMoveConflictToast()
   },
   showLockedDragToast,
 )

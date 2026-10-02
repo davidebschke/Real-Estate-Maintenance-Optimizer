@@ -46,10 +46,6 @@
         "text": "Die KI schlägt Mi, 12.08. um 14:00 vor — direkt nach der Wartung Rheinblick, gleicher Stadtteil. Das spart 34 km.",
         "applyButton": "Vorschlag übernehmen"
       },
-      "conflict": {
-        "suggestion": "Nächster freier Zeitpunkt: {slot} Uhr.",
-        "acceptSuggestion": "Vorschlag übernehmen"
-      },
       "submit": "Termin anlegen",
       "cancel": "Abbrechen",
       "requiredFieldsLegend": "* Pflichtfeld"
@@ -58,6 +54,10 @@
       "title": "Termin bearbeiten",
       "submit": "Speichern",
       "error": "Der Termin konnte nicht aktualisiert werden."
+    },
+    "conflict": {
+      "suggestion": "Nächster freier Zeitpunkt: {slot} Uhr.",
+      "acceptSuggestion": "Vorschlag übernehmen"
     },
     "detail": {
       "back": "‹ Zurück",

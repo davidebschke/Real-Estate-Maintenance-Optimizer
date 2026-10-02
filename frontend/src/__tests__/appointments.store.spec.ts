@@ -204,17 +204,64 @@ describe('useAppointmentsStore', () => {
 
   it('moves an appointment and refreshes the list', async () => {
     const moved = createAppointment({ start: new Date(2026, 7, 12, 9, 0) })
-    vi.mocked(appointmentService.moveAppointment).mockResolvedValue(moved)
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValue({ status: 'moved', appointment: moved })
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([moved])
     const store = useAppointmentsStore()
 
-    await store.moveAppointment('1', { start: moved.start, durationMinutes: 60 })
+    const result = await store.moveAppointment('1', { start: moved.start, durationMinutes: 60 })
+
+    expect(result).toEqual(moved)
 
     expect(appointmentService.moveAppointment).toHaveBeenCalledWith('1', {
       start: moved.start,
       durationMinutes: 60,
     })
     expect(store.appointments).toEqual([moved])
+  })
+
+  it('records a move conflict without moving or refreshing, then clears it on the next successful move', async () => {
+    const suggestedStart = new Date(2026, 7, 11, 15, 15)
+    const suggestedEnd = new Date(2026, 7, 11, 16, 15)
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValueOnce({
+      status: 'conflict',
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart,
+      suggestedEnd,
+    })
+    const store = useAppointmentsStore()
+    const payload = { start: new Date(2026, 7, 11, 14, 0), durationMinutes: 60 }
+
+    const blockedResult = await store.moveAppointment('1', payload)
+
+    expect(blockedResult).toBeNull()
+    expect(store.appointmentConflict).toEqual({
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart,
+      suggestedEnd,
+    })
+    expect(appointmentService.fetchAppointments).not.toHaveBeenCalled()
+
+    const moved = createAppointment({ start: new Date(2026, 7, 11, 15, 15) })
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValueOnce({ status: 'moved', appointment: moved })
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([moved])
+
+    const succeededResult = await store.moveAppointment('1', { start: moved.start, durationMinutes: 60 })
+
+    expect(succeededResult).toEqual(moved)
+    expect(store.appointmentConflict).toBeNull()
+  })
+
+  it('clears a previous conflict when a detail view is opened', () => {
+    const store = useAppointmentsStore()
+    store.appointmentConflict = {
+      message: 'Konflikt',
+      suggestedStart: new Date(2026, 7, 11, 15, 15),
+      suggestedEnd: new Date(2026, 7, 11, 16, 15),
+    }
+
+    store.openDetail('1')
+
+    expect(store.appointmentConflict).toBeNull()
   })
 
   it('completes an appointment and refreshes the list', async () => {

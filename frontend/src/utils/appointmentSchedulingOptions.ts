@@ -97,6 +97,12 @@ export function generateTimeSlotOptions(
   return options
 }
 
+/** Returns the options unchanged if one already has the given `HH:mm` time, otherwise the options with that time inserted in chronological order, so a time off the slot grid (e.g. a suggested start after a buffer) still shows in its select. */
+export function includeTimeOption(options: TimeOption[], time: string): TimeOption[] {
+  if (!time || options.some((option) => option.value === time)) return options
+  return [...options, { value: time, label: time }].sort((a, b) => a.value.localeCompare(b.value))
+}
+
 /** Formats a `Date` as the `YYYY-MM-DD` day option value. */
 export function toIsoDate(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')

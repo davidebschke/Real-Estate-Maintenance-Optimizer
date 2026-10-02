@@ -180,7 +180,7 @@ class PropertyServiceTest {
         AppointmentResponse appointment = appointmentService.create(
                 owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 13, 0)));
         AppointmentResponse unrelated = appointmentService.create(
-                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 15, 0)));
+                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 16, 0)));
 
         service.update(owner.id(), "1", new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3, 50733 Köln", null, null));
 
@@ -212,9 +212,9 @@ class PropertyServiceTest {
         AppointmentResponse first = appointmentService.create(
                 owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 13, 0)));
         AppointmentResponse second = appointmentService.create(
-                owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 15, 0)));
+                owner.id(), createAppointmentRequest("1", LocalDateTime.of(2026, 8, 11, 16, 0)));
         AppointmentResponse unrelated = appointmentService.create(
-                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 17, 0)));
+                owner.id(), createAppointmentRequest("2", LocalDateTime.of(2026, 8, 11, 19, 0)));
 
         service.delete(owner.id(), "1");
 

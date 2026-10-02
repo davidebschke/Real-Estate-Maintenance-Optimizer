@@ -6,6 +6,7 @@ import {
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
   getDurationMinutes,
+  includeTimeOption,
 } from '@/utils/appointmentSchedulingOptions'
 
 describe('appointmentSchedulingOptions', () => {
@@ -42,6 +43,23 @@ describe('appointmentSchedulingOptions', () => {
     expect(options[0]).toEqual({ value: '07:00', label: '07:00' })
     expect(options).toContainEqual({ value: '13:00', label: '13:00' })
     expect(options[options.length - 1]).toEqual({ value: '19:00', label: '19:00' })
+  })
+
+  it('keeps the time options unchanged when the given time is already one of them or empty', () => {
+    const options = generateTimeSlotOptions()
+
+    expect(includeTimeOption(options, '13:00')).toBe(options)
+    expect(includeTimeOption(options, '')).toBe(options)
+  })
+
+  it('inserts a time off the slot grid in chronological order without mutating the options', () => {
+    const options = generateTimeSlotOptions()
+
+    const extended = includeTimeOption(options, '08:15')
+
+    expect(extended.map((option) => option.value).slice(0, 4)).toEqual(['07:00', '07:30', '08:00', '08:15'])
+    expect(extended).toHaveLength(options.length + 1)
+    expect(options.some((option) => option.value === '08:15')).toBe(false)
   })
 
   it('exposes a fixed, non-empty set of duration and recurrence-interval options', () => {

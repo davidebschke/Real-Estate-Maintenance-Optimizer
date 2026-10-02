@@ -15,7 +15,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── ViewPlaceholder.vue # reusable placeholder content block used by the not-yet-implemented views
 │   │   │   ├── layout/            # app-wide layout building blocks (e.g. AppHeader, AppFooter, NavigationMenu and their parts)
 │   │   │   ├── calendar/          # calendar building blocks (AppCalendar wrapping vue-cal, CalendarToolbar, CalendarDayHeader, CalendarEventCard, CalendarListView for the day-grouped list view vue-cal itself does not provide)
-│   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
+│   │   │   ├── appointments/      # appointment create/detail building blocks (AppointmentFormDialog, AppointmentDetailDrawer, AppointmentConflictNotice shared by both for a blocked creation/move, AppointmentPropertySelect, AppointmentMaterialInput, AppointmentAiSuggestionBanner)
 │   │   │   ├── properties/        # property-list building blocks (PropertyList, PropertyCard with its edit/delete icon buttons, PropertyCreateCard for the pinned "add property" card, PropertyFormDialog shared by creation and, pre-filled, editing, PropertyLocationPreviewMap for the dialog's Leaflet location preview)
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
@@ -25,7 +25,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── router/                # Vue Router configuration (route definitions incl. the public /login route, NavigationKey type, authGuard.ts login guard)
 │   │   ├── services/              # Axios API clients (e.g. versionService.ts, appointmentService.ts, propertyService.ts, authService.ts), httpClient.ts for the shared axios defaults (session cookie, CSRF header, expired-session handling), and other external-service clients (geocodingService.ts, OpenStreetMap Nominatim)
 │   │   ├── stores/                # state management (Pinia; e.g. stores/appointments.ts, stores/properties.ts, stores/auth.ts)
-│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useDemoQuota, useAccountPresentation, useMediaQuery, useDurationOptions, useTouchedFields)
+│   │   ├── composables/           # reusable Vue Composition functions (e.g. useLocale, useAppVersion, useCalendarNavigation, useCalendarAppointments, useAppointmentDragAndDrop, useAppointmentDeleteConfirmation, usePropertyAppointmentSummaries, usePropertyDeleteConfirmation, useTodaysAppointments, useAppointmentMapMarkers, useSuggestedSlotLabel, useDemoQuota, useAccountPresentation, useMediaQuery, useDurationOptions, useTouchedFields)
 │   │   ├── types/                 # hand-written TypeScript types (e.g. Appointment, Property, auth.ts, vue-cal.ts) plus ambient shims for untyped packages (vue-cal-shims.d.ts)
 │   │   ├── utils/                 # small reusable, framework-agnostic helpers (e.g. locale-aware date formatting, appointmentSchedulingOptions.ts, propertyAddressParsing.ts for splitting a stored property address back into its form fields, addressFieldValidation.ts for the street/house number/postal code/city format checks, safeRedirect.ts for the post-login redirect, initials.ts)
 │   │   ├── i18n/                  # vue-i18n setup, merges all locale message files
@@ -35,7 +35,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── styles/
 │   │   │   ├── layout/            # one CSS file per components/layout building block (e.g. app-header.css, app-footer.css, navigation-menu.css)
 │   │   │   ├── calendar/          # one CSS file per components/calendar building block (e.g. app-calendar.css, calendar-toolbar.css, calendar-list-view.css)
-│   │   │   ├── appointments/      # one CSS file per components/appointments building block (e.g. appointment-form-dialog.css, appointment-detail-drawer.css)
+│   │   │   ├── appointments/      # one CSS file per components/appointments building block (e.g. appointment-form-dialog.css, appointment-detail-drawer.css, appointment-conflict-notice.css)
 │   │   │   ├── properties/        # one CSS file per components/properties building block plus PropertiesView (property-card.css, property-list.css, properties-view.css, property-create-card.css, property-form-dialog.css, property-location-preview-map.css)
 │   │   │   ├── overview/          # one CSS file per components/overview building block (daily-appointment-list.css, daily-appointment-card.css)
 │   │   │   ├── map/               # one CSS file per components/map building block (appointment-map-card.css, appointment-map.css)
@@ -50,7 +50,7 @@ Real-Estate-Maintenance-Optimizer/
 │   └── package.json
 ├── backend/                       # Spring Boot application
 │   ├── src/main/java/com/remo/realestatemaintainceoptimizer/
-│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig, AuthProperties, SchedulingConfig)
+│   │   ├── config/                # general configuration (e.g. LocalizationConfig for Accept-Language resolution, CorsConfig, RestClientConfig, AuthProperties, AppointmentSchedulingProperties for the appointment buffer time, SchedulingConfig)
 │   │   ├── controller/             # REST endpoints (e.g. VersionController, AuthController, AppointmentController, PropertyController, GeocodingController, GlobalExceptionHandler)
 │   │   ├── service/                # business logic (e.g. AppointmentService, PropertyService, GeocodingService — proxies address geocoding to OpenStreetMap Nominatim, see backend readme —, AuthService, DemoAccountService, DemoDataSeeder, DemoAccountCleanupScheduler, InitialAccountPasswordService)
 │   │   ├── repository/             # persistence via Spring Data JPA (e.g. AppointmentRepository, PropertyRepository, UserRepository, see backend readme)

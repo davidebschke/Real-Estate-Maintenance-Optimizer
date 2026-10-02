@@ -8,12 +8,14 @@ import { useAppointmentsStore } from '@/stores/appointments'
 import { useLocale } from '@/composables/useLocale'
 import { useDurationOptions } from '@/composables/useDurationOptions'
 import { useAppointmentDeleteConfirmation } from '@/composables/useAppointmentDeleteConfirmation'
+import AppointmentConflictNotice from '@/components/appointments/AppointmentConflictNotice.vue'
 import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
   combineDayAndTime,
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
   getDurationMinutes,
+  includeTimeOption,
   toIsoDate,
   toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
@@ -48,11 +50,12 @@ const actualEndTimeLabel = computed(() => {
   return formatLocalizedTime(appointment.value.actualEnd, currentLocale.value)
 })
 
-const timeOptions = generateTimeSlotOptions()
+const timeSlotOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => generateUpcomingDayOptions(new Date(), currentLocale.value, 120))
 
 const isEditingSchedule = ref(false)
 const scheduleForm = reactive({ day: '', time: '', durationMinutes: 60 })
+const selectableTimeOptions = computed(() => includeTimeOption(timeSlotOptions, scheduleForm.time))
 const isCompleting = ref(false)
 const completeForm = reactive({ day: '', time: '' })
 
@@ -65,31 +68,49 @@ const isActualEndBeforeStart = computed(() => {
 watch(appointment, (current) => {
   isEditingSchedule.value = false
   isCompleting.value = false
+  store.clearAppointmentConflict()
   if (!current) return
   scheduleForm.day = toIsoDate(current.start)
   scheduleForm.time = toTimeString(current.start)
   scheduleForm.durationMinutes = getDurationMinutes(current.start, current.end)
 })
 
+watch(
+  () => [scheduleForm.day, scheduleForm.time, scheduleForm.durationMinutes],
+  () => store.clearAppointmentConflict(),
+)
+
 /** Switches the schedule section into edit mode, pre-filled with the current schedule. */
 function startEditingSchedule() {
+  store.clearAppointmentConflict()
   isEditingSchedule.value = true
 }
 
 /** Cancels rescheduling without saving. */
 function cancelEditingSchedule() {
+  store.clearAppointmentConflict()
   isEditingSchedule.value = false
 }
 
-/** Sends the edited schedule to the backend and returns to the read-only view. */
+/** Sends the edited schedule to the backend and returns to the read-only view, staying in edit mode if the new schedule conflicts with another appointment. */
 async function saveSchedule() {
   if (!appointment.value) return
 
-  await store.moveAppointment(appointment.value.id, {
+  const moved = await store.moveAppointment(appointment.value.id, {
     start: combineDayAndTime(scheduleForm.day, scheduleForm.time),
     durationMinutes: scheduleForm.durationMinutes,
   })
-  isEditingSchedule.value = false
+  if (moved) isEditingSchedule.value = false
+}
+
+/** Applies the account's suggested next free slot to the day and time fields without any further manual input. */
+function acceptSuggestedSlot() {
+  const conflict = store.appointmentConflict
+  if (!conflict) return
+
+  scheduleForm.day = toIsoDate(conflict.suggestedStart)
+  scheduleForm.time = toTimeString(conflict.suggestedStart)
+  store.clearAppointmentConflict()
 }
 
 /** Closes the detail view. */
@@ -218,7 +239,7 @@ function requestDelete() {
           <Select
             input-id="appointment-detail-time"
             v-model="scheduleForm.time"
-            :options="timeOptions"
+            :options="selectableTimeOptions"
             option-label="label"
             option-value="value"
           />
@@ -231,6 +252,11 @@ function requestDelete() {
             :options="durationOptions"
             option-label="label"
             option-value="minutes"
+          />
+          <AppointmentConflictNotice
+            v-if="store.appointmentConflict"
+            :conflict="store.appointmentConflict"
+            @accept="acceptSuggestedSlot"
           />
           <div class="appointment-detail-drawer__schedule-actions">
             <Button
