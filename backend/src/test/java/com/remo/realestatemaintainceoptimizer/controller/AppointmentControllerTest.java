@@ -203,9 +203,9 @@ class AppointmentControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath(
                         "$.message",
-                        equalTo("The selected time range overlaps with an existing appointment of the same account.")))
-                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:00:00")))
-                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:00:00")));
+                        equalTo("The selected time range overlaps with an existing appointment of the same account or leaves less than the required buffer time to it.")))
+                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:15:00")))
+                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:15:00")));
 
         mockMvc.perform(get("/api/appointments")).andExpect(jsonPath("$", hasSize(1)));
     }
@@ -278,6 +278,33 @@ class AppointmentControllerTest {
     @Test
     void gettingAnUnknownAppointmentReturnsNotFound() throws Exception {
         mockMvc.perform(get("/api/appointments/{id}", "unknown-id")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void movingAnAppointmentIntoAnotherOneReturnsAConflictWithASuggestedSlotAndKeepsItUnchanged() throws Exception {
+        mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_REQUEST_BODY))
+                .andExpect(status().isCreated());
+        String movableRequestBody = CREATE_REQUEST_BODY.replace("2026-08-11T13:00:00", "2026-08-12T09:00:00");
+        String response = mockMvc.perform(post("/api/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(movableRequestBody))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        mockMvc.perform(patch("/api/appointments/{id}/schedule", id)
+                        .header("Accept-Language", "en")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"start\": \"2026-08-11T14:00:00\", \"durationMinutes\": 60}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.suggestedStart", equalTo("2026-08-11T15:15:00")))
+                .andExpect(jsonPath("$.suggestedEnd", equalTo("2026-08-11T16:15:00")));
+
+        mockMvc.perform(get("/api/appointments/{id}", id))
+                .andExpect(jsonPath("$.start", equalTo("2026-08-12T09:00:00")));
     }
 
     @Test

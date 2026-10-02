@@ -116,7 +116,7 @@ test.describe('appointments', () => {
       await page.getByRole('option', { name: property.name }).click()
       await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
 
-      const conflictBanner = page.locator('.appointment-form-dialog__conflict')
+      const conflictBanner = page.locator('.appointment-conflict-notice')
       await expect(conflictBanner).toBeVisible()
       await expect(page.getByText(secondTitle)).toHaveCount(0)
 
@@ -124,7 +124,7 @@ test.describe('appointments', () => {
         (response) =>
           response.url().includes('/api/appointments') && response.request().method() === 'POST',
       )
-      await page.locator('.appointment-form-dialog__accept-suggestion').click()
+      await page.locator('.appointment-conflict-notice__accept').click()
       await expect(conflictBanner).toHaveCount(0)
       await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
 
@@ -134,6 +134,53 @@ test.describe('appointments', () => {
       await expect(page.getByText(secondTitle)).toBeVisible()
 
       await deleteAppointment(page, secondId)
+    } finally {
+      await deleteAppointment(page, firstId)
+    }
+  })
+
+  test('moving an appointment into another one is blocked, and the suggested next free slot can be applied', async ({
+    page,
+  }) => {
+    await page.goto('/calendar')
+    const firstTitle = `E2E Verschieben Basis ${Date.now()}`
+    const secondTitle = `E2E Verschieben Neu ${Date.now()}`
+
+    const firstId = await createAppointment(page, { title: firstTitle, property: property.name })
+
+    try {
+      await page.getByRole('button', { name: '+ Termin' }).click()
+      await page.getByLabel('Titel').fill(secondTitle)
+      await page.locator('#appointment-property').click()
+      await page.getByRole('option', { name: property.name }).click()
+      await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
+      await page.locator('.appointment-conflict-notice__accept').click()
+
+      const createResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/appointments') && response.request().method() === 'POST',
+      )
+      await page.getByRole('button', { name: 'Termin anlegen', exact: true }).click()
+      const secondId = ((await (await createResponsePromise).json()) as { id: string }).id
+
+      try {
+        await page.getByText(secondTitle).click()
+        await page.getByRole('button', { name: 'Verschieben' }).click()
+        await page.locator('#appointment-detail-time').click()
+        await page.getByRole('option', { name: '07:00' }).click()
+        await page.getByRole('button', { name: 'Speichern' }).click()
+
+        const conflictNotice = page.locator('.appointment-conflict-notice')
+        await expect(conflictNotice).toBeVisible()
+
+        await page.locator('.appointment-conflict-notice__accept').click()
+        await expect(conflictNotice).toHaveCount(0)
+        await page.getByRole('button', { name: 'Speichern' }).click()
+
+        await expect(page.getByRole('button', { name: 'Verschieben' })).toBeVisible()
+      } finally {
+        await deleteAppointment(page, secondId)
+      }
     } finally {
       await deleteAppointment(page, firstId)
     }

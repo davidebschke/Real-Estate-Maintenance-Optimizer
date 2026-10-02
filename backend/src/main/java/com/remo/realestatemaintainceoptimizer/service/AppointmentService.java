@@ -1,5 +1,6 @@
 package com.remo.realestatemaintainceoptimizer.service;
 
+import com.remo.realestatemaintainceoptimizer.config.AppointmentSchedulingProperties;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.HistoryEntryResponse;
@@ -26,6 +27,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
+@EnableConfigurationProperties(AppointmentSchedulingProperties.class)
 public class AppointmentService {
 
     static final String SCOPE_SERIES = "series";
@@ -48,16 +51,19 @@ public class AppointmentService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
     private final MessageSource messageSource;
+    private final AppointmentSchedulingProperties schedulingProperties;
 
     public AppointmentService(
             AppointmentRepository repository,
             PropertyRepository propertyRepository,
             UserRepository userRepository,
-            MessageSource messageSource) {
+            MessageSource messageSource,
+            AppointmentSchedulingProperties schedulingProperties) {
         this.repository = repository;
         this.propertyRepository = propertyRepository;
         this.userRepository = userRepository;
         this.messageSource = messageSource;
+        this.schedulingProperties = schedulingProperties;
     }
 
     /**
@@ -80,7 +86,7 @@ public class AppointmentService {
 
     /**
      * Creates a new appointment for one of the given account's properties, rejecting a schedule that overlaps with
-     * another of the account's own appointments, materializing a bounded horizon of future occurrences when
+     * or comes closer than the configured buffer to another of the account's own appointments, materializing a bounded horizon of future occurrences when
      * recurring and using up one of the account's appointment creations if it has a limit.
      */
     public AppointmentResponse create(String ownerId, CreateAppointmentRequest request) {
@@ -89,15 +95,10 @@ public class AppointmentService {
         }
 
         LocalDateTime firstStart = request.start().truncatedTo(ChronoUnit.MICROS);
-        LocalDateTime firstEnd = firstStart.plusMinutes(request.durationMinutes());
         Property property = propertyRepository.findByIdAndOwnerId(request.propertyId(), ownerId)
                 .orElseThrow(() -> new PropertyNotFoundException(request.propertyId()));
 
-        // Serializes concurrent creations for the same account, so two requests racing for the same slot cannot both
-        // pass the conflict check below before either has persisted its appointment.
-        userRepository.acquireTransactionLock(ownerId.hashCode());
-        List<Appointment> existingAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId);
-        rejectIfConflicting(existingAppointments, firstStart, firstEnd, request.durationMinutes());
+        requireFreeSchedule(ownerId, null, firstStart, request.durationMinutes());
 
         userRepository.findById(ownerId)
                 .orElseThrow(() -> new AccountNotFoundException(ownerId))
@@ -139,7 +140,8 @@ public class AppointmentService {
     }
 
     /**
-     * Reschedules an unlocked appointment to a new start and duration, rejecting locked appointments.
+     * Reschedules an unlocked appointment to a new start and duration, rejecting locked appointments and a changed
+     * schedule that overlaps with or comes closer than the configured buffer to another of the account's appointments.
      */
     public AppointmentResponse move(String ownerId, String id, MoveAppointmentRequest request) {
         Appointment appointment = loadOrThrow(ownerId, id);
@@ -149,6 +151,9 @@ public class AppointmentService {
 
         LocalDateTime newStart = request.start().truncatedTo(ChronoUnit.MICROS);
         LocalDateTime newEnd = newStart.plusMinutes(request.durationMinutes());
+        if (!newStart.equals(appointment.start()) || !newEnd.equals(appointment.end())) {
+            requireFreeSchedule(ownerId, id, newStart, request.durationMinutes());
+        }
         HistoryEntry moveEntry = new HistoryEntry(
                 currentInstant(),
                 HistoryEventType.MOVED,
@@ -288,24 +293,30 @@ public class AppointmentService {
 
     /**
      * Throws an {@link AppointmentConflictException} carrying the next free slot of the given duration if the given
-     * schedule overlaps with any of the given account's existing appointments.
+     * schedule overlaps with or comes closer than the configured buffer to any of the account's appointments other
+     * than {@code ignoredAppointmentId} (null to ignore none), holding the account's transaction lock so two requests
+     * racing for the same slot cannot both pass this check before either has persisted its change.
      */
-    private static void rejectIfConflicting(
-            List<Appointment> existingAppointments, LocalDateTime start, LocalDateTime end, int durationMinutes) {
-        boolean hasConflict = existingAppointments.stream()
-                .anyMatch(existing -> rangesOverlap(existing.start(), occupiedEnd(existing), start, end));
-        if (!hasConflict) {
+    private void requireFreeSchedule(
+            String ownerId, String ignoredAppointmentId, LocalDateTime start, int durationMinutes) {
+        userRepository.acquireTransactionLock(ownerId.hashCode());
+        List<Appointment> otherAppointments = repository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId).stream()
+                .filter(existing -> !existing.id().equals(ignoredAppointmentId))
+                .toList();
+        LocalDateTime end = start.plusMinutes(durationMinutes);
+        if (otherAppointments.stream().noneMatch(existing -> isTooCloseTo(existing, start, end))) {
             return;
         }
-        LocalDateTime suggestedStart = findNextAvailableStart(existingAppointments, start, durationMinutes);
+        LocalDateTime suggestedStart = findNextAvailableStart(otherAppointments, start, durationMinutes);
         throw new AppointmentConflictException(suggestedStart, suggestedStart.plusMinutes(durationMinutes));
     }
 
     /**
-     * Returns the earliest start at or after the given start at which the given duration is free of every given
-     * appointment's occupied range, never suggesting a Sunday since the company schedules no appointments then.
+     * Returns the earliest start at or after the given start at which the given duration keeps the configured buffer
+     * to every given appointment's occupied range, never suggesting a Sunday since the company schedules no
+     * appointments then.
      */
-    private static LocalDateTime findNextAvailableStart(
+    private LocalDateTime findNextAvailableStart(
             List<Appointment> existingAppointments, LocalDateTime requestedStart, int durationMinutes) {
         LocalDateTime candidateStart = requestedStart;
         boolean candidateChanged;
@@ -318,15 +329,24 @@ public class AppointmentService {
             }
             LocalDateTime candidateEnd = candidateStart.plusMinutes(durationMinutes);
             for (Appointment existing : existingAppointments) {
-                LocalDateTime existingEnd = occupiedEnd(existing);
-                if (rangesOverlap(existing.start(), existingEnd, candidateStart, candidateEnd)) {
-                    candidateStart = existingEnd;
+                if (isTooCloseTo(existing, candidateStart, candidateEnd)) {
+                    candidateStart = occupiedEnd(existing).plusMinutes(schedulingProperties.bufferMinutes());
                     candidateChanged = true;
                     break;
                 }
             }
         } while (candidateChanged);
         return candidateStart;
+    }
+
+    /**
+     * Returns whether the given range overlaps with the existing appointment's occupied range widened by the
+     * configured buffer on both sides.
+     */
+    private boolean isTooCloseTo(Appointment existing, LocalDateTime start, LocalDateTime end) {
+        int bufferMinutes = schedulingProperties.bufferMinutes();
+        return rangesOverlap(
+                existing.start().minusMinutes(bufferMinutes), occupiedEnd(existing).plusMinutes(bufferMinutes), start, end);
     }
 
     /**

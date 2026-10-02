@@ -46,10 +46,6 @@
         "text": "The AI suggests Wed, 08/12 at 2:00 PM — right after the Rheinblick maintenance, same neighborhood. That saves 34 km.",
         "applyButton": "Apply suggestion"
       },
-      "conflict": {
-        "suggestion": "Next free slot: {slot}.",
-        "acceptSuggestion": "Apply suggestion"
-      },
       "submit": "Create appointment",
       "cancel": "Cancel",
       "requiredFieldsLegend": "* Required field"
@@ -58,6 +54,10 @@
       "title": "Edit appointment",
       "submit": "Save",
       "error": "The appointment could not be updated."
+    },
+    "conflict": {
+      "suggestion": "Next free slot: {slot}.",
+      "acceptSuggestion": "Apply suggestion"
     },
     "detail": {
       "back": "‹ Back",

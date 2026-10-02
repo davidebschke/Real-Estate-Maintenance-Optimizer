@@ -2,6 +2,7 @@ package com.remo.realestatemaintainceoptimizer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
@@ -44,6 +45,8 @@ import org.springframework.context.i18n.LocaleContextHolder;
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
 class AppointmentServiceTest {
+
+    private static final int BUFFER_MINUTES = 15;
 
     @Autowired
     private AppointmentService service;
@@ -97,26 +100,65 @@ class AppointmentServiceTest {
     void theConflictExceptionSuggestsTheNextFreeSlotAfterEveryOverlappingAppointment() {
         service.create(owner.id(), createRequest(false, null));
         CreateAppointmentRequest secondExisting = new CreateAppointmentRequest(
-                "TÜV-Termin", "property-1", "", LocalDateTime.of(2026, 8, 11, 15, 0), 60, false, false, null, List.of());
+                "TÜV-Termin", "property-1", "", LocalDateTime.of(2026, 8, 11, 15, 15), 60, false, false, null, List.of());
         service.create(owner.id(), secondExisting);
         CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
                 "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 13, 0), 60, false, false, null, List.of());
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 0));
-                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 0));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 11, 16, 30));
+                    assertThat(exception.suggestedEnd()).isEqualTo(LocalDateTime.of(2026, 8, 11, 17, 30));
                 });
     }
 
     @Test
-    void creatingAnAppointmentImmediatelyAdjacentToAnExistingOneIsAllowed() {
+    void creatingAnAppointmentExactlyTheBufferAfterAnExistingOneIsAllowed() {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
-        CreateAppointmentRequest adjacent = new CreateAppointmentRequest(
-                "Fensterreinigung", "property-1", "", created.end(), 60, false, false, null, List.of());
+        CreateAppointmentRequest afterBuffer = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.end().plusMinutes(BUFFER_MINUTES), 60, false, false, null, List.of());
 
-        assertThat(service.create(owner.id(), adjacent)).isNotNull();
+        assertThat(service.create(owner.id(), afterBuffer)).isNotNull();
         assertThat(service.listAll(owner.id())).hasSize(2);
+    }
+
+    @Test
+    void creatingAnAppointmentCloserThanTheBufferAfterAnExistingOneIsBlockedWithoutOverlapping() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest tooClose = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.end().plusMinutes(BUFFER_MINUTES - 1), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), tooClose))
+                .isInstanceOfSatisfying(AppointmentConflictException.class, exception ->
+                        assertThat(exception.suggestedStart()).isEqualTo(created.end().plusMinutes(BUFFER_MINUTES)));
+        assertThat(service.listAll(owner.id())).hasSize(1);
+    }
+
+    @Test
+    void creatingAnAppointmentEndingCloserThanTheBufferBeforeAnExistingOneIsBlocked() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest tooClose = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.start().minusMinutes(60 + BUFFER_MINUTES - 1), 60, false, false, null, List.of());
+        CreateAppointmentRequest beforeBuffer = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.start().minusMinutes(60 + BUFFER_MINUTES), 60, false, false, null, List.of());
+
+        assertThatThrownBy(() -> service.create(owner.id(), tooClose)).isInstanceOf(AppointmentConflictException.class);
+        assertThat(service.create(owner.id(), beforeBuffer)).isNotNull();
+    }
+
+    @Test
+    void theSuggestedSlotKeepsTheBufferAndCanBeCreatedWithoutAnotherConflict() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        CreateAppointmentRequest overlapping = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", created.start().plusMinutes(30), 60, false, false, null, List.of());
+
+        AppointmentConflictException conflict = catchThrowableOfType(
+                AppointmentConflictException.class, () -> service.create(owner.id(), overlapping));
+        CreateAppointmentRequest atSuggestion = new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", conflict.suggestedStart(), 60, false, false, null, List.of());
+
+        assertThat(conflict.suggestedStart()).isEqualTo(created.end().plusMinutes(BUFFER_MINUTES));
+        assertThat(service.create(owner.id(), atSuggestion)).isNotNull();
     }
 
     @Test
@@ -135,7 +177,7 @@ class AppointmentServiceTest {
         AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
         service.complete(owner.id(), created.id(), LocalDateTime.of(2026, 8, 11, 14, 0));
         CreateAppointmentRequest afterActualEnd = new CreateAppointmentRequest(
-                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 14, 0), 60, false, false, null, List.of());
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 11, 14, 15), 60, false, false, null, List.of());
 
         assertThat(service.create(owner.id(), afterActualEnd)).isNotNull();
 
@@ -169,7 +211,7 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> service.create(owner.id(), overlapping))
                 .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
-                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 0));
+                    assertThat(exception.suggestedStart()).isEqualTo(LocalDateTime.of(2026, 8, 17, 23, 15));
                     assertThat(exception.suggestedStart().getDayOfWeek()).isNotEqualTo(DayOfWeek.SUNDAY);
                 });
     }
@@ -343,6 +385,69 @@ class AppointmentServiceTest {
         assertThat(moved.start()).isEqualTo(newStart);
         assertThat(moved.history()).hasSize(2);
         assertThat(service.getById(owner.id(), created.id()).start()).isEqualTo(newStart);
+    }
+
+    @Test
+    void movingAnAppointmentIntoAnotherOneIsBlockedWithTheNextFreeSlotAndLeavesItUnchanged() {
+        AppointmentResponse blocker = service.create(owner.id(), createRequest(false, null));
+        AppointmentResponse movable = service.create(owner.id(), new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 12, 9, 0), 60, false, false, null, List.of()));
+        MoveAppointmentRequest intoBlocker = new MoveAppointmentRequest(blocker.start().plusMinutes(30), 60);
+
+        assertThatThrownBy(() -> service.move(owner.id(), movable.id(), intoBlocker))
+                .isInstanceOfSatisfying(AppointmentConflictException.class, exception -> {
+                    assertThat(exception.suggestedStart()).isEqualTo(blocker.end().plusMinutes(BUFFER_MINUTES));
+                    assertThat(exception.suggestedEnd()).isEqualTo(blocker.end().plusMinutes(BUFFER_MINUTES + 60));
+                });
+        assertThat(service.getById(owner.id(), movable.id())).isEqualTo(movable);
+    }
+
+    @Test
+    void movingAnAppointmentCloserThanTheBufferToAnotherOneIsBlockedWithoutOverlapping() {
+        AppointmentResponse blocker = service.create(owner.id(), createRequest(false, null));
+        AppointmentResponse movable = service.create(owner.id(), new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", LocalDateTime.of(2026, 8, 12, 9, 0), 60, false, false, null, List.of()));
+
+        assertThatThrownBy(() -> service.move(owner.id(), movable.id(), new MoveAppointmentRequest(blocker.end(), 60)))
+                .isInstanceOf(AppointmentConflictException.class);
+        assertThat(service.move(owner.id(), movable.id(), new MoveAppointmentRequest(blocker.end().plusMinutes(BUFFER_MINUTES), 60)))
+                .isNotNull();
+    }
+
+    @Test
+    void movingAnAppointmentOverlappingItsOwnPreviousTimeIsNotAConflict() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+
+        AppointmentResponse shifted = service.move(owner.id(), created.id(), new MoveAppointmentRequest(created.start().plusMinutes(30), 120));
+
+        assertThat(shifted.start()).isEqualTo(created.start().plusMinutes(30));
+    }
+
+    @Test
+    void movingAnAppointmentToItsCurrentSlotIsAllowedEvenIfANeighbourAlreadyLiesWithinTheBuffer() {
+        AppointmentResponse first = service.create(owner.id(), createRequest(false, null));
+        AppointmentResponse second = service.create(owner.id(), new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", first.end().plusMinutes(BUFFER_MINUTES), 60, false, false, null, List.of()));
+        service.update(owner.id(), second.id(), new CreateAppointmentRequest(
+                "Fensterreinigung", "property-1", "", first.end(), 60, false, false, null, List.of()));
+
+        AppointmentResponse unchanged = service.move(owner.id(), second.id(), new MoveAppointmentRequest(first.end(), 60));
+
+        assertThat(unchanged.start()).isEqualTo(first.end());
+    }
+
+    @Test
+    void movingAnAppointmentOntoAnotherAccountsAppointmentIsNotAConflict() {
+        service.create(owner.id(), createRequest(false, null));
+        propertyRepository.save(new Property(
+                "other-owner-property", otherOwner.id(), "Anderes Objekt", "Anderestr. 1", "pi-building"));
+        AppointmentResponse foreign = service.create(otherOwner.id(), new CreateAppointmentRequest(
+                "Fensterreinigung", "other-owner-property", "", LocalDateTime.of(2026, 8, 12, 9, 0), 60, false, false, null, List.of()));
+
+        AppointmentResponse moved = service.move(
+                otherOwner.id(), foreign.id(), new MoveAppointmentRequest(LocalDateTime.of(2026, 8, 11, 13, 0), 120));
+
+        assertThat(moved.start()).isEqualTo(LocalDateTime.of(2026, 8, 11, 13, 0));
     }
 
     @Test

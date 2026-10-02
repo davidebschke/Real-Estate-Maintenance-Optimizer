@@ -49,14 +49,14 @@ export interface MoveAppointmentPayload {
 /** Scope of a delete operation: only the given appointment, or it and every following occurrence of its recurring series. */
 export type AppointmentDeleteScope = 'single' | 'series'
 
-/** Shape of the 409 response returned when a new appointment's schedule overlaps with an existing one of the same account. */
+/** Shape of the 409 response returned when a created or moved appointment's schedule overlaps with, or comes too close to, an existing one of the same account. */
 interface AppointmentConflictResponseDto {
   message: string
   suggestedStart: string
   suggestedEnd: string
 }
 
-/** The account's next free slot suggested after a blocked appointment creation, alongside its localized message. */
+/** The account's next free slot suggested after a blocked appointment creation or move, alongside its localized message. */
 export interface AppointmentConflict {
   message: string
   suggestedStart: Date
@@ -66,6 +66,11 @@ export interface AppointmentConflict {
 /** Outcome of creating an appointment: either the created (first) occurrence, or the conflict that blocked it. */
 export type CreateAppointmentResult =
   | { status: 'created'; appointment: Appointment }
+  | ({ status: 'conflict' } & AppointmentConflict)
+
+/** Outcome of moving an appointment: either the moved appointment, or the conflict that blocked it. */
+export type MoveAppointmentResult =
+  | { status: 'moved'; appointment: Appointment }
   | ({ status: 'conflict' } & AppointmentConflict)
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
@@ -82,7 +87,7 @@ export async function fetchAppointment(id: string): Promise<Appointment> {
   return toAppointment(data)
 }
 
-/** Creates a new appointment, returning its first (or only) occurrence, or the account's next free slot if its schedule overlaps with an existing appointment of the same account. */
+/** Creates a new appointment, returning its first (or only) occurrence, or the account's next free slot if its schedule overlaps with, or comes too close to, an existing appointment of the same account. */
 export async function createAppointment(payload: CreateAppointmentPayload): Promise<CreateAppointmentResult> {
   try {
     const { data } = await axios.post<AppointmentResponseDto>(`${apiBaseUrl}/api/appointments`, {
@@ -125,19 +130,25 @@ export async function updateAppointment(
   return toAppointment(data)
 }
 
-/** Reschedules an unlocked appointment to a new start and duration. */
+/** Reschedules an unlocked appointment to a new start and duration, or returns the account's next free slot if the new schedule overlaps with, or comes too close to, another appointment of the same account. */
 export async function moveAppointment(
   id: string,
   payload: MoveAppointmentPayload,
-): Promise<Appointment> {
-  const { data } = await axios.patch<AppointmentResponseDto>(
-    `${apiBaseUrl}/api/appointments/${id}/schedule`,
-    {
-      start: toLocalDateTimeString(payload.start),
-      durationMinutes: payload.durationMinutes,
-    },
-  )
-  return toAppointment(data)
+): Promise<MoveAppointmentResult> {
+  try {
+    const { data } = await axios.patch<AppointmentResponseDto>(
+      `${apiBaseUrl}/api/appointments/${id}/schedule`,
+      {
+        start: toLocalDateTimeString(payload.start),
+        durationMinutes: payload.durationMinutes,
+      },
+    )
+    return { status: 'moved', appointment: toAppointment(data) }
+  } catch (error) {
+    const conflict = toAppointmentConflict(error)
+    if (conflict) return { status: 'conflict', ...conflict }
+    throw error
+  }
 }
 
 /** Marks an appointment as completed with the given actual end time. */

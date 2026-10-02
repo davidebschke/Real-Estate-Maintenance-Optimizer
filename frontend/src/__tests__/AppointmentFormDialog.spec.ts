@@ -235,7 +235,7 @@ describe('AppointmentFormDialog', () => {
     await submitButton(wrapper).trigger('click')
     await flushPromises()
 
-    await bodyField('.appointment-form-dialog__accept-suggestion').trigger('click')
+    await bodyField('.appointment-conflict-notice__accept').trigger('click')
     await flushPromises()
 
     const selects = wrapper.findAllComponents(Select)

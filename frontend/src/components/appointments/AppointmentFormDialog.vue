@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import AppointmentPropertySelect from '@/components/appointments/AppointmentPropertySelect.vue'
 import AppointmentMaterialInput from '@/components/appointments/AppointmentMaterialInput.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
+import AppointmentConflictNotice from '@/components/appointments/AppointmentConflictNotice.vue'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { useDemoQuota } from '@/composables/useDemoQuota'
@@ -17,7 +18,6 @@ import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useLocale } from '@/composables/useLocale'
 import { useDurationOptions } from '@/composables/useDurationOptions'
-import { formatLocalizedTime } from '@/utils/dateFormat'
 import {
   DURATION_OPTIONS,
   RECURRENCE_INTERVAL_OPTIONS,
@@ -26,6 +26,7 @@ import {
   generateTimeSlotOptions,
   generateUpcomingDayOptions,
   getDurationMinutes,
+  includeTimeOption,
   toIsoDate,
   toTimeString,
 } from '@/utils/appointmentSchedulingOptions'
@@ -48,7 +49,7 @@ const isEditMode = computed(() => store.editingAppointment !== null)
 /** Whether a demo account already used up its appointment creations, which blocks creating but never editing. */
 const isBlockedByQuota = computed(() => !isEditMode.value && isQuotaExhausted.value)
 
-const timeOptions = generateTimeSlotOptions()
+const timeSlotOptions = generateTimeSlotOptions()
 const dayOptions = computed(() => {
   const upcomingOptions = generateUpcomingDayOptions(new Date(), currentLocale.value)
   const editingStart = store.editingAppointment?.start
@@ -78,6 +79,8 @@ const form = reactive({
   materials: [] as string[],
 })
 
+const selectableTimeOptions = computed(() => includeTimeOption(timeSlotOptions, form.time))
+
 const isValid = computed(
   () =>
     form.title.trim().length > 0 &&
@@ -94,14 +97,6 @@ const isTitleTouched = ref(false)
 
 /** Whether the title has been left empty after being touched, i.e. its required-field hint must be shown. */
 const isTitleMissing = computed(() => isTitleTouched.value && form.title.trim().length === 0)
-
-/** The account's suggested next free slot after a blocked creation, as a single readable line. */
-const suggestedSlotLine = computed(() => {
-  const conflict = store.appointmentConflict
-  if (!conflict) return ''
-  const { label } = formatDayOption(conflict.suggestedStart, currentLocale.value)
-  return `${label}, ${formatLocalizedTime(conflict.suggestedStart, currentLocale.value)}`
-})
 
 watch(visible, (isVisible) => {
   if (isVisible) resetForm()
@@ -140,7 +135,7 @@ function resetForm() {
   form.propertyId = null
   form.description = ''
   form.day = dayOptions.value[0]?.value ?? ''
-  form.time = timeOptions[0]?.value ?? ''
+  form.time = timeSlotOptions[0]?.value ?? ''
   form.durationMinutes = DURATION_OPTIONS[0]?.minutes ?? 60
   form.locked = false
   form.recurring = false
@@ -249,7 +244,7 @@ function cancel() {
         <Select
           input-id="appointment-time"
           v-model="form.time"
-          :options="timeOptions"
+          :options="selectableTimeOptions"
           option-label="label"
           option-value="value"
           aria-required="true"
@@ -294,15 +289,11 @@ function cancel() {
 
     <AppointmentAiSuggestionBanner v-if="!isEditMode" />
 
-    <div v-if="!isEditMode && store.appointmentConflict" class="appointment-form-dialog__conflict">
-      <p class="appointment-form-dialog__field-error">{{ store.appointmentConflict.message }}</p>
-      <p class="appointment-form-dialog__field-error">
-        {{ t('appointments.form.conflict.suggestion', { slot: suggestedSlotLine }) }}
-      </p>
-      <button type="button" class="appointment-form-dialog__accept-suggestion" @click="acceptSuggestedSlot">
-        {{ t('appointments.form.conflict.acceptSuggestion') }}
-      </button>
-    </div>
+    <AppointmentConflictNotice
+      v-if="!isEditMode && store.appointmentConflict"
+      :conflict="store.appointmentConflict"
+      @accept="acceptSuggestedSlot"
+    />
 
     <p v-if="isEditMode && store.hasUpdateError" class="appointment-form-dialog__error">
       {{ t('appointments.edit.error') }}

@@ -51,3 +51,6 @@ remo:
     max-demo-accounts-per-client: ${REMO_AUTH_MAX_DEMO_ACCOUNTS_PER_CLIENT:10}
     demo-account-creation-window: 1h
     max-active-demo-accounts: 100
+  appointments:
+    # Minimum gap in minutes between two appointments of the same account (creation and rescheduling), e.g. for travel and tools
+    buffer-minutes: 15

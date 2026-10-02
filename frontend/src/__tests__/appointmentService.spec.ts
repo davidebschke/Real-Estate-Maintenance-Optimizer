@@ -194,12 +194,41 @@ describe('appointmentService', () => {
   it('moves an appointment to a new start and duration', async () => {
     vi.mocked(axios.patch).mockResolvedValue({ data: createDto() })
 
-    await moveAppointment('1', { start: new Date(2026, 7, 12, 9, 0), durationMinutes: 60 })
+    const result = await moveAppointment('1', { start: new Date(2026, 7, 12, 9, 0), durationMinutes: 60 })
 
     expect(axios.patch).toHaveBeenCalledWith(
       expect.stringContaining('/api/appointments/1/schedule'),
       { start: '2026-08-12T09:00:00', durationMinutes: 60 },
     )
+    expect(result).toEqual(expect.objectContaining({ status: 'moved' }))
+  })
+
+  it('returns the suggested next free slot when a move is blocked by a 409 conflict', async () => {
+    vi.mocked(axios.patch).mockRejectedValue(
+      httpError(409, {
+        message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+        suggestedStart: '2026-08-11T15:15:00',
+        suggestedEnd: '2026-08-11T16:15:00',
+      }),
+    )
+
+    const result = await moveAppointment('1', { start: new Date(2026, 7, 11, 14, 0), durationMinutes: 60 })
+
+    expect(result).toEqual({
+      status: 'conflict',
+      message: 'Der gewählte Zeitraum überschneidet sich mit einem bereits bestehenden Termin.',
+      suggestedStart: new Date('2026-08-11T15:15:00'),
+      suggestedEnd: new Date('2026-08-11T16:15:00'),
+    })
+  })
+
+  it('rethrows a move error that is not a slot conflict, such as a locked appointment', async () => {
+    const lockedError = httpError(409, { message: 'Der Termin ist unverschiebbar.' })
+    vi.mocked(axios.patch).mockRejectedValue(lockedError)
+
+    await expect(
+      moveAppointment('1', { start: new Date(2026, 7, 12, 9, 0), durationMinutes: 60 }),
+    ).rejects.toBe(lockedError)
   })
 
   it('completes an appointment with the given actual end time', async () => {

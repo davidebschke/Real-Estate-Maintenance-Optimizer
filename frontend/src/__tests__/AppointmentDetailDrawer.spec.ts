@@ -63,6 +63,20 @@ async function mountDrawer(appointment: Appointment) {
   return { wrapper, store }
 }
 
+/** Opens the schedule form of a mounted drawer and saves it unchanged. */
+async function openScheduleFormAndSave(wrapper: Awaited<ReturnType<typeof mountDrawer>>['wrapper']) {
+  const moveButton = wrapper
+    .findAllComponents(Button)
+    .find((button) => button.text() === 'Verschieben')
+  await moveButton!.trigger('click')
+
+  const saveButton = wrapper
+    .findAllComponents(Button)
+    .find((button) => button.text() === 'Speichern')
+  await saveButton!.trigger('click')
+  await flushPromises()
+}
+
 describe('AppointmentDetailDrawer', () => {
   it("renders the appointment's title, property, description and materials", async () => {
     await mountDrawer(createAppointment())
@@ -99,7 +113,10 @@ describe('AppointmentDetailDrawer', () => {
   })
 
   it('reschedules an unlocked appointment via the schedule form', async () => {
-    vi.mocked(appointmentService.moveAppointment).mockResolvedValue(createAppointment())
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValue({
+      status: 'moved',
+      appointment: createAppointment(),
+    })
     const { wrapper } = await mountDrawer(createAppointment())
 
     const moveButton = wrapper
@@ -122,6 +139,59 @@ describe('AppointmentDetailDrawer', () => {
       '1',
       expect.objectContaining({ start: new Date(2026, 7, 12, 9, 0), durationMinutes: 60 }),
     )
+  })
+
+  it('keeps the schedule form open and shows the conflict with its suggested slot when the move is blocked', async () => {
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValue({
+      status: 'conflict',
+      message: 'Konflikt mit einem bestehenden Termin.',
+      suggestedStart: new Date(2026, 7, 11, 15, 15),
+      suggestedEnd: new Date(2026, 7, 11, 16, 15),
+    })
+    const { wrapper } = await mountDrawer(createAppointment())
+
+    await openScheduleFormAndSave(wrapper)
+
+    expect(document.body.querySelector('.appointment-conflict-notice')?.textContent).toContain(
+      'Konflikt mit einem bestehenden Termin.',
+    )
+    expect(document.body.querySelector('.appointment-conflict-notice')?.textContent).toContain('15:15')
+    expect(wrapper.findAllComponents(Select)).toHaveLength(3)
+  })
+
+  it('applies the suggested slot to the day and time fields and clears the conflict notice', async () => {
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValue({
+      status: 'conflict',
+      message: 'Konflikt mit einem bestehenden Termin.',
+      suggestedStart: new Date(2026, 7, 12, 15, 15),
+      suggestedEnd: new Date(2026, 7, 12, 16, 15),
+    })
+    const { wrapper } = await mountDrawer(createAppointment())
+    await openScheduleFormAndSave(wrapper)
+
+    document.body.querySelector<HTMLButtonElement>('.appointment-conflict-notice__accept')!.click()
+    await flushPromises()
+
+    const selects = wrapper.findAllComponents(Select)
+    expect(selects[0]!.props('modelValue')).toBe('2026-08-12')
+    expect(selects[1]!.props('modelValue')).toBe('15:15')
+    expect(document.body.querySelector('.appointment-conflict-notice')).toBeNull()
+  })
+
+  it('clears the conflict notice once the user changes the schedule fields', async () => {
+    vi.mocked(appointmentService.moveAppointment).mockResolvedValue({
+      status: 'conflict',
+      message: 'Konflikt mit einem bestehenden Termin.',
+      suggestedStart: new Date(2026, 7, 11, 15, 15),
+      suggestedEnd: new Date(2026, 7, 11, 16, 15),
+    })
+    const { wrapper } = await mountDrawer(createAppointment())
+    await openScheduleFormAndSave(wrapper)
+
+    await wrapper.findAllComponents(Select)[1]!.vm.$emit('update:modelValue', '09:00')
+    await flushPromises()
+
+    expect(document.body.querySelector('.appointment-conflict-notice')).toBeNull()
   })
 
   it('opens a date/time form pre-filled with the current time and marks the appointment as completed on confirm', async () => {

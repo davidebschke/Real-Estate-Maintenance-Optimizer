@@ -72,7 +72,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 #### 2. ➕ Appointment Creation (`Term creation`)
 - **Standard Input Form:** Fast manual entry interface.
-- **Conflict Detection:** Overlapping appointments are rejected and the next free slot of the same duration is suggested.
+- **Conflict Detection:** Appointments that overlap with, or come closer than a configurable buffer time to, another appointment are rejected when creating or moving them, and the next free slot of the same duration is suggested.
 
 #### 3. 🗺️ Location-Based Planning (`Automatic planning Place`)
 - Smart location grouping to **minimize driving time** between service calls.
@@ -132,7 +132,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 #### 2. ➕ Terminerstellung
 - **Eingabemaske:** Schnelle manuelle Erstellung von Aufträgen.
-- **Konflikterkennung:** Sich überschneidende Termine werden abgelehnt und der nächste freie Zeitraum gleicher Dauer wird vorgeschlagen.
+- **Konflikterkennung:** Termine, die sich mit einem anderen Termin überschneiden oder eine konfigurierbare Pufferzeit dazu unterschreiten, werden beim Anlegen und Verschieben abgelehnt und der nächste freie Zeitraum gleicher Dauer wird vorgeschlagen.
 
 #### 3. 🗺️ Ortsabhängige Planung
 - Intelligent abgestimmte Routen zur **Reduzierung von Fahrzeiten** zwischen Einsatzorten.
