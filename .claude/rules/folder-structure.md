@@ -20,7 +20,7 @@ Real-Estate-Maintenance-Optimizer/
 │   │   │   ├── overview/          # daily appointment overview building blocks (DailyAppointmentList, DailyAppointmentCard)
 │   │   │   ├── map/               # appointment map building blocks (AppointmentMapCard for the card frame, AppointmentMap wrapping Leaflet)
 │   │   │   ├── auth/              # login/demo account building blocks (AuthCard switching between LoginForm and DemoAccountPanel, DemoAccountBanner below the header, DemoQuotaHint in the create dialogs)
-│   │   │   ├── profile/           # profile and settings dialog building blocks (ProfileSettingsDialog, ProfileUsernameSection, ProfilePasswordSection, ProfileAppointmentBufferSection)
+│   │   │   ├── profile/           # profile and settings dialog building blocks (ProfileSettingsDialog, ProfileUsernameSection, ProfilePasswordConfirmDialog, ProfilePasswordSection, ProfileAppointmentBufferSection)
 │   │   │   └── forms/             # form building blocks shared by several dialogs (RequiredFieldLabel for a label with its required-field asterisk)
 │   │   ├── views/                 # pages / route targets (e.g. OverviewView, CalendarView, StatisticsView, PropertiesView, LoginView)
 │   │   ├── router/                # Vue Router configuration (route definitions incl. the public /login route, NavigationKey type, authGuard.ts login guard)
