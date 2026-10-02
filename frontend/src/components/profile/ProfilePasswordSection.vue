@@ -43,7 +43,7 @@ async function save(): Promise<void> {
     heading-id="profile-password-heading"
     :heading="t('profile.password.heading')"
     :description="t('profile.password.description')"
-    :failure-message="failureReason ? t('profile.errors.' + failureReason) : null"
+    :failure-reason="failureReason"
     :success-message="isSaved ? t('profile.password.success') : null"
   >
     <div class="profile-settings-dialog__field">

@@ -25,8 +25,8 @@ const trimmedUsername = computed(() => username.value.trim())
 const isInvalid = computed(() => !isValidUsername(trimmedUsername.value))
 const isUnchanged = computed(() => trimmedUsername.value.toLowerCase() === authStore.currentUser?.username)
 const isUsernameErrorShown = computed(() => touched.username && isInvalid.value)
-const failureMessage = computed(() =>
-  failureReason.value && failureReason.value !== 'currentPasswordIncorrect' ? t('profile.errors.' + failureReason.value) : null,
+const inlineFailureReason = computed(() =>
+  failureReason.value !== 'currentPasswordIncorrect' ? failureReason.value : null,
 )
 const confirmErrorMessage = computed(() =>
   failureReason.value === 'currentPasswordIncorrect' ? t('profile.errors.currentPasswordIncorrect') : null,
@@ -56,7 +56,7 @@ async function save(currentPassword: string): Promise<void> {
     heading-id="profile-username-heading"
     :heading="t('profile.username.heading')"
     :description="t('profile.username.description')"
-    :failure-message="failureMessage"
+    :failure-reason="inlineFailureReason"
     :success-message="isSaved ? t('profile.username.success') : null"
   >
     <div class="profile-settings-dialog__field">
@@ -78,19 +78,19 @@ async function save(currentPassword: string): Promise<void> {
       </p>
     </div>
 
-    <ProfilePasswordConfirmDialog
-      v-model:visible="isConfirming"
-      :is-saving="isSaving"
-      :error-message="confirmErrorMessage"
-      @confirm="save"
-    />
-
     <template #actions>
       <Button
         class="profile-settings-dialog__submit"
         :label="t('profile.username.submit')"
         :disabled="isInvalid || isUnchanged || isSaving"
         @click="requestSave"
+      />
+
+      <ProfilePasswordConfirmDialog
+        v-model:visible="isConfirming"
+        :is-saving="isSaving"
+        :error-message="confirmErrorMessage"
+        @confirm="save"
       />
     </template>
   </ProfileSection>

@@ -34,7 +34,7 @@ async function save(): Promise<void> {
     heading-id="profile-buffer-heading"
     :heading="t('profile.buffer.heading')"
     :description="t('profile.buffer.description')"
-    :failure-message="failureReason ? t('profile.errors.' + failureReason) : null"
+    :failure-reason="failureReason"
     :success-message="isSaved ? t('profile.buffer.success') : null"
   >
     <div class="profile-settings-dialog__field profile-settings-dialog__field--narrow">

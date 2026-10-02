@@ -7,6 +7,7 @@ import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import com.remo.realestatemaintainceoptimizer.security.JwtService;
 import com.remo.realestatemaintainceoptimizer.security.SessionCookieManager;
+import com.remo.realestatemaintainceoptimizer.security.UsernamePolicy;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -56,7 +57,7 @@ public final class TestAccounts {
         String id = UUID.randomUUID().toString();
         return userRepository.save(new User(
                 id,
-                "demo-" + id.substring(0, 8),
+                UsernamePolicy.DEMO_PREFIX + id.substring(0, 8),
                 null,
                 "Demo",
                 true,

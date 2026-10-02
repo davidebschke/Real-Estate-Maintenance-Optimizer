@@ -1,17 +1,25 @@
 /** Longest appointment buffer in minutes the backend accepts (one day). */
 export const MAX_APPOINTMENT_BUFFER_MINUTES = 24 * 60
 
-/** Shortest and longest accepted username, in characters. */
+/** Shortest accepted username, in characters, mirroring the backend class UsernamePolicy. */
 const USERNAME_MIN_LENGTH = 3
+
+/** Longest accepted username, in characters, mirroring the backend class UsernamePolicy. */
 export const USERNAME_MAX_LENGTH = 50
 
-/** Longest password the backend accepts as input, in characters. */
+/** Longest password the backend accepts as input, in characters, mirroring the backend class PasswordPolicy. */
 export const PASSWORD_MAX_LENGTH = 128
 
+/** Shortest accepted password, in characters, mirroring the backend class PasswordPolicy. */
 const PASSWORD_MIN_LENGTH = 8
+
+/** Longest accepted password, in UTF-8 bytes (the BCrypt limit), mirroring the backend class PasswordPolicy. */
 const PASSWORD_MAX_BYTES = 72
 
-const USERNAME_PATTERN = new RegExp(`^(?!demo-)[A-Za-z0-9._-]{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}$`, 'i')
+/** Prefix of the usernames generated for demo accounts, which nobody may choose, mirroring the backend class UsernamePolicy. */
+const DEMO_USERNAME_PREFIX = 'demo-'
+
+const USERNAME_PATTERN = new RegExp(`^(?!${DEMO_USERNAME_PREFIX})[A-Za-z0-9._-]{${USERNAME_MIN_LENGTH},${USERNAME_MAX_LENGTH}}$`, 'i')
 
 /** Why a new password is not acceptable. */
 export type NewPasswordProblem = 'tooShort' | 'tooLong' | 'unchanged'
