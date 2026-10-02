@@ -3,7 +3,7 @@ package com.remo.realestatemaintainceoptimizer.service;
 import com.remo.realestatemaintainceoptimizer.config.AuthProperties;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
-import java.nio.charset.StandardCharsets;
+import com.remo.realestatemaintainceoptimizer.security.PasswordPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -20,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class InitialAccountPasswordService {
 
     static final String INITIAL_USERNAME = "debschke";
-    static final int MIN_PASSWORD_LENGTH = 8;
-    static final int MAX_PASSWORD_BYTES = 72;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialAccountPasswordService.class);
 
@@ -52,14 +50,14 @@ public class InitialAccountPasswordService {
         if (rawPassword == null || rawPassword.isBlank()) {
             return false;
         }
-        if (rawPassword.length() < MIN_PASSWORD_LENGTH) {
+        if (PasswordPolicy.isTooShort(rawPassword)) {
             LOGGER.warn("Initial password for account '{}' ignored: it must have at least {} characters",
-                    username, MIN_PASSWORD_LENGTH);
+                    username, PasswordPolicy.MIN_LENGTH);
             return false;
         }
-        if (rawPassword.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
+        if (PasswordPolicy.isTooLong(rawPassword)) {
             LOGGER.warn("Initial password for account '{}' ignored: BCrypt only supports up to {} bytes",
-                    username, MAX_PASSWORD_BYTES);
+                    username, PasswordPolicy.MAX_BYTES);
             return false;
         }
 

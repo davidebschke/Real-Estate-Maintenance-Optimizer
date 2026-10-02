@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import com.remo.realestatemaintainceoptimizer.security.PasswordPolicy;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,7 +94,7 @@ class InitialAccountPasswordServiceTest {
 
     @Test
     void acceptsAPasswordOfExactlyTheMaximumBcryptLength() {
-        String maximumLengthPassword = "a".repeat(InitialAccountPasswordService.MAX_PASSWORD_BYTES);
+        String maximumLengthPassword = "a".repeat(PasswordPolicy.MAX_BYTES);
 
         assertThat(service.applyInitialPassword(InitialAccountPasswordService.INITIAL_USERNAME, maximumLengthPassword))
                 .isTrue();

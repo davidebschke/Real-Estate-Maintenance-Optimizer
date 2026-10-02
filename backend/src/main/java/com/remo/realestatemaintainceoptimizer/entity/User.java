@@ -16,11 +16,15 @@ import java.util.Locale;
 @Table(name = "users")
 public class User {
 
+    public static final String DEMO_USERNAME_PREFIX = "demo-";
+    public static final int MIN_USERNAME_LENGTH = 3;
+    public static final int MAX_USERNAME_LENGTH = 50;
+
     @Id
     @Column(length = 36)
     private String id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = MAX_USERNAME_LENGTH)
     private String username;
 
     @Column(name = "password_hash", length = 100)

@@ -9,8 +9,8 @@ import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededExcepti
 import com.remo.realestatemaintainceoptimizer.exception.UsernameAlreadyTakenException;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import com.remo.realestatemaintainceoptimizer.security.JwtService;
+import com.remo.realestatemaintainceoptimizer.security.PasswordPolicy;
 import com.remo.realestatemaintainceoptimizer.security.SlidingWindowRateLimiter;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -111,10 +111,10 @@ public class AccountService {
     }
 
     private static void requireAcceptableNewPassword(String currentPassword, String newPassword) {
-        if (newPassword.length() < InitialAccountPasswordService.MIN_PASSWORD_LENGTH) {
+        if (PasswordPolicy.isTooShort(newPassword)) {
             throw new InvalidNewPasswordException(InvalidNewPasswordException.REASON_TOO_SHORT);
         }
-        if (newPassword.getBytes(StandardCharsets.UTF_8).length > InitialAccountPasswordService.MAX_PASSWORD_BYTES) {
+        if (PasswordPolicy.isTooLong(newPassword)) {
             throw new InvalidNewPasswordException(InvalidNewPasswordException.REASON_TOO_LONG);
         }
         if (newPassword.equals(currentPassword)) {
