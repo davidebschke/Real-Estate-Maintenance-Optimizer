@@ -17,18 +17,31 @@ let resizeObserver: ResizeObserver | null = null
 const defaultCenter: L.LatLngTuple = [51.1657, 10.4515]
 const defaultZoom = 6
 
-/**
- * Redraws every marker and the connecting line for the current appointments, then fits the view to them; the line
- * follows the given road route and falls back to a dashed straight line between the markers while there is none.
- */
+/** Redraws the line connecting the markers along the given road route, or as a dashed straight line while there is none. */
+function renderRouteLine(markers: AppointmentMapMarker[], route: [number, number][] | null) {
+  if (!map) {
+    return
+  }
+
+  routeLine?.remove()
+  routeLine = null
+
+  if (route && route.length > 1) {
+    routeLine = L.polyline(route, { color: '#3b82f6' }).addTo(map)
+  } else if (markers.length > 1) {
+    const latLngs: L.LatLngTuple[] = markers.map((marker) => [marker.lat, marker.lng])
+    routeLine = L.polyline(latLngs, { color: '#3b82f6', dashArray: '6 8' }).addTo(map)
+  }
+}
+
+/** Redraws every marker and the connecting line for the current appointments, then fits the view to them and the route. */
 function renderMarkers(markers: AppointmentMapMarker[], route: [number, number][] | null) {
   if (!map || !markerLayer) {
     return
   }
 
   markerLayer.clearLayers()
-  routeLine?.remove()
-  routeLine = null
+  renderRouteLine(markers, route)
 
   const latLngs: L.LatLngTuple[] = markers.map((marker) => [marker.lat, marker.lng])
 
@@ -37,12 +50,6 @@ function renderMarkers(markers: AppointmentMapMarker[], route: [number, number][
       .bindPopup(`${marker.position}. ${marker.appointment.title}`)
       .addTo(markerLayer as L.LayerGroup)
   })
-
-  if (route && route.length > 1) {
-    routeLine = L.polyline(route, { color: '#3b82f6' }).addTo(map)
-  } else if (latLngs.length > 1) {
-    routeLine = L.polyline(latLngs, { color: '#3b82f6', dashArray: '6 8' }).addTo(map)
-  }
 
   if (latLngs.length > 0) {
     map.fitBounds(L.latLngBounds([...latLngs, ...(route ?? [])]), { padding: [32, 32] })
@@ -72,8 +79,26 @@ onMounted(() => {
 })
 
 watch(
-  () => [props.markers, props.route] as const,
-  ([markers, route]) => renderMarkers(markers, route ?? null),
+  () => props.markers,
+  (markers) => renderMarkers(markers, props.route ?? null),
+)
+
+watch(
+  () => props.route,
+  (route) => {
+    renderRouteLine(props.markers, route ?? null)
+    if (route && map && !map.getBounds().contains(L.latLngBounds(route))) {
+      map.fitBounds(
+        L.latLngBounds([
+          ...props.markers.map((marker): L.LatLngTuple => [marker.lat, marker.lng]),
+          ...route,
+        ]),
+        {
+          padding: [32, 32],
+        },
+      )
+    }
+  },
 )
 
 onUnmounted(() => {

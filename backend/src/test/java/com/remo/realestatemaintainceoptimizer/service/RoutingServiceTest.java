@@ -16,6 +16,7 @@ import com.remo.realestatemaintainceoptimizer.config.RoutingProperties;
 import com.remo.realestatemaintainceoptimizer.dto.RouteCoordinate;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import java.io.IOException;
 import java.util.List;
@@ -53,10 +54,15 @@ class RoutingServiceTest {
         mockServer = MockRestServiceServer.bindTo(builder).build();
     }
 
-    private RoutingService serviceWithLimits(int perAccountPerMinute, int overallPerMinute) {
+    private RoutingService serviceWithLimits(int perAccountPerMinute, int overallPerMinute, int perDay) {
         return new RoutingService(
-                new RoutingProperties(true, "https://ors.test", "test-key", "driving-car", perAccountPerMinute, overallPerMinute),
+                new RoutingProperties(
+                        true, "https://ors.test", "test-key", "driving-car", perAccountPerMinute, overallPerMinute, perDay),
                 builder);
+    }
+
+    private RoutingService serviceWithLimits(int perAccountPerMinute, int overallPerMinute) {
+        return serviceWithLimits(perAccountPerMinute, overallPerMinute, 1500);
     }
 
     private RoutingService service() {
@@ -188,9 +194,9 @@ class RoutingServiceTest {
     @Test
     void doesNotCallOpenrouteserviceWhileRoutingIsDisabled() {
         RoutingService disabled = new RoutingService(
-                new RoutingProperties(false, "https://ors.test", "", "driving-car", 20, 30), builder);
+                new RoutingProperties(false, "https://ors.test", "", "driving-car", 20, 30, 1500), builder);
 
-        assertThatThrownBy(() -> disabled.route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> disabled.route("account-1", STOPS)).isInstanceOf(RoutingDisabledException.class);
 
         mockServer.verify();
     }
@@ -228,6 +234,23 @@ class RoutingServiceTest {
         assertThatThrownBy(() -> service.route("account-2", OTHER_STOPS))
                 .isInstanceOf(RateLimitExceededException.class);
         mockServer.verify();
+    }
+
+    @Test
+    void limitsTheRequestsOfAllAccountsPerDayAndGivesBackTheOtherBudgets() {
+        mockServer
+                .expect(once(), requestTo(DIRECTIONS_URL))
+                .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
+        RoutingService service = serviceWithLimits(2, 2, 1);
+
+        service.route("account-1", STOPS);
+
+        assertThatThrownBy(() -> service.route("account-1", OTHER_STOPS))
+                .isInstanceOfSatisfying(
+                        RateLimitExceededException.class,
+                        exception -> assertThat(exception.reasonCode())
+                                .isEqualTo(RateLimitExceededException.REASON_ROUTE_QUOTA_EXHAUSTED));
+        assertThat(service.route("account-1", STOPS).legs()).hasSize(2);
     }
 
     @Test

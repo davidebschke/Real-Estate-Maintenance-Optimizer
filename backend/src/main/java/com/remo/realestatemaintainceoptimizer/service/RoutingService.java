@@ -6,6 +6,7 @@ import com.remo.realestatemaintainceoptimizer.dto.RouteCoordinate;
 import com.remo.realestatemaintainceoptimizer.dto.RouteLeg;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.security.SlidingWindowRateLimiter;
 import java.time.Clock;
@@ -21,7 +22,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Calculates road routes through ordered stops via the openrouteservice directions API, cached per coordinate sequence (emptied once it holds {@value #MAX_CACHED_ROUTES} routes) and rate-limited per account and overall to protect the shared API quota.
+ * Calculates road routes through ordered stops via the openrouteservice directions API, cached per coordinate sequence and rate-limited per account and overall to protect the shared API quota.
  */
 @Service
 @EnableConfigurationProperties(RoutingProperties.class)
@@ -29,6 +30,7 @@ public class RoutingService {
 
     static final int MAX_CACHED_ROUTES = 500;
     static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
+    static final Duration DAILY_LIMIT_WINDOW = Duration.ofDays(1);
     private static final String ALL_ACCOUNTS_KEY = "all-accounts";
     private static final Logger log = LoggerFactory.getLogger(RoutingService.class);
 
@@ -36,6 +38,7 @@ public class RoutingService {
     private final RestClient restClient;
     private final SlidingWindowRateLimiter requestsPerAccount;
     private final SlidingWindowRateLimiter requestsOverall;
+    private final SlidingWindowRateLimiter requestsPerDay;
     private final Map<List<RouteCoordinate>, RouteResponse> cache = new ConcurrentHashMap<>();
 
     public RoutingService(RoutingProperties properties, RestClient.Builder restClientBuilder) {
@@ -48,15 +51,16 @@ public class RoutingService {
                 properties.maxRequestsPerAccountPerMinute(), RATE_LIMIT_WINDOW, Clock.systemUTC());
         this.requestsOverall =
                 new SlidingWindowRateLimiter(properties.maxRequestsPerMinute(), RATE_LIMIT_WINDOW, Clock.systemUTC());
+        this.requestsPerDay =
+                new SlidingWindowRateLimiter(properties.maxRequestsPerDay(), DAILY_LIMIT_WINDOW, Clock.systemUTC());
     }
 
     /**
-     * Returns the road route through the given stops in order, answering repeated sequences from the cache without a further openrouteservice call.
-     * Throws {@link RateLimitExceededException} when the account or the application as a whole used up its request budget, and {@link RoutingUnavailableException} when routing is switched off or openrouteservice failed, timed out or answered unusably; the caller is expected to degrade deliberately.
+     * Returns the road route through the given stops in order, throwing {@link RoutingDisabledException} while routing is switched off, {@link RateLimitExceededException} when a request budget is used up and {@link RoutingUnavailableException} when openrouteservice fails, so callers can degrade deliberately.
      */
     public RouteResponse route(String accountId, List<RouteCoordinate> coordinates) {
         if (!properties.enabled()) {
-            throw new RoutingUnavailableException("Routing is disabled (remo.routing.enabled=false)");
+            throw new RoutingDisabledException();
         }
         List<RouteCoordinate> stops = List.copyOf(coordinates);
         RouteResponse cached = cache.get(stops);
@@ -80,6 +84,11 @@ public class RoutingService {
         if (!requestsOverall.tryAcquire(ALL_ACCOUNTS_KEY)) {
             requestsPerAccount.releaseLatest(accountId);
             throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_ROUTE_REQUESTS);
+        }
+        if (!requestsPerDay.tryAcquire(ALL_ACCOUNTS_KEY)) {
+            requestsPerAccount.releaseLatest(accountId);
+            requestsOverall.releaseLatest(ALL_ACCOUNTS_KEY);
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_ROUTE_QUOTA_EXHAUSTED);
         }
     }
 

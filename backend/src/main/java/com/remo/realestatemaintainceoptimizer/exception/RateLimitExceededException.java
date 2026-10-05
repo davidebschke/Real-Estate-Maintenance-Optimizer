@@ -11,6 +11,7 @@ public class RateLimitExceededException extends RuntimeException {
     public static final String REASON_TOO_MANY_PASSWORD_CHANGE_ATTEMPTS = "tooManyPasswordChangeAttempts";
     public static final String REASON_TOO_MANY_USERNAME_CHANGES = "tooManyUsernameChanges";
     public static final String REASON_TOO_MANY_ROUTE_REQUESTS = "tooManyRouteRequests";
+    public static final String REASON_ROUTE_QUOTA_EXHAUSTED = "routeQuotaExhausted";
 
     private final String reasonCode;
 

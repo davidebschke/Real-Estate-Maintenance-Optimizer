@@ -15,10 +15,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 const MAX_REMEMBERED_ROUTES = 50
 const routeRequests = new Map<string, Promise<RoadRoute>>()
 
-/**
- * Fetches the road route through the given stops in order via the backend, sharing one request per identical
- * stop sequence for the session; a failed request is rejected to the caller and not remembered, so it can be retried.
- */
+/** Fetches the road route through the given stops in order via the backend, sharing one request per identical stop sequence and rejecting a failure without remembering it. */
 export function fetchRoute(stops: GeocodedPosition[]): Promise<RoadRoute> {
   const key = stops.map((stop) => `${stop.lat},${stop.lng}`).join(';')
   const remembered = routeRequests.get(key)

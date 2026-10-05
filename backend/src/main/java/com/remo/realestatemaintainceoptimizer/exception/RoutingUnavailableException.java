@@ -1,7 +1,7 @@
 package com.remo.realestatemaintainceoptimizer.exception;
 
 /**
- * Thrown when a road route cannot be calculated because routing is switched off or the external routing service failed or answered unusably.
+ * Thrown when a road route cannot be calculated because the external routing service failed or answered unusably.
  */
 public class RoutingUnavailableException extends RuntimeException {
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { AxiosError } from 'axios'
 import { ref } from 'vue'
 import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
 import * as routingService from '@/services/routingService'
@@ -82,7 +83,7 @@ describe('useAppointmentRoute', () => {
     })
   })
 
-  it('treats consecutive appointments at the same position as one stop without travel', async () => {
+  it('treats consecutive appointments at the same position as one stop without a leg', async () => {
     const markers = ref([
       createMarker('1', 50.9, 6.9),
       createMarker('2', 50.9, 6.9),
@@ -96,7 +97,7 @@ describe('useAppointmentRoute', () => {
       { lat: 50.9, lng: 6.9 },
       { lat: 50.7, lng: 6.7 },
     ])
-    expect(legsByAppointmentId.value.get('2')).toEqual({ distanceMeters: 0, durationSeconds: 0 })
+    expect(legsByAppointmentId.value.has('2')).toBe(false)
     expect(legsByAppointmentId.value.get('3')).toEqual({
       distanceMeters: 1000,
       durationSeconds: 100,
@@ -129,13 +130,27 @@ describe('useAppointmentRoute', () => {
     vi.mocked(routingService.fetchRoute).mockRejectedValue(new Error('503'))
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
 
-    const { route, hasRouteError, legsByAppointmentId, isLoading } = useAppointmentRoute(markers)
+    const { route, hasRouteError, legsByAppointmentId } = useAppointmentRoute(markers)
     await flushPromises()
 
     expect(route.value).toBeNull()
     expect(hasRouteError.value).toBe(true)
     expect(legsByAppointmentId.value.size).toBe(0)
-    expect(isLoading.value).toBe(false)
+  })
+
+  it('reports no error when the server has routing deliberately disabled', async () => {
+    vi.mocked(routingService.fetchRoute).mockRejectedValue(
+      new AxiosError('Not Implemented', 'ERR_BAD_RESPONSE', undefined, undefined, {
+        status: 501,
+      } as never),
+    )
+    const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
+
+    const { route, hasRouteError } = useAppointmentRoute(markers)
+    await flushPromises()
+
+    expect(route.value).toBeNull()
+    expect(hasRouteError.value).toBe(false)
   })
 
   it('clears the error once the positions change to a sequence that no longer needs a route', async () => {

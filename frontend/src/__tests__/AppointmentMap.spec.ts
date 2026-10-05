@@ -10,6 +10,7 @@ interface MapMock {
   remove: ReturnType<typeof vi.fn<() => void>>
   fitBounds: ReturnType<typeof vi.fn<(bounds: unknown, options?: unknown) => void>>
   invalidateSize: ReturnType<typeof vi.fn<() => void>>
+  getBounds: ReturnType<typeof vi.fn<() => { contains: (bounds: unknown) => boolean }>>
 }
 interface LayerGroupMock {
   addTo: ReturnType<typeof vi.fn<(map: unknown) => LayerGroupMock>>
@@ -25,7 +26,9 @@ const mapInstance: MapMock = {
   remove: vi.fn<() => void>(),
   fitBounds: vi.fn<(bounds: unknown, options?: unknown) => void>(),
   invalidateSize: vi.fn<() => void>(),
+  getBounds: vi.fn<() => { contains: (bounds: unknown) => boolean }>(),
 }
+const viewContains = vi.fn<(bounds: unknown) => boolean>()
 const tileLayerInstance = { addTo: vi.fn<(map: unknown) => void>() }
 const layerGroupInstance: LayerGroupMock = {
   addTo: vi.fn<(map: unknown) => LayerGroupMock>(),
@@ -96,6 +99,8 @@ beforeEach(() => {
   layerGroupInstance.addTo.mockReturnValue(layerGroupInstance)
   markerInstance.bindPopup.mockReturnValue(markerInstance)
   polylineInstance.addTo.mockReturnValue(polylineInstance)
+  viewContains.mockReturnValue(true)
+  mapInstance.getBounds.mockReturnValue({ contains: viewContains })
   resizeObserverCallback = null
   vi.stubGlobal('ResizeObserver', ResizeObserverMock)
 })
@@ -177,6 +182,42 @@ describe('AppointmentMap', () => {
 
     expect(polylineInstance.remove).toHaveBeenCalled()
     expect(L.polyline).toHaveBeenLastCalledWith(route, { color: '#3b82f6' })
+  })
+
+  it('keeps the current view when the arriving road route lies within it', async () => {
+    const wrapper = mount(AppointmentMap, {
+      props: { markers: [createMarker(), createMarker({ position: 2, lat: 50.8, lng: 6.8 })] },
+    })
+    mapInstance.fitBounds.mockClear()
+
+    await wrapper.setProps({
+      route: [
+        [50.9, 6.9],
+        [50.8, 6.8],
+      ],
+    })
+
+    expect(mapInstance.fitBounds).not.toHaveBeenCalled()
+  })
+
+  it('widens the view when the arriving road route leaves it', async () => {
+    const wrapper = mount(AppointmentMap, {
+      props: { markers: [createMarker(), createMarker({ position: 2, lat: 50.8, lng: 6.8 })] },
+    })
+    mapInstance.fitBounds.mockClear()
+    viewContains.mockReturnValue(false)
+
+    await wrapper.setProps({
+      route: [
+        [50.9, 6.9],
+        [50.7, 6.7],
+      ],
+    })
+
+    expect(mapInstance.fitBounds).toHaveBeenCalledWith(
+      expect.arrayContaining([[50.7, 6.7]]),
+      expect.anything(),
+    )
   })
 
   it('does not draw a route line for a single appointment', () => {

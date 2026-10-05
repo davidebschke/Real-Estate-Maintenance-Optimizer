@@ -17,6 +17,7 @@ import com.remo.realestatemaintainceoptimizer.dto.RouteLeg;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import com.remo.realestatemaintainceoptimizer.security.JwtService;
@@ -152,7 +153,7 @@ class RoutingControllerTest {
 
     @Test
     void answersAnUnavailableRoutingWithALocalizedServiceUnavailable() throws Exception {
-        when(routingService.route(eq(account.id()), any())).thenThrow(new RoutingUnavailableException("disabled"));
+        when(routingService.route(eq(account.id()), any())).thenThrow(new RoutingUnavailableException("openrouteservice request failed"));
 
         mockMvc.perform(post("/api/routes")
                         .header("Accept-Language", "de")
@@ -160,6 +161,14 @@ class RoutingControllerTest {
                         .content(TWO_STOPS))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message", equalTo("Die Straßenroute konnte gerade nicht berechnet werden.")));
+    }
+
+    @Test
+    void answersDisabledRoutingWithNotImplemented() throws Exception {
+        when(routingService.route(eq(account.id()), any())).thenThrow(new RoutingDisabledException());
+
+        mockMvc.perform(post("/api/routes").contentType(MediaType.APPLICATION_JSON).content(TWO_STOPS))
+                .andExpect(status().isNotImplemented());
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,8 +98,33 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message", equalTo("Die Straßenroute konnte gerade nicht berechnet werden.")));
     }
 
+    @Test
+    void anExhaustedDailyRouteQuotaReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/route-quota-exhausted").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Das Tageslimit für Routenberechnungen ist erreicht. Bitte versuchen Sie es morgen erneut.")));
+    }
+
+    @Test
+    void disabledRoutingReturnsALocalizedNotImplemented() throws Exception {
+        mockMvc.perform(get("/routing-disabled").header("Accept-Language", "en"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.message", equalTo("Road routing is not enabled on this server.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/route-quota-exhausted")
+        String failWithRouteQuotaExhausted() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_ROUTE_QUOTA_EXHAUSTED);
+        }
+
+        @GetMapping("/routing-disabled")
+        String failWithRoutingDisabled() {
+            throw new RoutingDisabledException();
+        }
 
         @GetMapping("/route-rate-limit-exceeded")
         String failWithRouteRateLimitExceeded() {

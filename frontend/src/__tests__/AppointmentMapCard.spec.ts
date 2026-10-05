@@ -25,7 +25,6 @@ function mockRoute(route: RoadRoute | null, hasRouteError: boolean) {
   vi.mocked(useAppointmentRoute).mockReturnValue({
     route: ref(route),
     hasRouteError: ref(hasRouteError),
-    isLoading: ref(false),
     legsByAppointmentId: computed(() => new Map()),
   })
 }
