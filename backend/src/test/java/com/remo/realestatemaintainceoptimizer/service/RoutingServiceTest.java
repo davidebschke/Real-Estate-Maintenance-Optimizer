@@ -109,6 +109,19 @@ class RoutingServiceTest {
     }
 
     @Test
+    void keepsThePathOfTheConfiguredBaseUrlInFrontOfTheEndpoint() {
+        mockServer
+                .expect(requestTo("https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson"))
+                .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
+        RoutingService service = new RoutingService(
+                new RoutingProperties(true, "https://api.heigit.org/openrouteservice", "test-key", 20, 30, 1500), builder);
+
+        service.route("account-1", RouteMode.CAR, STOPS);
+
+        mockServer.verify();
+    }
+
+    @Test
     void routesOnFootWithTheWalkingProfileAndCachesPerMode() {
         mockServer
                 .expect(once(), requestTo("https://ors.test/v2/directions/foot-walking/geojson"))

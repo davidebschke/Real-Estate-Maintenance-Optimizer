@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties(prefix = "remo.routing")
 public record RoutingProperties(
         @DefaultValue("false") boolean enabled,
-        @DefaultValue("https://api.openrouteservice.org") String baseUrl,
+        @DefaultValue("https://api.heigit.org/openrouteservice") String baseUrl,
         String apiKey,
         @DefaultValue("20") int maxRequestsPerAccountPerMinute,
         @DefaultValue("30") int maxRequestsPerMinute,

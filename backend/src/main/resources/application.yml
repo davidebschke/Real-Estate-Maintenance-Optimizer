@@ -57,7 +57,8 @@ remo:
   routing:
     # Road routes via openrouteservice; while false the endpoint answers 501 and the frontend silently keeps drawing straight lines
     enabled: ${REMO_ROUTING_ENABLED:false}
-    base-url: https://api.openrouteservice.org
+    # api.openrouteservice.org is deprecated in favour of api.heigit.org (same API key); no trailing slash, otherwise requests fail with 405
+    base-url: https://api.heigit.org/openrouteservice
     # Required (startup fails without it) while routing is enabled; never commit it
     api-key: ${REMO_ROUTING_API_KEY:}
     # Free plan allows 40 directions requests/minute and 2,000/day in total, so stay below that across all accounts and demo accounts

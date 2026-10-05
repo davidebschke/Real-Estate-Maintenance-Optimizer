@@ -23,7 +23,7 @@ class RoutingPropertiesTest {
         RoutingProperties properties = bind(Map.of());
 
         assertThat(properties.enabled()).isFalse();
-        assertThat(properties.baseUrl()).isEqualTo("https://api.openrouteservice.org");
+        assertThat(properties.baseUrl()).isEqualTo("https://api.heigit.org/openrouteservice");
         assertThat(properties.maxRequestsPerAccountPerMinute()).isEqualTo(20);
         assertThat(properties.maxRequestsPerMinute()).isEqualTo(30);
         assertThat(properties.maxRequestsPerDay()).isEqualTo(1500);
