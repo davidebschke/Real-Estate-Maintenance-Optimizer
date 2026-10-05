@@ -86,7 +86,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 - Attach required tools and materials directly to jobs to prevent extra supply runs.
 
 #### 6. 🚗 Route Optimization (`Fast route planning`)
-- Route optimization and map display run exclusively via **Leaflet**, embedded directly in the appointment summary.
+- Route optimization and map display run via **Leaflet** (road routes calculated via **openrouteservice**), embedded directly in the appointment summary.
 
 #### 7. 🔒 Fixed Appointments (`Unrescheduled terms`)
 - Lock specific appointments so automated AI scheduling leaves them untouched.
@@ -108,7 +108,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 | Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly |
 | Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`) |
 
-Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. The PostgreSQL database stays hosted on Supabase (project "RemoDB"), reached from the Oracle Cloud instance via Supabase's session pooler; the connection is passed in through the GitHub secrets `REMO_DB_URL`, `REMO_DB_USERNAME` and `REMO_DB_PASSWORD`. The login additionally needs the GitHub secrets `REMO_AUTH_JWT_SECRET` (signing key of the session token, at least 32 bytes, the deploy fails without it) and `REMO_AUTH_INITIAL_USER_PASSWORD` (initial password of the account `account_default`); the site must be served over HTTPS, otherwise the repository variable `REMO_AUTH_COOKIE_SECURE` has to be set to `false`.
+Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. The PostgreSQL database stays hosted on Supabase (project "RemoDB"), reached from the Oracle Cloud instance via Supabase's session pooler; the connection is passed in through the GitHub secrets `REMO_DB_URL`, `REMO_DB_USERNAME` and `REMO_DB_PASSWORD`. The login additionally needs the GitHub secrets `REMO_AUTH_JWT_SECRET` (signing key of the session token, at least 32 bytes, the deploy fails without it) and `REMO_AUTH_INITIAL_USER_PASSWORD` (initial password of the account `account_default`); the site must be served over HTTPS, otherwise the repository variable `REMO_AUTH_COOKIE_SECURE` has to be set to `false`. The optional GitHub secret `REMO_ROUTING_API_KEY` (openrouteservice key) enables road routing on the map; without it the deploy only warns and the map keeps drawing straight lines.
 
 ### 🛠️ Running the Project Locally
 
@@ -268,7 +268,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 - Zuordnung von benötigtem Material direkt zum Termin, um unnötige Fahrten zum Lager oder Baumarkt zu vermeiden.
 
 #### 6. 🚗 Routenoptimierung 
-- Routenoptimierung und Kartenanzeige laufen ausschließlich über **Leaflet**, direkt in der Terminübersicht eingebettet.
+- Routenoptimierung und Kartenanzeige laufen über **Leaflet** (Straßenrouten berechnet über **openrouteservice**), direkt in der Terminübersicht eingebettet.
 
 #### 7. 🔒 Unverschiebbare Termine 
 - Fixierte Termine werden durch den KI-Optimierungsalgorithmus nicht verändert.
@@ -289,7 +289,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 | Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed |
 | Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`) |
 
-Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. Die PostgreSQL-Datenbank bleibt bei Supabase gehostet (Projekt "RemoDB") und wird von der Oracle-Cloud-Instanz über Supabases Session-Pooler erreicht; die Verbindung wird über die GitHub-Secrets `REMO_DB_URL`, `REMO_DB_USERNAME` und `REMO_DB_PASSWORD` übergeben. Die Anmeldung braucht zusätzlich die GitHub-Secrets `REMO_AUTH_JWT_SECRET` (Signaturschlüssel des Sitzungs-Tokens, mindestens 32 Byte, ohne ihn schlägt das Deployment fehl) und `REMO_AUTH_INITIAL_USER_PASSWORD` (initiales Passwort des Accounts `account_default`); die Seite muss über HTTPS ausgeliefert werden, andernfalls ist die Repository-Variable `REMO_AUTH_COOKIE_SECURE` auf `false` zu setzen.
+Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. Die PostgreSQL-Datenbank bleibt bei Supabase gehostet (Projekt "RemoDB") und wird von der Oracle-Cloud-Instanz über Supabases Session-Pooler erreicht; die Verbindung wird über die GitHub-Secrets `REMO_DB_URL`, `REMO_DB_USERNAME` und `REMO_DB_PASSWORD` übergeben. Die Anmeldung braucht zusätzlich die GitHub-Secrets `REMO_AUTH_JWT_SECRET` (Signaturschlüssel des Sitzungs-Tokens, mindestens 32 Byte, ohne ihn schlägt das Deployment fehl) und `REMO_AUTH_INITIAL_USER_PASSWORD` (initiales Passwort des Accounts `account_default`); die Seite muss über HTTPS ausgeliefert werden, andernfalls ist die Repository-Variable `REMO_AUTH_COOKIE_SECURE` auf `false` zu setzen. Das optionale GitHub-Secret `REMO_ROUTING_API_KEY` (openrouteservice-Schlüssel) aktiviert das Straßenrouting auf der Karte; ohne es warnt das Deployment nur und die Karte zeichnet weiter Luftlinien.
 
 ### 🛠️ Projekt lokal starten
 
@@ -429,7 +429,7 @@ Damit läuft das Projekt vollständig lokal.
 * **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
 * **Data Access:** Spring Data JPA
-* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim)
+* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim, Straßenrouting via openrouteservice)
 * **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
 ### 🗄️ Datenbank

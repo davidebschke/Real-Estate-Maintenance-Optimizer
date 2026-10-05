@@ -9,6 +9,8 @@ import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -82,8 +84,57 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message", equalTo("A demo account can create at most 3 additional properties.")));
     }
 
+    @Test
+    void anExceededRouteRequestLimitReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/route-rate-limit-exceeded").header("Accept-Language", "en"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo("Too many route calculations. Please try again in a minute.")));
+    }
+
+    @Test
+    void anUnavailableRoutingReturnsALocalizedServiceUnavailable() throws Exception {
+        mockMvc.perform(get("/routing-unavailable").header("Accept-Language", "de"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message", equalTo("Die Straßenroute konnte gerade nicht berechnet werden.")));
+    }
+
+    @Test
+    void anExhaustedDailyRouteQuotaReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/route-quota-exhausted").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Das Tageslimit für Routenberechnungen ist erreicht. Bitte versuchen Sie es morgen erneut.")));
+    }
+
+    @Test
+    void disabledRoutingReturnsALocalizedNotImplemented() throws Exception {
+        mockMvc.perform(get("/routing-disabled").header("Accept-Language", "en"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.message", equalTo("Road routing is not enabled on this server.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/route-quota-exhausted")
+        String failWithRouteQuotaExhausted() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_ROUTE_QUOTA_EXHAUSTED);
+        }
+
+        @GetMapping("/routing-disabled")
+        String failWithRoutingDisabled() {
+            throw new RoutingDisabledException();
+        }
+
+        @GetMapping("/route-rate-limit-exceeded")
+        String failWithRouteRateLimitExceeded() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_ROUTE_REQUESTS);
+        }
+
+        @GetMapping("/routing-unavailable")
+        String failWithRoutingUnavailable() {
+            throw new RoutingUnavailableException("openrouteservice request failed");
+        }
 
         @GetMapping("/invalid-credentials")
         String failWithInvalidCredentials() {

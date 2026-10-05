@@ -24,7 +24,6 @@ export interface Appointment {
   recurrenceIntervalMonths: number | null
   materials: string[]
   history: AppointmentHistoryEntry[]
-  travelDistanceKm: number
   actualEnd: Date | null
   completed: boolean
 }

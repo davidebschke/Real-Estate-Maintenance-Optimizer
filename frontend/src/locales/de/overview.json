@@ -8,11 +8,22 @@
       "allCompletedHint": "Alle Termine heute erledigt · Vorschau auf morgen",
       "tomorrowHeading": "Termine für morgen, den {date}",
       "emptyTomorrow": "Für morgen stehen noch keine Termine an.",
-      "travelSummary": "{km} km · {duration}"
+      "travelSummary": {
+        "car": "{km} km · {duration} Anfahrt",
+        "walking": "{km} km · {duration} zu Fuß"
+      },
+      "durationSummary": "Dauer {duration}",
+      "googleMapsRoute": "Route über Google Maps"
     },
     "map": {
+      "routeMode": {
+        "label": "Fortbewegungsart für die Route",
+        "car": "PKW",
+        "walking": "Zu Fuß"
+      },
       "empty": "Heute stehen keine Termine an.",
       "geocodingError": "Für einzelne Adressen konnte kein Standort ermittelt werden.",
+      "routeError": "Die Route ist gerade nicht verfügbar, die Karte zeigt die Luftlinie.",
       "allCompleted": "Alle Termine heute erledigt"
     }
   }

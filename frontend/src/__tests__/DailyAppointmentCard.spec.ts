@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { i18n } from '@/i18n'
+import { useRouteMode } from '@/composables/useRouteMode'
 import DailyAppointmentCard from '@/components/overview/DailyAppointmentCard.vue'
 import type { Appointment } from '@/types/appointment'
 
@@ -22,7 +23,6 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     recurrenceIntervalMonths: null,
     materials: ['Filterpatrone 2x', 'Dichtungsset'],
     history: [],
-    travelDistanceKm: 6.4,
     actualEnd: null,
     completed: false,
     ...overrides,
@@ -30,11 +30,12 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
 }
 
 afterEach(() => {
+  useRouteMode().routeMode.value = 'car'
   i18n.global.locale.value = 'de'
 })
 
 describe('DailyAppointmentCard', () => {
-  it('renders the position, time, title, property, materials and travel summary', () => {
+  it('renders the position, time, title, property, materials and duration', () => {
     const wrapper = mount(DailyAppointmentCard, {
       props: { appointment: createAppointment(), position: 1 },
       global: { plugins: [i18n] },
@@ -49,7 +50,58 @@ describe('DailyAppointmentCard', () => {
     expect(wrapper.find('.daily-appointment-card__materials').text()).toBe(
       'Filterpatrone 2x, Dichtungsset',
     )
-    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6.4 km · 1 Std 30 Min')
+    expect(wrapper.find('.daily-appointment-card__duration').text()).toBe('Dauer 1 Std 30 Min')
+  })
+
+  it('shows the distance and driving time of the travel leg to the appointment', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: {
+        appointment: createAppointment(),
+        position: 2,
+        travelLeg: { distanceMeters: 6400, durationSeconds: 721 },
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6,4 km · 13 Min Anfahrt')
+  })
+
+  it('words the travel leg as a walk when routes are calculated on foot', () => {
+    useRouteMode().routeMode.value = 'walking'
+    const wrapper = mount(DailyAppointmentCard, {
+      props: {
+        appointment: createAppointment(),
+        position: 2,
+        travelLeg: { distanceMeters: 800, durationSeconds: 600 },
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('0,8 km · 10 Min zu Fuß')
+  })
+
+  it('formats the travel leg in English when the locale is switched', () => {
+    i18n.global.locale.value = 'en'
+    const wrapper = mount(DailyAppointmentCard, {
+      props: {
+        appointment: createAppointment(),
+        position: 2,
+        travelLeg: { distanceMeters: 6400, durationSeconds: 3900 },
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6.4 km · 1 hr 5 min drive')
+    expect(wrapper.find('.daily-appointment-card__duration').text()).toBe('Duration 1 hr 30 min')
+  })
+
+  it('shows no travel information without a travel leg, e.g. for the first appointment of the day', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1 },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').exists()).toBe(false)
   })
 
   it('does not render a materials tag when the appointment has no materials', () => {
@@ -68,6 +120,55 @@ describe('DailyAppointmentCard', () => {
     })
 
     expect(wrapper.classes()).toContain('daily-appointment-card--completed')
+  })
+
+  it('shows no Google Maps link unless requested', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1 },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__route-link').exists()).toBe(false)
+  })
+
+  it('links to Google Maps directions from the current location to the appointment address', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1, showRouteLink: true },
+      global: { plugins: [i18n] },
+    })
+
+    const link = wrapper.find('.daily-appointment-card__route-link')
+    const url = new URL(link.attributes('href') ?? '')
+
+    expect(link.text()).toBe('Route über Google Maps')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toBe('noopener noreferrer')
+    expect(url.searchParams.get('destination')).toBe('Aachener Str. 512, 50933 Köln-Braunsenfeld')
+    expect(url.searchParams.get('travelmode')).toBe('driving')
+    expect(url.searchParams.has('origin')).toBe(false)
+  })
+
+  it('uses the walking travel mode when routes are calculated on foot', () => {
+    useRouteMode().routeMode.value = 'walking'
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1, showRouteLink: true },
+      global: { plugins: [i18n] },
+    })
+
+    const url = new URL(wrapper.find('.daily-appointment-card__route-link').attributes('href') ?? '')
+
+    expect(url.searchParams.get('travelmode')).toBe('walking')
+  })
+
+  it('does not open the appointment details when the Google Maps link is clicked', async () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1, showRouteLink: true },
+      global: { plugins: [i18n] },
+    })
+
+    await wrapper.find('.daily-appointment-card__route-link').trigger('click')
+
+    expect(wrapper.emitted('open-appointment')).toBeUndefined()
   })
 
   it('emits the appointment id when clicked', async () => {

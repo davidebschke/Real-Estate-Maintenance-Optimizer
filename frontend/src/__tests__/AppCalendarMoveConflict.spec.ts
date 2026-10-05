@@ -34,7 +34,6 @@ function createAppointment(): Appointment {
     recurrenceIntervalMonths: null,
     materials: [],
     history: [],
-    travelDistanceKm: 0,
     actualEnd: null,
     completed: false,
   }

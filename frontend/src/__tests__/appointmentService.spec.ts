@@ -73,7 +73,6 @@ describe('appointmentService', () => {
         start: new Date('2026-08-11T13:00:00'),
         end: new Date('2026-08-11T15:00:00'),
         category: 'maintenance',
-        travelDistanceKm: 0,
       }),
     ])
     expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/api/appointments'))

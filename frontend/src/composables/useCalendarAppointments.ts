@@ -13,10 +13,9 @@ export interface VueCalEvent {
   class: string
 }
 
-/** Number of appointments and total travel distance scheduled for a single calendar day. */
+/** Number of appointments scheduled for a single calendar day. */
 export interface DayAppointmentSummary {
   appointmentCount: number
-  travelDistanceKm: number
 }
 
 /** Provides reusable access to the appointments shown on the calendar, in vue-cal's event format and as per-day summaries. */
@@ -26,20 +25,14 @@ export function useCalendarAppointments() {
 
   const events = computed<VueCalEvent[]>(() => appointments.value.map(toVueCalEvent))
 
-  /** Returns the appointment count and total travel distance for the given calendar day, or null when none are scheduled. */
+  /** Returns the appointment count for the given calendar day, or null when none are scheduled. */
   function getDaySummary(date: Date): DayAppointmentSummary | null {
     const dayAppointments = appointments.value.filter((appointment) =>
       isSameDay(appointment.start, date),
     )
     if (dayAppointments.length === 0) return null
 
-    return {
-      appointmentCount: dayAppointments.length,
-      travelDistanceKm: dayAppointments.reduce(
-        (total, appointment) => total + appointment.travelDistanceKm,
-        0,
-      ),
-    }
+    return { appointmentCount: dayAppointments.length }
   }
 
   return { appointments, events, getDaySummary }

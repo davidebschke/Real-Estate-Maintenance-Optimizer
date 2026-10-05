@@ -16,8 +16,7 @@
     },
     "dayHeader": {
       "appointmentCountSingular": "{count} appointment",
-      "appointmentCountPlural": "{count} appointments",
-      "travelDistance": "{km} km"
+      "appointmentCountPlural": "{count} appointments"
     },
     "list": {
       "empty": "No appointments in the shown period."

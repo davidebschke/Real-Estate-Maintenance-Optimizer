@@ -31,8 +31,7 @@ const appointmentCountKey = computed(() =>
       dayNumber ? `${label} ${dayNumber}` : label
     }}</span>
     <span v-if="summary" class="calendar-day-header__summary">
-      {{ t(appointmentCountKey, { count: summary.appointmentCount }) }} ·
-      {{ t('calendar.dayHeader.travelDistance', { km: summary.travelDistanceKm }) }}
+      {{ t(appointmentCountKey, { count: summary.appointmentCount }) }}
     </span>
   </div>
 </template>
