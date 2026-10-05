@@ -48,6 +48,7 @@ vi.mock('leaflet', () => ({
     marker: vi.fn<() => typeof markerInstance>(() => markerInstance),
     polyline: vi.fn<() => typeof polylineInstance>(() => polylineInstance),
     latLngBounds: vi.fn<(latLngs: unknown) => unknown>((latLngs) => latLngs),
+    divIcon: vi.fn<(options: unknown) => unknown>((options) => options),
   },
 }))
 
@@ -218,6 +219,92 @@ describe('AppointmentMap', () => {
       expect.arrayContaining([[50.7, 6.7]]),
       expect.anything(),
     )
+  })
+
+  it('numbers each marker with the stop number of its appointment', () => {
+    mount(AppointmentMap, {
+      props: {
+        markers: [
+          createMarker({ position: 1, lat: 50.9, lng: 6.9 }),
+          createMarker({ position: 3, lat: 50.8, lng: 6.8 }),
+        ],
+      },
+    })
+
+    expect(L.divIcon).toHaveBeenCalledTimes(2)
+    expect(L.divIcon).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ html: '<span>1</span>' }),
+    )
+    expect(L.divIcon).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ html: '<span>3</span>' }),
+    )
+    expect(L.marker).toHaveBeenNthCalledWith(
+      1,
+      [50.9, 6.9],
+      expect.objectContaining({ icon: expect.objectContaining({ html: '<span>1</span>' }) }),
+    )
+  })
+
+  it('shares one marker with all stop numbers between appointments at the same position', () => {
+    mount(AppointmentMap, {
+      props: {
+        markers: [
+          createMarker({ position: 1, lat: 50.9, lng: 6.9 }),
+          createMarker({ position: 2, lat: 50.9, lng: 6.9 }),
+          createMarker({ position: 3, lat: 50.8, lng: 6.8 }),
+        ],
+      },
+    })
+
+    expect(L.marker).toHaveBeenCalledTimes(2)
+    expect(L.divIcon).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ html: '<span>1, 2</span>' }),
+    )
+  })
+
+  it('mutes the marker of a stop whose appointments are all completed', () => {
+    mount(AppointmentMap, {
+      props: {
+        markers: [
+          createMarker({
+            position: 1,
+            lat: 50.9,
+            lng: 6.9,
+            appointment: createAppointment({ completed: true }),
+          }),
+          createMarker({ position: 2, lat: 50.8, lng: 6.8 }),
+        ],
+      },
+    })
+
+    expect(L.divIcon).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ className: expect.stringContaining('--completed') }),
+    )
+    expect(L.divIcon).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ className: 'appointment-map__marker' }),
+    )
+  })
+
+  it('shows the appointment titles in the popup as plain text, never as markup', () => {
+    mount(AppointmentMap, {
+      props: {
+        markers: [
+          createMarker({
+            position: 2,
+            appointment: createAppointment({ title: '<img src=x onerror=alert(1)>' }),
+          }),
+        ],
+      },
+    })
+
+    const popupContent = markerInstance.bindPopup.mock.calls[0]?.[0] as unknown as HTMLElement
+    expect(popupContent.textContent).toBe('2. <img src=x onerror=alert(1)>')
+    expect(popupContent.querySelector('img')).toBeNull()
   })
 
   it('does not draw a route line for a single appointment', () => {

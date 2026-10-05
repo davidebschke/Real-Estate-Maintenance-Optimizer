@@ -87,8 +87,25 @@ describe('DailyAppointmentList', () => {
 
     const cards = wrapper.findAll('.daily-appointment-card')
     expect(cards[0]?.find('.daily-appointment-card__travel').exists()).toBe(false)
-    expect(cards[1]?.find('.daily-appointment-card__travel').text()).toBe(
-      '6,4 km · 13 Min Anfahrt',
+    expect(cards[1]?.find('.daily-appointment-card__travel').text()).toBe('6,4 km · 13 Min Anfahrt')
+  })
+
+  it('numbers the open appointments like their markers on the map, counting completed ones too', async () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      createAppointment({ id: '1', title: 'Erledigt', completed: true }),
+      createAppointment({
+        id: '2',
+        title: 'Offen',
+        start: new Date(2026, 7, 10, 11, 0),
+        end: new Date(2026, 7, 10, 12, 0),
+      }),
+    ])
+
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.daily-appointment-card__position').map((node) => node.text())).toEqual(
+      ['2'],
     )
   })
 

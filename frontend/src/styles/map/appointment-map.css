@@ -6,6 +6,40 @@
   width: 100%;
 }
 
+.appointment-map :deep(.appointment-map__marker) {
+  background: none;
+  border: none;
+}
+
+.appointment-map :deep(.appointment-map__marker span) {
+  align-items: center;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%),
+    var(--remo-calendar-accent-color, #3b82f6);
+  border-radius: 1rem;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  color: #0d1013;
+  display: flex;
+  font-weight: 700;
+  height: 1.75rem;
+  justify-content: center;
+  left: 50%;
+  min-width: 1.75rem;
+  padding: 0 0.5rem;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.appointment-map :deep(.appointment-map__marker--completed span) {
+  background: var(--remo-calendar-muted-text-color, #8b8f96);
+  opacity: 0.8;
+}
+
 @media (max-width: 40rem) {
   .appointment-map {
     min-height: 18rem;

@@ -6,6 +6,7 @@ import { useTodaysAppointments } from '@/composables/useTodaysAppointments'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
 import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
 import { useLocale } from '@/composables/useLocale'
+import type { Appointment } from '@/types/appointment'
 import DailyAppointmentCard from '@/components/overview/DailyAppointmentCard.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
 
@@ -31,6 +32,11 @@ const openAppointments = computed(() =>
 const openTomorrowsAppointments = computed(() =>
   tomorrowsAppointments.value.filter((appointment) => !appointment.completed),
 )
+
+/** The 1-based place of the given appointment within today's whole schedule, i.e. the number of its marker on the map. */
+function positionInToday(appointment: Appointment): number {
+  return todaysAppointments.value.findIndex((candidate) => candidate.id === appointment.id) + 1
+}
 
 /** Formats a date as a localized "weekday, day month" heading. */
 function formatHeadingDate(date: Date): string {
@@ -98,10 +104,10 @@ onMounted(() => {
       </p>
       <div v-else class="daily-appointment-list__items">
         <DailyAppointmentCard
-          v-for="(appointment, index) in openAppointments"
+          v-for="appointment in openAppointments"
           :key="appointment.id"
           :appointment="appointment"
-          :position="index + 1"
+          :position="positionInToday(appointment)"
           :travel-leg="legsByAppointmentId.get(appointment.id) ?? null"
           @open-appointment="appointmentsStore.openDetail"
         />

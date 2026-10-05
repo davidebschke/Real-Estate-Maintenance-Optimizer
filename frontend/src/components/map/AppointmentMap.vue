@@ -34,6 +34,39 @@ function renderRouteLine(markers: AppointmentMapMarker[], route: [number, number
   }
 }
 
+/** Groups the markers by position, so appointments at the same property share one marker instead of covering each other. */
+function groupByPosition(markers: AppointmentMapMarker[]): AppointmentMapMarker[][] {
+  const groups = new Map<string, AppointmentMapMarker[]>()
+  markers.forEach((marker) => {
+    const key = `${marker.lat},${marker.lng}`
+    groups.set(key, [...(groups.get(key) ?? []), marker])
+  })
+  return [...groups.values()]
+}
+
+/** Creates the marker icon showing the stop numbers of the given group, muted once all of its appointments are completed. */
+function createNumberedIcon(group: AppointmentMapMarker[]): L.DivIcon {
+  const isCompleted = group.every((marker) => marker.appointment.completed)
+  return L.divIcon({
+    className: `appointment-map__marker${isCompleted ? ' appointment-map__marker--completed' : ''}`,
+    html: `<span>${group.map((marker) => marker.position).join(', ')}</span>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    popupAnchor: [0, -14],
+  })
+}
+
+/** Creates the popup content listing the number and title of each appointment of the given group as plain text. */
+function createPopupContent(group: AppointmentMapMarker[]): HTMLElement {
+  const content = document.createElement('div')
+  group.forEach((marker) => {
+    const line = document.createElement('div')
+    line.textContent = `${marker.position}. ${marker.appointment.title}`
+    content.appendChild(line)
+  })
+  return content
+}
+
 /** Redraws every marker and the connecting line for the current appointments, then fits the view to them and the route. */
 function renderMarkers(markers: AppointmentMapMarker[], route: [number, number][] | null) {
   if (!map || !markerLayer) {
@@ -45,9 +78,11 @@ function renderMarkers(markers: AppointmentMapMarker[], route: [number, number][
 
   const latLngs: L.LatLngTuple[] = markers.map((marker) => [marker.lat, marker.lng])
 
-  markers.forEach((marker) => {
-    L.marker([marker.lat, marker.lng])
-      .bindPopup(`${marker.position}. ${marker.appointment.title}`)
+  groupByPosition(markers).forEach(([first, ...others]) => {
+    if (!first) return
+    const group = [first, ...others]
+    L.marker([first.lat, first.lng], { icon: createNumberedIcon(group) })
+      .bindPopup(createPopupContent(group))
       .addTo(markerLayer as L.LayerGroup)
   })
 
