@@ -80,7 +80,8 @@
   padding: 0.15rem 0.6rem;
 }
 
-.daily-appointment-card__travel {
+.daily-appointment-card__travel,
+.daily-appointment-card__duration {
   color: var(--remo-calendar-muted-text-color, #8b8f96);
   font-size: 0.9rem;
 }

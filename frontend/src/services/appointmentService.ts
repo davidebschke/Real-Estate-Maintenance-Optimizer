@@ -197,7 +197,6 @@ function toAppointment(dto: AppointmentResponseDto): Appointment {
       timestamp: new Date(entry.timestamp),
       message: entry.message,
     })),
-    travelDistanceKm: 0,
     actualEnd: dto.actualEnd ? new Date(dto.actualEnd) : null,
     completed: dto.completed,
   }

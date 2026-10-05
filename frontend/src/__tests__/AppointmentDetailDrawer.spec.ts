@@ -32,7 +32,6 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     recurrenceIntervalMonths: null,
     materials: ['Kehrmaschine'],
     history: [{ timestamp: new Date(2026, 7, 1, 10, 0), message: 'Termin erstellt.' }],
-    travelDistanceKm: 0,
     actualEnd: null,
     completed: false,
     ...overrides,

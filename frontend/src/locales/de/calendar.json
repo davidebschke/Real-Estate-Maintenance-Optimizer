@@ -16,8 +16,7 @@
     },
     "dayHeader": {
       "appointmentCountSingular": "{count} Termin",
-      "appointmentCountPlural": "{count} Termine",
-      "travelDistance": "{km} km"
+      "appointmentCountPlural": "{count} Termine"
     },
     "list": {
       "empty": "Keine Termine im angezeigten Zeitraum."

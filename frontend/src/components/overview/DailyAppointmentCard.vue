@@ -4,12 +4,15 @@ import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
 import { useCardTilt } from '@/composables/useCardTilt'
 import { formatDurationMinutes } from '@/utils/dateFormat'
+import { formatKilometers, formatTravelDuration } from '@/utils/travelFormat'
 import { getDurationMinutes } from '@/utils/appointmentSchedulingOptions'
 import type { Appointment } from '@/types/appointment'
+import type { RouteLeg } from '@/types/route'
 
 const props = defineProps<{
   appointment: Appointment
   position: number
+  travelLeg?: RouteLeg | null
 }>()
 
 defineEmits<{ 'open-appointment': [appointmentId: string] }>()
@@ -28,6 +31,15 @@ const durationLabel = computed(() => {
   const durationMinutes = getDurationMinutes(props.appointment.start, props.appointment.end)
   return formatDurationMinutes(durationMinutes, currentLocale.value)
 })
+
+const travelLabel = computed(() =>
+  props.travelLeg
+    ? t('overview.dailyList.travelSummary', {
+        km: formatKilometers(props.travelLeg.distanceMeters, currentLocale.value),
+        duration: formatTravelDuration(props.travelLeg.durationSeconds, currentLocale.value),
+      })
+    : null,
+)
 
 const materialsLabel = computed(() => props.appointment.materials.join(', '))
 </script>
@@ -55,8 +67,9 @@ const materialsLabel = computed(() => props.appointment.materials.join(', '))
         <span v-if="materialsLabel" class="daily-appointment-card__materials">{{
           materialsLabel
         }}</span>
-        <span class="daily-appointment-card__travel">
-          {{ t('overview.dailyList.travelSummary', { km: appointment.travelDistanceKm, duration: durationLabel }) }}
+        <span v-if="travelLabel" class="daily-appointment-card__travel">{{ travelLabel }}</span>
+        <span class="daily-appointment-card__duration">
+          {{ t('overview.dailyList.durationSummary', { duration: durationLabel }) }}
         </span>
       </div>
     </div>

@@ -22,7 +22,6 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     recurrenceIntervalMonths: null,
     materials: ['Filterpatrone 2x', 'Dichtungsset'],
     history: [],
-    travelDistanceKm: 6.4,
     actualEnd: null,
     completed: false,
     ...overrides,
@@ -34,7 +33,7 @@ afterEach(() => {
 })
 
 describe('DailyAppointmentCard', () => {
-  it('renders the position, time, title, property, materials and travel summary', () => {
+  it('renders the position, time, title, property, materials and duration', () => {
     const wrapper = mount(DailyAppointmentCard, {
       props: { appointment: createAppointment(), position: 1 },
       global: { plugins: [i18n] },
@@ -49,7 +48,44 @@ describe('DailyAppointmentCard', () => {
     expect(wrapper.find('.daily-appointment-card__materials').text()).toBe(
       'Filterpatrone 2x, Dichtungsset',
     )
-    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6.4 km · 1 Std 30 Min')
+    expect(wrapper.find('.daily-appointment-card__duration').text()).toBe('Dauer 1 Std 30 Min')
+  })
+
+  it('shows the distance and driving time of the travel leg to the appointment', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: {
+        appointment: createAppointment(),
+        position: 2,
+        travelLeg: { distanceMeters: 6400, durationSeconds: 721 },
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6,4 km · 13 Min Anfahrt')
+  })
+
+  it('formats the travel leg in English when the locale is switched', () => {
+    i18n.global.locale.value = 'en'
+    const wrapper = mount(DailyAppointmentCard, {
+      props: {
+        appointment: createAppointment(),
+        position: 2,
+        travelLeg: { distanceMeters: 6400, durationSeconds: 3900 },
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').text()).toBe('6.4 km · 1 hr 5 min drive')
+    expect(wrapper.find('.daily-appointment-card__duration').text()).toBe('Duration 1 hr 30 min')
+  })
+
+  it('shows no travel information without a travel leg, e.g. for the first appointment of the day', () => {
+    const wrapper = mount(DailyAppointmentCard, {
+      props: { appointment: createAppointment(), position: 1 },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.find('.daily-appointment-card__travel').exists()).toBe(false)
   })
 
   it('does not render a materials tag when the appointment has no materials', () => {

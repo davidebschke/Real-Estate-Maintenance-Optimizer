@@ -35,7 +35,7 @@ const markerInstance: MarkerMock = {
   bindPopup: vi.fn<(content: string) => MarkerMock>(),
   addTo: vi.fn<(layer: unknown) => void>(),
 }
-const polylineInstance = { addTo: vi.fn<(map: unknown) => void>(), remove: vi.fn<() => void>() }
+const polylineInstance = { addTo: vi.fn<(map: unknown) => unknown>(), remove: vi.fn<() => void>() }
 
 vi.mock('leaflet', () => ({
   default: {
@@ -66,7 +66,6 @@ function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
     recurrenceIntervalMonths: null,
     materials: [],
     history: [],
-    travelDistanceKm: 6.4,
     actualEnd: null,
     completed: false,
     ...overrides,
@@ -96,6 +95,7 @@ beforeEach(() => {
   mapInstance.setView.mockReturnValue(mapInstance)
   layerGroupInstance.addTo.mockReturnValue(layerGroupInstance)
   markerInstance.bindPopup.mockReturnValue(markerInstance)
+  polylineInstance.addTo.mockReturnValue(polylineInstance)
   resizeObserverCallback = null
   vi.stubGlobal('ResizeObserver', ResizeObserverMock)
 })
@@ -129,6 +129,54 @@ describe('AppointmentMap', () => {
       ],
       expect.objectContaining({ padding: expect.any(Array) }),
     )
+  })
+
+  it('draws the straight connecting line dashed to mark it as a fallback for the road route', () => {
+    mount(AppointmentMap, {
+      props: { markers: [createMarker(), createMarker({ position: 2, lat: 50.8, lng: 6.8 })] },
+    })
+
+    expect(L.polyline).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ dashArray: expect.any(String) }),
+    )
+  })
+
+  it('draws the given road route instead of a straight line and fits the view to it', () => {
+    const route: [number, number][] = [
+      [50.9, 6.9],
+      [50.85, 6.85],
+      [50.8, 6.8],
+    ]
+
+    mount(AppointmentMap, {
+      props: {
+        markers: [createMarker(), createMarker({ position: 2, lat: 50.8, lng: 6.8 })],
+        route,
+      },
+    })
+
+    expect(L.polyline).toHaveBeenCalledTimes(1)
+    expect(L.polyline).toHaveBeenCalledWith(route, { color: '#3b82f6' })
+    expect(mapInstance.fitBounds).toHaveBeenCalledWith(
+      expect.arrayContaining([[50.85, 6.85]]),
+      expect.anything(),
+    )
+  })
+
+  it('replaces the straight line by the road route once it becomes available', async () => {
+    const wrapper = mount(AppointmentMap, {
+      props: { markers: [createMarker(), createMarker({ position: 2, lat: 50.8, lng: 6.8 })] },
+    })
+    const route: [number, number][] = [
+      [50.9, 6.9],
+      [50.8, 6.8],
+    ]
+
+    await wrapper.setProps({ route })
+
+    expect(polylineInstance.remove).toHaveBeenCalled()
+    expect(L.polyline).toHaveBeenLastCalledWith(route, { color: '#3b82f6' })
   })
 
   it('does not draw a route line for a single appointment', () => {

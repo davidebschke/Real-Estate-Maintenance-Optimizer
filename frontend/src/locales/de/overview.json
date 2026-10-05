@@ -8,11 +8,13 @@
       "allCompletedHint": "Alle Termine heute erledigt · Vorschau auf morgen",
       "tomorrowHeading": "Termine für morgen, den {date}",
       "emptyTomorrow": "Für morgen stehen noch keine Termine an.",
-      "travelSummary": "{km} km · {duration}"
+      "travelSummary": "{km} km · {duration} Anfahrt",
+      "durationSummary": "Dauer {duration}"
     },
     "map": {
       "empty": "Heute stehen keine Termine an.",
       "geocodingError": "Für einzelne Adressen konnte kein Standort ermittelt werden.",
+      "routeError": "Die Straßenroute ist gerade nicht verfügbar, die Karte zeigt die Luftlinie.",
       "allCompleted": "Alle Termine heute erledigt"
     }
   }

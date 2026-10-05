@@ -3,6 +3,8 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useTodaysAppointments } from '@/composables/useTodaysAppointments'
+import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
+import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
 import { useLocale } from '@/composables/useLocale'
 import DailyAppointmentCard from '@/components/overview/DailyAppointmentCard.vue'
 import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
@@ -10,8 +12,15 @@ import AppointmentAiSuggestionBanner from '@/components/appointments/Appointment
 const { t } = useI18n()
 const { currentLocale } = useLocale()
 const appointmentsStore = useAppointmentsStore()
-const { today, tomorrow, todaysAppointments, tomorrowsAppointments, allTodaysAppointmentsCompleted } =
-  useTodaysAppointments()
+const {
+  today,
+  tomorrow,
+  todaysAppointments,
+  tomorrowsAppointments,
+  allTodaysAppointmentsCompleted,
+} = useTodaysAppointments()
+const { markers } = useAppointmentMapMarkers()
+const { legsByAppointmentId } = useAppointmentRoute(markers)
 
 /** Today's appointments still to do, hiding ones already marked as completed. */
 const openAppointments = computed(() =>
@@ -93,6 +102,7 @@ onMounted(() => {
           :key="appointment.id"
           :appointment="appointment"
           :position="index + 1"
+          :travel-leg="legsByAppointmentId.get(appointment.id) ?? null"
           @open-appointment="appointmentsStore.openDetail"
         />
       </div>

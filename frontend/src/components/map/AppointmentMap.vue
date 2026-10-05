@@ -5,6 +5,7 @@ import type { AppointmentMapMarker } from '@/composables/useAppointmentMapMarker
 
 const props = defineProps<{
   markers: AppointmentMapMarker[]
+  route?: [number, number][] | null
 }>()
 
 const mapContainer = ref<HTMLDivElement | null>(null)
@@ -16,8 +17,11 @@ let resizeObserver: ResizeObserver | null = null
 const defaultCenter: L.LatLngTuple = [51.1657, 10.4515]
 const defaultZoom = 6
 
-/** Redraws every marker and the connecting route line for the current appointments, then fits the view to them. */
-function renderMarkers(markers: AppointmentMapMarker[]) {
+/**
+ * Redraws every marker and the connecting line for the current appointments, then fits the view to them; the line
+ * follows the given road route and falls back to a dashed straight line between the markers while there is none.
+ */
+function renderMarkers(markers: AppointmentMapMarker[], route: [number, number][] | null) {
   if (!map || !markerLayer) {
     return
   }
@@ -34,12 +38,14 @@ function renderMarkers(markers: AppointmentMapMarker[]) {
       .addTo(markerLayer as L.LayerGroup)
   })
 
-  if (latLngs.length > 1) {
-    routeLine = L.polyline(latLngs, { color: '#3b82f6' }).addTo(map)
+  if (route && route.length > 1) {
+    routeLine = L.polyline(route, { color: '#3b82f6' }).addTo(map)
+  } else if (latLngs.length > 1) {
+    routeLine = L.polyline(latLngs, { color: '#3b82f6', dashArray: '6 8' }).addTo(map)
   }
 
   if (latLngs.length > 0) {
-    map.fitBounds(L.latLngBounds(latLngs), { padding: [32, 32] })
+    map.fitBounds(L.latLngBounds([...latLngs, ...(route ?? [])]), { padding: [32, 32] })
   } else {
     map.setView(defaultCenter, defaultZoom)
   }
@@ -59,15 +65,15 @@ onMounted(() => {
   }).addTo(map)
   markerLayer = L.layerGroup().addTo(map)
 
-  renderMarkers(props.markers)
+  renderMarkers(props.markers, props.route ?? null)
 
   resizeObserver = new ResizeObserver(() => map?.invalidateSize())
   resizeObserver.observe(mapContainer.value)
 })
 
 watch(
-  () => props.markers,
-  (markers) => renderMarkers(markers),
+  () => [props.markers, props.route] as const,
+  ([markers, route]) => renderMarkers(markers, route ?? null),
 )
 
 onUnmounted(() => {

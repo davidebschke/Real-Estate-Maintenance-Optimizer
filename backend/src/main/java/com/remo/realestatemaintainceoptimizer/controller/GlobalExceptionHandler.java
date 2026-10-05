@@ -15,6 +15,7 @@ import com.remo.realestatemaintainceoptimizer.exception.InvalidNewPasswordExcept
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.UsernameAlreadyTakenException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
@@ -122,6 +123,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidNewPassword(InvalidNewPasswordException exception, Locale locale) {
         String message = messageSource.getMessage("account.error." + exception.reasonCode(), null, locale);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(RoutingUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleRoutingUnavailable(Locale locale) {
+        String message = messageSource.getMessage("routing.error.unavailable", null, locale);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})

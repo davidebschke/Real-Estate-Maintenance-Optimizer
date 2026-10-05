@@ -34,7 +34,6 @@ function createExistingAppointment(overrides: Partial<Appointment> = {}): Appoin
     recurrenceIntervalMonths: null,
     materials: [],
     history: [],
-    travelDistanceKm: 0,
     actualEnd: null,
     completed: false,
     ...overrides,
