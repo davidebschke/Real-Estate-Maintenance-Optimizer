@@ -109,6 +109,7 @@ onMounted(() => {
           :appointment="appointment"
           :position="positionInToday(appointment)"
           :travel-leg="legsByAppointmentId.get(appointment.id) ?? null"
+          show-route-link
           @open-appointment="appointmentsStore.openDetail"
         />
       </div>

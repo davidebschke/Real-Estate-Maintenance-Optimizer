@@ -90,6 +90,31 @@ describe('DailyAppointmentList', () => {
     expect(cards[1]?.find('.daily-appointment-card__travel').text()).toBe('6,4 km · 13 Min Anfahrt')
   })
 
+  it("offers a Google Maps route link under each of today's appointments but not under tomorrow's preview", async () => {
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      createAppointment({ id: '1', title: 'Heute' }),
+    ])
+    const todayWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(todayWrapper.findAll('.daily-appointment-card__route-link')).toHaveLength(1)
+
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
+      createAppointment({ id: '1', title: 'Erledigt', completed: true }),
+      createAppointment({
+        id: '2',
+        title: 'Morgen',
+        start: new Date(2026, 7, 11, 9, 0),
+        end: new Date(2026, 7, 11, 10, 0),
+      }),
+    ])
+    const tomorrowWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(tomorrowWrapper.findAll('.daily-appointment-card')).toHaveLength(1)
+    expect(tomorrowWrapper.find('.daily-appointment-card__route-link').exists()).toBe(false)
+  })
+
   it('numbers the open appointments like their markers on the map, counting completed ones too', async () => {
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
       createAppointment({ id: '1', title: 'Erledigt', completed: true }),

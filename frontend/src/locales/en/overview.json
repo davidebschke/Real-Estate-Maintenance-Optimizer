@@ -12,7 +12,8 @@
         "car": "{km} km · {duration} drive",
         "walking": "{km} km · {duration} on foot"
       },
-      "durationSummary": "Duration {duration}"
+      "durationSummary": "Duration {duration}",
+      "googleMapsRoute": "Route via Google Maps"
     },
     "map": {
       "routeMode": {
