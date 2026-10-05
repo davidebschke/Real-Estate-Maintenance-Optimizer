@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.remo.realestatemaintainceoptimizer.config.RoutingProperties;
 import com.remo.realestatemaintainceoptimizer.dto.RouteCoordinate;
 import com.remo.realestatemaintainceoptimizer.dto.RouteLeg;
+import com.remo.realestatemaintainceoptimizer.dto.RouteMode;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
@@ -22,7 +23,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Calculates road routes through ordered stops via the openrouteservice directions API, cached per coordinate sequence and rate-limited per account and overall to protect the shared API quota.
+ * Calculates routes by car or on foot through ordered stops via the openrouteservice directions API, cached per mode and coordinate sequence and rate-limited per account and overall to protect the shared API quota.
  */
 @Service
 @EnableConfigurationProperties(RoutingProperties.class)
@@ -39,7 +40,7 @@ public class RoutingService {
     private final SlidingWindowRateLimiter requestsPerAccount;
     private final SlidingWindowRateLimiter requestsOverall;
     private final SlidingWindowRateLimiter requestsPerDay;
-    private final Map<List<RouteCoordinate>, RouteResponse> cache = new ConcurrentHashMap<>();
+    private final Map<RouteKey, RouteResponse> cache = new ConcurrentHashMap<>();
 
     public RoutingService(RoutingProperties properties, RestClient.Builder restClientBuilder) {
         this.properties = properties;
@@ -56,24 +57,24 @@ public class RoutingService {
     }
 
     /**
-     * Returns the road route through the given stops in order, throwing {@link RoutingDisabledException} while routing is switched off, {@link RateLimitExceededException} when a request budget is used up and {@link RoutingUnavailableException} when openrouteservice fails, so callers can degrade deliberately.
+     * Returns the route for the given mode through the given stops in order, throwing {@link RoutingDisabledException} while routing is switched off, {@link RateLimitExceededException} when a request budget is used up and {@link RoutingUnavailableException} when openrouteservice fails, so callers can degrade deliberately.
      */
-    public RouteResponse route(String accountId, List<RouteCoordinate> coordinates) {
+    public RouteResponse route(String accountId, RouteMode mode, List<RouteCoordinate> coordinates) {
         if (!properties.enabled()) {
             throw new RoutingDisabledException();
         }
-        List<RouteCoordinate> stops = List.copyOf(coordinates);
-        RouteResponse cached = cache.get(stops);
+        RouteKey key = new RouteKey(mode, List.copyOf(coordinates));
+        RouteResponse cached = cache.get(key);
         if (cached != null) {
             return cached;
         }
         acquireRequestBudget(accountId);
 
-        RouteResponse route = fetchRoute(stops);
+        RouteResponse route = fetchRoute(key);
         if (cache.size() >= MAX_CACHED_ROUTES) {
             cache.clear();
         }
-        cache.put(stops, route);
+        cache.put(key, route);
         return route;
     }
 
@@ -92,7 +93,8 @@ public class RoutingService {
         }
     }
 
-    private RouteResponse fetchRoute(List<RouteCoordinate> stops) {
+    private RouteResponse fetchRoute(RouteKey key) {
+        List<RouteCoordinate> stops = key.stops();
         List<List<Double>> orderedLongitudeLatitude = stops.stream()
                 .map(stop -> List.of(stop.longitude(), stop.latitude()))
                 .toList();
@@ -100,7 +102,7 @@ public class RoutingService {
         try {
             response = restClient
                     .post()
-                    .uri("/v2/directions/{profile}/geojson", properties.profile())
+                    .uri("/v2/directions/{profile}/geojson", key.mode().profile())
                     .body(Map.of("coordinates", orderedLongitudeLatitude))
                     .retrieve()
                     .body(DirectionsResponse.class);
@@ -137,6 +139,9 @@ public class RoutingService {
     private RoutingUnavailableException unusableResponse() {
         log.warn("openrouteservice answered with an unusable route");
         return new RoutingUnavailableException("openrouteservice answered with an unusable route");
+    }
+
+    private record RouteKey(RouteMode mode, List<RouteCoordinate> stops) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

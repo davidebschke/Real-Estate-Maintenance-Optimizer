@@ -6,6 +6,7 @@ import { i18n } from '@/i18n'
 import AppointmentMapCard from '@/components/map/AppointmentMapCard.vue'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
 import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
+import { useRouteMode } from '@/composables/useRouteMode'
 import type { RoadRoute } from '@/types/route'
 import * as propertyService from '@/services/propertyService'
 
@@ -42,6 +43,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  useRouteMode().routeMode.value = 'car'
   i18n.global.locale.value = 'de'
   vi.mocked(useAppointmentMapMarkers).mockReset()
 })
@@ -132,7 +134,7 @@ describe('AppointmentMapCard', () => {
     const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
 
     expect(wrapper.find('.appointment-map-card__route-hint').text()).toBe(
-      'Die Straßenroute ist gerade nicht verfügbar, die Karte zeigt die Luftlinie.',
+      'Die Route ist gerade nicht verfügbar, die Karte zeigt die Luftlinie.',
     )
     expect(wrapper.find('.appointment-map-stub').exists()).toBe(true)
   })
@@ -148,6 +150,37 @@ describe('AppointmentMapCard', () => {
     const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
 
     expect(wrapper.find('.appointment-map-card__route-hint').exists()).toBe(false)
+  })
+
+  it('offers the choice between car and walking once there is a route to calculate', async () => {
+    vi.mocked(useAppointmentMapMarkers).mockReturnValue({
+      markers: ref([
+        { appointment: { id: '1' } as never, position: 1, lat: 50.9, lng: 6.9 },
+        { appointment: { id: '2' } as never, position: 2, lat: 50.8, lng: 6.8 },
+      ]),
+      isLoading: ref(false),
+      hasGeocodingError: ref(false),
+      allTodaysAppointmentsCompleted: computed(() => false),
+    })
+
+    const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
+    const [, walkingButton] = wrapper.findAll('.route-mode-switch__button')
+    await walkingButton?.trigger('click')
+
+    expect(useRouteMode().routeMode.value).toBe('walking')
+  })
+
+  it('does not offer the mode choice for fewer than two stops', () => {
+    vi.mocked(useAppointmentMapMarkers).mockReturnValue({
+      markers: ref([{ appointment: { id: '1' } as never, position: 1, lat: 50.9, lng: 6.9 }]),
+      isLoading: ref(false),
+      hasGeocodingError: ref(false),
+      allTodaysAppointmentsCompleted: computed(() => false),
+    })
+
+    const wrapper = mount(AppointmentMapCard, { global: { plugins: [i18n] } })
+
+    expect(wrapper.find('.route-mode-switch').exists()).toBe(false)
   })
 
   it('shows a checkmark instead of the map once every appointment today is completed', () => {

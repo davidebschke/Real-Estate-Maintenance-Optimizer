@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocale } from '@/composables/useLocale'
 import { useCardTilt } from '@/composables/useCardTilt'
+import { useRouteMode } from '@/composables/useRouteMode'
 import { formatDurationMinutes } from '@/utils/dateFormat'
 import { formatKilometers, formatTravelDuration } from '@/utils/travelFormat'
 import { getDurationMinutes } from '@/utils/appointmentSchedulingOptions'
@@ -20,6 +21,7 @@ defineEmits<{ 'open-appointment': [appointmentId: string] }>()
 const { t } = useI18n()
 const { currentLocale } = useLocale()
 const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
+const { routeMode } = useRouteMode()
 
 const startTimeLabel = computed(() =>
   new Intl.DateTimeFormat(currentLocale.value, { hour: '2-digit', minute: '2-digit' }).format(
@@ -34,7 +36,7 @@ const durationLabel = computed(() => {
 
 const travelLabel = computed(() =>
   props.travelLeg
-    ? t('overview.dailyList.travelSummary', {
+    ? t(`overview.dailyList.travelSummary.${routeMode.value}`, {
         km: formatKilometers(props.travelLeg.distanceMeters, currentLocale.value),
         duration: formatTravelDuration(props.travelLeg.durationSeconds, currentLocale.value),
       })

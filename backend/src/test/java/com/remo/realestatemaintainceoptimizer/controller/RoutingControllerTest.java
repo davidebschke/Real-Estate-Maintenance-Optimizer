@@ -14,6 +14,7 @@ import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.RouteCoordinate;
 import com.remo.realestatemaintainceoptimizer.dto.RouteLeg;
+import com.remo.realestatemaintainceoptimizer.dto.RouteMode;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
@@ -90,7 +91,7 @@ class RoutingControllerTest {
 
     @Test
     void returnsTheRouteCalculatedForTheLoggedInAccount() throws Exception {
-        when(routingService.route(eq(account.id()), any()))
+        when(routingService.route(eq(account.id()), any(), any()))
                 .thenReturn(new RouteResponse(
                         List.of(List.of(6.87, 50.94), List.of(6.93, 50.95)), 5000.5, 700.0, List.of(new RouteLeg(5000.5, 700.0))));
 
@@ -103,7 +104,24 @@ class RoutingControllerTest {
                 .andExpect(jsonPath("$.legs[0].distanceMeters", equalTo(5000.5)));
 
         verify(routingService)
-                .route(account.id(), List.of(new RouteCoordinate(50.94, 6.87), new RouteCoordinate(50.95, 6.93)));
+                .route(account.id(), RouteMode.CAR, List.of(new RouteCoordinate(50.94, 6.87), new RouteCoordinate(50.95, 6.93)));
+    }
+
+    @Test
+    void passesTheRequestedModeOnAndRejectsAnUnknownOne() throws Exception {
+        when(routingService.route(eq(account.id()), any(), any()))
+                .thenReturn(new RouteResponse(List.of(), 0, 0, List.of()));
+
+        mockMvc.perform(post("/api/routes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TWO_STOPS.replace("{\"coordinates", "{\"mode\":\"WALKING\",\"coordinates")))
+                .andExpect(status().isOk());
+        verify(routingService).route(eq(account.id()), eq(RouteMode.WALKING), any());
+
+        mockMvc.perform(post("/api/routes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TWO_STOPS.replace("{\"coordinates", "{\"mode\":\"BICYCLE\",\"coordinates")))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -126,7 +144,7 @@ class RoutingControllerTest {
 
     @Test
     void acceptsExactlyTheUpperBoundOfCoordinates() throws Exception {
-        when(routingService.route(eq(account.id()), any()))
+        when(routingService.route(eq(account.id()), any(), any()))
                 .thenReturn(new RouteResponse(List.of(), 0, 0, List.of()));
 
         mockMvc.perform(post("/api/routes").contentType(MediaType.APPLICATION_JSON).content(stops(25)))
@@ -153,7 +171,7 @@ class RoutingControllerTest {
 
     @Test
     void answersAnUnavailableRoutingWithALocalizedServiceUnavailable() throws Exception {
-        when(routingService.route(eq(account.id()), any())).thenThrow(new RoutingUnavailableException("openrouteservice request failed"));
+        when(routingService.route(eq(account.id()), any(), any())).thenThrow(new RoutingUnavailableException("openrouteservice request failed"));
 
         mockMvc.perform(post("/api/routes")
                         .header("Accept-Language", "de")
@@ -165,7 +183,7 @@ class RoutingControllerTest {
 
     @Test
     void answersDisabledRoutingWithNotImplemented() throws Exception {
-        when(routingService.route(eq(account.id()), any())).thenThrow(new RoutingDisabledException());
+        when(routingService.route(eq(account.id()), any(), any())).thenThrow(new RoutingDisabledException());
 
         mockMvc.perform(post("/api/routes").contentType(MediaType.APPLICATION_JSON).content(TWO_STOPS))
                 .andExpect(status().isNotImplemented());
@@ -173,7 +191,7 @@ class RoutingControllerTest {
 
     @Test
     void answersAnExhaustedRequestBudgetWithTooManyRequests() throws Exception {
-        when(routingService.route(eq(account.id()), any()))
+        when(routingService.route(eq(account.id()), any(), any()))
                 .thenThrow(new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_ROUTE_REQUESTS));
 
         mockMvc.perform(post("/api/routes").contentType(MediaType.APPLICATION_JSON).content(TWO_STOPS))

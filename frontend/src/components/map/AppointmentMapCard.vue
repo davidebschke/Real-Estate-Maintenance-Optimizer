@@ -3,12 +3,15 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
 import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
+import { useRouteMode } from '@/composables/useRouteMode'
 import { usePropertiesStore } from '@/stores/properties'
 import AppointmentMap from '@/components/map/AppointmentMap.vue'
+import RouteModeSwitch from '@/components/map/RouteModeSwitch.vue'
 
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
 const { markers, hasGeocodingError, allTodaysAppointmentsCompleted } = useAppointmentMapMarkers()
+const { routeMode } = useRouteMode()
 const { route, hasRouteError } = useAppointmentRoute(markers)
 
 onMounted(() => {
@@ -34,6 +37,8 @@ onMounted(() => {
           {{ t('overview.map.routeError') }}
         </span>
       </div>
+
+      <RouteModeSwitch v-if="markers.length > 1" v-model="routeMode" />
 
       <p v-if="markers.length === 0" class="appointment-map-card__empty">
         {{ t('overview.map.empty') }}

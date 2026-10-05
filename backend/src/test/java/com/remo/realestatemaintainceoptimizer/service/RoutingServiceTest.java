@@ -14,6 +14,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 import com.remo.realestatemaintainceoptimizer.config.RoutingProperties;
 import com.remo.realestatemaintainceoptimizer.dto.RouteCoordinate;
+import com.remo.realestatemaintainceoptimizer.dto.RouteMode;
 import com.remo.realestatemaintainceoptimizer.dto.RouteResponse;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
@@ -57,7 +58,7 @@ class RoutingServiceTest {
     private RoutingService serviceWithLimits(int perAccountPerMinute, int overallPerMinute, int perDay) {
         return new RoutingService(
                 new RoutingProperties(
-                        true, "https://ors.test", "test-key", "driving-car", perAccountPerMinute, overallPerMinute, perDay),
+                        true, "https://ors.test", "test-key", perAccountPerMinute, overallPerMinute, perDay),
                 builder);
     }
 
@@ -80,7 +81,7 @@ class RoutingServiceTest {
                 .andExpect(jsonPath("$.coordinates.length()").value(3))
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
 
-        RouteResponse route = service().route("account-1", STOPS);
+        RouteResponse route = service().route("account-1", RouteMode.CAR, STOPS);
 
         assertThat(route.geometry()).hasSize(3);
         assertThat(route.geometry().get(0)).containsExactly(6.87, 50.94);
@@ -99,11 +100,28 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = service();
 
-        RouteResponse first = service.route("account-1", STOPS);
-        RouteResponse second = service.route("account-2", List.of(
+        RouteResponse first = service.route("account-1", RouteMode.CAR, STOPS);
+        RouteResponse second = service.route("account-2", RouteMode.CAR, List.of(
                 new RouteCoordinate(50.94, 6.87), new RouteCoordinate(50.95, 6.9), new RouteCoordinate(50.96, 6.93)));
 
         assertThat(second).isEqualTo(first);
+        mockServer.verify();
+    }
+
+    @Test
+    void routesOnFootWithTheWalkingProfileAndCachesPerMode() {
+        mockServer
+                .expect(once(), requestTo("https://ors.test/v2/directions/foot-walking/geojson"))
+                .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
+        mockServer
+                .expect(once(), requestTo(DIRECTIONS_URL))
+                .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
+        RoutingService service = service();
+
+        service.route("account-1", RouteMode.WALKING, STOPS);
+        service.route("account-1", RouteMode.WALKING, STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
+
         mockServer.verify();
     }
 
@@ -117,8 +135,8 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = service();
 
-        service.route("account-1", STOPS);
-        service.route("account-1", OTHER_STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
+        service.route("account-1", RouteMode.CAR, OTHER_STOPS);
 
         mockServer.verify();
     }
@@ -131,8 +149,8 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = service();
 
-        assertThatThrownBy(() -> service.route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
-        assertThat(service.route("account-1", STOPS).legs()).hasSize(2);
+        assertThatThrownBy(() -> service.route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThat(service.route("account-1", RouteMode.CAR, STOPS).legs()).hasSize(2);
 
         mockServer.verify();
     }
@@ -141,7 +159,7 @@ class RoutingServiceTest {
     void reportsAnOpenrouteserviceServerErrorAsUnavailable() {
         mockServer.expect(requestTo(DIRECTIONS_URL)).andRespond(withServerError());
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS))
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS))
                 .isInstanceOf(RoutingUnavailableException.class)
                 .hasCauseInstanceOf(org.springframework.web.client.RestClientException.class);
     }
@@ -150,7 +168,7 @@ class RoutingServiceTest {
     void reportsAnExceededOpenrouteserviceQuotaAsUnavailable() {
         mockServer.expect(requestTo(DIRECTIONS_URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
     }
 
     @Test
@@ -161,14 +179,14 @@ class RoutingServiceTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("{\"error\":{\"code\":2010,\"message\":\"Could not find routable point\"}}"));
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
     }
 
     @Test
     void reportsATimeoutOrConnectionFailureAsUnavailable() {
         mockServer.expect(requestTo(DIRECTIONS_URL)).andRespond(withException(new IOException("Read timed out")));
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
     }
 
     @Test
@@ -177,7 +195,7 @@ class RoutingServiceTest {
                 .expect(requestTo(DIRECTIONS_URL))
                 .andRespond(withSuccess("{\"features\":[]}", MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
     }
 
     @Test
@@ -188,15 +206,15 @@ class RoutingServiceTest {
                 """;
         mockServer.expect(requestTo(DIRECTIONS_URL)).andRespond(withSuccess(oneLegOnly, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> service().route("account-1", STOPS)).isInstanceOf(RoutingUnavailableException.class);
+        assertThatThrownBy(() -> service().route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingUnavailableException.class);
     }
 
     @Test
     void doesNotCallOpenrouteserviceWhileRoutingIsDisabled() {
         RoutingService disabled = new RoutingService(
-                new RoutingProperties(false, "https://ors.test", "", "driving-car", 20, 30, 1500), builder);
+                new RoutingProperties(false, "https://ors.test", "", 20, 30, 1500), builder);
 
-        assertThatThrownBy(() -> disabled.route("account-1", STOPS)).isInstanceOf(RoutingDisabledException.class);
+        assertThatThrownBy(() -> disabled.route("account-1", RouteMode.CAR, STOPS)).isInstanceOf(RoutingDisabledException.class);
 
         mockServer.verify();
     }
@@ -211,14 +229,14 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = serviceWithLimits(1, 30);
 
-        service.route("account-1", STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
 
-        assertThatThrownBy(() -> service.route("account-1", OTHER_STOPS))
+        assertThatThrownBy(() -> service.route("account-1", RouteMode.CAR, OTHER_STOPS))
                 .isInstanceOfSatisfying(
                         RateLimitExceededException.class,
                         exception -> assertThat(exception.reasonCode())
                                 .isEqualTo(RateLimitExceededException.REASON_TOO_MANY_ROUTE_REQUESTS));
-        service.route("account-2", OTHER_STOPS);
+        service.route("account-2", RouteMode.CAR, OTHER_STOPS);
         mockServer.verify();
     }
 
@@ -229,9 +247,9 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = serviceWithLimits(1, 1);
 
-        service.route("account-1", STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
 
-        assertThatThrownBy(() -> service.route("account-2", OTHER_STOPS))
+        assertThatThrownBy(() -> service.route("account-2", RouteMode.CAR, OTHER_STOPS))
                 .isInstanceOf(RateLimitExceededException.class);
         mockServer.verify();
     }
@@ -243,14 +261,14 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = serviceWithLimits(2, 2, 1);
 
-        service.route("account-1", STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
 
-        assertThatThrownBy(() -> service.route("account-1", OTHER_STOPS))
+        assertThatThrownBy(() -> service.route("account-1", RouteMode.CAR, OTHER_STOPS))
                 .isInstanceOfSatisfying(
                         RateLimitExceededException.class,
                         exception -> assertThat(exception.reasonCode())
                                 .isEqualTo(RateLimitExceededException.REASON_ROUTE_QUOTA_EXHAUSTED));
-        assertThat(service.route("account-1", STOPS).legs()).hasSize(2);
+        assertThat(service.route("account-1", RouteMode.CAR, STOPS).legs()).hasSize(2);
     }
 
     @Test
@@ -260,9 +278,9 @@ class RoutingServiceTest {
                 .andRespond(withSuccess(ROUTE_JSON, MediaType.APPLICATION_JSON));
         RoutingService service = serviceWithLimits(1, 1);
 
-        service.route("account-1", STOPS);
+        service.route("account-1", RouteMode.CAR, STOPS);
 
-        assertThat(service.route("account-1", STOPS).legs()).hasSize(2);
+        assertThat(service.route("account-1", RouteMode.CAR, STOPS).legs()).hasSize(2);
         mockServer.verify();
     }
 }

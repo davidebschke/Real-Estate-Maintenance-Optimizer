@@ -1,3 +1,6 @@
+/** The way of travelling a route is calculated for. */
+export type RouteMode = 'car' | 'walking'
+
 /** Distance in meters and driving time in seconds between two consecutive stops of a road route. */
 export interface RouteLeg {
   distanceMeters: number

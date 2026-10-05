@@ -60,7 +60,6 @@ remo:
     base-url: https://api.openrouteservice.org
     # Required (startup fails without it) while routing is enabled; never commit it
     api-key: ${REMO_ROUTING_API_KEY:}
-    profile: driving-car
     # Free plan allows 40 directions requests/minute and 2,000/day in total, so stay below that across all accounts and demo accounts
     max-requests-per-account-per-minute: 20
     max-requests-per-minute: 30

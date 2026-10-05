@@ -8,13 +8,21 @@
       "allCompletedHint": "All of today's appointments are completed · Preview of tomorrow",
       "tomorrowHeading": "Appointments for tomorrow, {date}",
       "emptyTomorrow": "No appointments are scheduled for tomorrow yet.",
-      "travelSummary": "{km} km · {duration} drive",
+      "travelSummary": {
+        "car": "{km} km · {duration} drive",
+        "walking": "{km} km · {duration} on foot"
+      },
       "durationSummary": "Duration {duration}"
     },
     "map": {
+      "routeMode": {
+        "label": "Way of travelling for the route",
+        "car": "Car",
+        "walking": "On foot"
+      },
       "empty": "No appointments are scheduled for today.",
       "geocodingError": "The location for some addresses could not be determined.",
-      "routeError": "The road route is currently unavailable, the map shows the straight line.",
+      "routeError": "The route is currently unavailable, the map shows the straight line.",
       "allCompleted": "All of today's appointments are completed"
     }
   }

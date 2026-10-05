@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Proxies road route calculation to openrouteservice so its API key never reaches the browser.
+ * Proxies route calculation by car or on foot to openrouteservice so its API key never reaches the browser.
  */
 @RestController
 @RequestMapping("/api/routes")
@@ -25,10 +25,10 @@ public class RoutingController {
     }
 
     /**
-     * Calculates the road route through the given ordered positions of the logged-in account.
+     * Calculates the route for the requested mode through the given ordered positions of the logged-in account.
      */
     @PostMapping
     public RouteResponse route(@AuthenticationPrincipal AuthenticatedUser user, @Valid @RequestBody RouteRequest request) {
-        return routingService.route(user.id(), request.coordinates());
+        return routingService.route(user.id(), request.mode(), request.coordinates());
     }
 }

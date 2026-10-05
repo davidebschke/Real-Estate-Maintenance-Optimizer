@@ -24,7 +24,6 @@ class RoutingPropertiesTest {
 
         assertThat(properties.enabled()).isFalse();
         assertThat(properties.baseUrl()).isEqualTo("https://api.openrouteservice.org");
-        assertThat(properties.profile()).isEqualTo("driving-car");
         assertThat(properties.maxRequestsPerAccountPerMinute()).isEqualTo(20);
         assertThat(properties.maxRequestsPerMinute()).isEqualTo(30);
         assertThat(properties.maxRequestsPerDay()).isEqualTo(1500);
@@ -36,7 +35,6 @@ class RoutingPropertiesTest {
                 "remo.routing.enabled", "true",
                 "remo.routing.api-key", "secret",
                 "remo.routing.base-url", "https://ors.example",
-                "remo.routing.profile", "driving-hgv",
                 "remo.routing.max-requests-per-account-per-minute", "5",
                 "remo.routing.max-requests-per-minute", "10",
                 "remo.routing.max-requests-per-day", "100"));
@@ -44,7 +42,6 @@ class RoutingPropertiesTest {
         assertThat(properties.enabled()).isTrue();
         assertThat(properties.apiKey()).isEqualTo("secret");
         assertThat(properties.baseUrl()).isEqualTo("https://ors.example");
-        assertThat(properties.profile()).isEqualTo("driving-hgv");
         assertThat(properties.maxRequestsPerAccountPerMinute()).isEqualTo(5);
         assertThat(properties.maxRequestsPerMinute()).isEqualTo(10);
         assertThat(properties.maxRequestsPerDay()).isEqualTo(100);
@@ -52,19 +49,19 @@ class RoutingPropertiesTest {
 
     @Test
     void rejectsEnabledRoutingWithoutAnApiKey() {
-        assertThatThrownBy(() -> new RoutingProperties(true, "https://ors.test", null, "driving-car", 20, 30, 1500))
+        assertThatThrownBy(() -> new RoutingProperties(true, "https://ors.test", null, 20, 30, 1500))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new RoutingProperties(true, "https://ors.test", "  ", "driving-car", 20, 30, 1500))
+        assertThatThrownBy(() -> new RoutingProperties(true, "https://ors.test", "  ", 20, 30, 1500))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsANonPositiveRequestLimit() {
-        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, "driving-car", 0, 30, 1500))
+        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, 0, 30, 1500))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, "driving-car", 20, 0, 1500))
+        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, 20, 0, 1500))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, "driving-car", 20, 30, 0))
+        assertThatThrownBy(() -> new RoutingProperties(false, "https://ors.test", null, 20, 30, 0))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

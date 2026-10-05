@@ -4,14 +4,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Binds the openrouteservice configuration (switch, endpoint, API key, profile, request limits) under the {@code remo.routing} prefix.
+ * Binds the openrouteservice configuration (switch, endpoint, API key, request limits) under the {@code remo.routing} prefix.
  */
 @ConfigurationProperties(prefix = "remo.routing")
 public record RoutingProperties(
         @DefaultValue("false") boolean enabled,
         @DefaultValue("https://api.openrouteservice.org") String baseUrl,
         String apiKey,
-        @DefaultValue("driving-car") String profile,
         @DefaultValue("20") int maxRequestsPerAccountPerMinute,
         @DefaultValue("30") int maxRequestsPerMinute,
         @DefaultValue("1500") int maxRequestsPerDay) {

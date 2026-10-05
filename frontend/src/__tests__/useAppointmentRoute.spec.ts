@@ -1,13 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { AxiosError } from 'axios'
-import { ref } from 'vue'
+import { effectScope, ref, type EffectScope, type Ref } from 'vue'
 import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
+import { useRouteMode } from '@/composables/useRouteMode'
 import * as routingService from '@/services/routingService'
 import type { AppointmentMapMarker } from '@/composables/useAppointmentMapMarkers'
 import type { RoadRoute } from '@/types/route'
 
 vi.mock('@/services/routingService')
+
+const scopes: EffectScope[] = []
+
+/** Runs the composable in its own effect scope, as a component would, so its watchers can be stopped after the test. */
+function useRoute(markers: Ref<AppointmentMapMarker[]>) {
+  const scope = effectScope()
+  scopes.push(scope)
+  return scope.run(() => useAppointmentRoute(markers)) as ReturnType<typeof useAppointmentRoute>
+}
 
 /** Builds a map marker for the appointment with the given id at the given position. */
 function createMarker(id: string, lat: number, lng: number): AppointmentMapMarker {
@@ -31,22 +41,30 @@ function createRoute(stopCount: number): RoadRoute {
 }
 
 beforeEach(() => {
+  useRouteMode().routeMode.value = 'car'
   vi.mocked(routingService.fetchRoute)
     .mockReset()
     .mockImplementation(async (stops) => createRoute(stops.length))
+})
+
+afterEach(() => {
+  scopes.splice(0).forEach((scope) => scope.stop())
 })
 
 describe('useAppointmentRoute', () => {
   it('requests the route through the marker positions in order and exposes it', async () => {
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
 
-    const { route, hasRouteError } = useAppointmentRoute(markers)
+    const { route, hasRouteError } = useRoute(markers)
     await flushPromises()
 
-    expect(routingService.fetchRoute).toHaveBeenCalledWith([
-      { lat: 50.9, lng: 6.9 },
-      { lat: 50.8, lng: 6.8 },
-    ])
+    expect(routingService.fetchRoute).toHaveBeenCalledWith(
+      [
+        { lat: 50.9, lng: 6.9 },
+        { lat: 50.8, lng: 6.8 },
+      ],
+      'car',
+    )
     expect(route.value).toEqual(createRoute(2))
     expect(hasRouteError.value).toBe(false)
   })
@@ -54,7 +72,7 @@ describe('useAppointmentRoute', () => {
   it('does not request a route for fewer than two stops', async () => {
     const markers = ref([createMarker('1', 50.9, 6.9)])
 
-    const { route, hasRouteError } = useAppointmentRoute(markers)
+    const { route, hasRouteError } = useRoute(markers)
     await flushPromises()
 
     expect(routingService.fetchRoute).not.toHaveBeenCalled()
@@ -69,7 +87,7 @@ describe('useAppointmentRoute', () => {
       createMarker('3', 50.7, 6.7),
     ])
 
-    const { legsByAppointmentId } = useAppointmentRoute(markers)
+    const { legsByAppointmentId } = useRoute(markers)
     await flushPromises()
 
     expect(legsByAppointmentId.value.has('1')).toBe(false)
@@ -90,13 +108,16 @@ describe('useAppointmentRoute', () => {
       createMarker('3', 50.7, 6.7),
     ])
 
-    const { legsByAppointmentId } = useAppointmentRoute(markers)
+    const { legsByAppointmentId } = useRoute(markers)
     await flushPromises()
 
-    expect(routingService.fetchRoute).toHaveBeenCalledWith([
-      { lat: 50.9, lng: 6.9 },
-      { lat: 50.7, lng: 6.7 },
-    ])
+    expect(routingService.fetchRoute).toHaveBeenCalledWith(
+      [
+        { lat: 50.9, lng: 6.9 },
+        { lat: 50.7, lng: 6.7 },
+      ],
+      'car',
+    )
     expect(legsByAppointmentId.value.has('2')).toBe(false)
     expect(legsByAppointmentId.value.get('3')).toEqual({
       distanceMeters: 1000,
@@ -106,7 +127,7 @@ describe('useAppointmentRoute', () => {
 
   it('does not request the route again when the markers change but their positions stay the same', async () => {
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
-    useAppointmentRoute(markers)
+    useRoute(markers)
     await flushPromises()
 
     markers.value = [createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)]
@@ -117,7 +138,7 @@ describe('useAppointmentRoute', () => {
 
   it('requests the route again when the sequence of positions changes', async () => {
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
-    useAppointmentRoute(markers)
+    useRoute(markers)
     await flushPromises()
 
     markers.value = [createMarker('2', 50.8, 6.8), createMarker('1', 50.9, 6.9)]
@@ -126,11 +147,29 @@ describe('useAppointmentRoute', () => {
     expect(routingService.fetchRoute).toHaveBeenCalledTimes(2)
   })
 
+  it('requests the route again for the newly selected mode', async () => {
+    const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
+    useRoute(markers)
+    await flushPromises()
+
+    useRouteMode().routeMode.value = 'walking'
+    await flushPromises()
+
+    expect(routingService.fetchRoute).toHaveBeenCalledTimes(2)
+    expect(routingService.fetchRoute).toHaveBeenLastCalledWith(
+      [
+        { lat: 50.9, lng: 6.9 },
+        { lat: 50.8, lng: 6.8 },
+      ],
+      'walking',
+    )
+  })
+
   it('reports an error and exposes no route when the calculation fails', async () => {
     vi.mocked(routingService.fetchRoute).mockRejectedValue(new Error('503'))
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
 
-    const { route, hasRouteError, legsByAppointmentId } = useAppointmentRoute(markers)
+    const { route, hasRouteError, legsByAppointmentId } = useRoute(markers)
     await flushPromises()
 
     expect(route.value).toBeNull()
@@ -146,7 +185,7 @@ describe('useAppointmentRoute', () => {
     )
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
 
-    const { route, hasRouteError } = useAppointmentRoute(markers)
+    const { route, hasRouteError } = useRoute(markers)
     await flushPromises()
 
     expect(route.value).toBeNull()
@@ -156,7 +195,7 @@ describe('useAppointmentRoute', () => {
   it('clears the error once the positions change to a sequence that no longer needs a route', async () => {
     vi.mocked(routingService.fetchRoute).mockRejectedValue(new Error('503'))
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
-    const { hasRouteError } = useAppointmentRoute(markers)
+    const { hasRouteError } = useRoute(markers)
     await flushPromises()
 
     markers.value = [createMarker('1', 50.9, 6.9)]
@@ -171,7 +210,7 @@ describe('useAppointmentRoute', () => {
       .mockImplementationOnce(() => new Promise<RoadRoute>((resolve) => (resolveFirst = resolve)))
       .mockImplementationOnce(async (stops) => createRoute(stops.length))
     const markers = ref([createMarker('1', 50.9, 6.9), createMarker('2', 50.8, 6.8)])
-    const { route } = useAppointmentRoute(markers)
+    const { route } = useRoute(markers)
 
     markers.value = [
       createMarker('1', 50.9, 6.9),

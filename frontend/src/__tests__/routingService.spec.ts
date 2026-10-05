@@ -32,13 +32,14 @@ describe('routingService', () => {
     vi.mocked(axios.post).mockResolvedValue({ data: routeResponse })
     const { fetchRoute } = await import('@/services/routingService')
 
-    const route = await fetchRoute(stops)
+    const route = await fetchRoute(stops, 'car')
 
     expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/routes'), {
       coordinates: [
         { latitude: 50.94, longitude: 6.87 },
         { latitude: 50.95, longitude: 6.93 },
       ],
+      mode: 'CAR',
     })
     expect(route.geometry).toEqual([
       [50.94, 6.87],
@@ -54,19 +55,37 @@ describe('routingService', () => {
     vi.mocked(axios.post).mockResolvedValue({ data: routeResponse })
     const { fetchRoute } = await import('@/services/routingService')
 
-    const [first, second] = await Promise.all([fetchRoute(stops), fetchRoute([...stops])])
-    await fetchRoute(stops)
+    const [first, second] = await Promise.all([
+      fetchRoute(stops, 'car'),
+      fetchRoute([...stops], 'car'),
+    ])
+    await fetchRoute(stops, 'car')
 
     expect(second).toBe(first)
     expect(axios.post).toHaveBeenCalledTimes(1)
+  })
+
+  it('requests the same stops separately for each mode and sends the walking mode to the backend', async () => {
+    vi.mocked(axios.post).mockResolvedValue({ data: routeResponse })
+    const { fetchRoute } = await import('@/services/routingService')
+
+    await fetchRoute(stops, 'car')
+    await fetchRoute(stops, 'walking')
+    await fetchRoute(stops, 'walking')
+
+    expect(axios.post).toHaveBeenCalledTimes(2)
+    expect(axios.post).toHaveBeenLastCalledWith(
+      expect.stringContaining('/api/routes'),
+      expect.objectContaining({ mode: 'WALKING' }),
+    )
   })
 
   it('requests a different stop sequence separately', async () => {
     vi.mocked(axios.post).mockResolvedValue({ data: routeResponse })
     const { fetchRoute } = await import('@/services/routingService')
 
-    await fetchRoute(stops)
-    await fetchRoute([...stops].reverse())
+    await fetchRoute(stops, 'car')
+    await fetchRoute([...stops].reverse(), 'car')
 
     expect(axios.post).toHaveBeenCalledTimes(2)
   })
@@ -77,8 +96,8 @@ describe('routingService', () => {
       .mockResolvedValue({ data: routeResponse })
     const { fetchRoute } = await import('@/services/routingService')
 
-    await expect(fetchRoute(stops)).rejects.toThrow('503')
-    const route = await fetchRoute(stops)
+    await expect(fetchRoute(stops, 'car')).rejects.toThrow('503')
+    const route = await fetchRoute(stops, 'car')
 
     expect(route.legs).toHaveLength(1)
     expect(axios.post).toHaveBeenCalledTimes(2)
