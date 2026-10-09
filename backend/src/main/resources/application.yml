@@ -23,8 +23,8 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        default_schema: remo
-        default_batch_fetch_size: 50
+        "[default_schema]": remo
+        "[default_batch_fetch_size]": 50
   flyway:
     # Dedicated schema instead of "public", which Supabase exposes through its auto-generated Data API
     schemas: remo
