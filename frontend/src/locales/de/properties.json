@@ -12,6 +12,7 @@
       "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin",
       "detailsButton": "Details und Mieter von {name} anzeigen",
+      "tenantsButton": "Mieter",
       "editButton": "Bearbeiten",
       "deleteButton": "Löschen",
       "deleteConfirm": {

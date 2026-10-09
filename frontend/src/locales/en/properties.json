@@ -12,6 +12,7 @@
       "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment",
       "detailsButton": "Show details and tenants of {name}",
+      "tenantsButton": "Tenants",
       "editButton": "Edit",
       "deleteButton": "Delete",
       "deleteConfirm": {

@@ -90,6 +90,16 @@ const nextAppointmentLabel = computed(() => {
     </p>
 
     <button
+      v-tooltip.top="t('properties.card.tenantsButton')"
+      type="button"
+      class="property-card__tenants"
+      :aria-label="t('properties.card.tenantsButton')"
+      @click="$emit('open-detail', property.id)"
+    >
+      <i class="pi pi-users" aria-hidden="true"></i>
+    </button>
+
+    <button
       v-tooltip.top="t('properties.card.editButton')"
       type="button"
       class="property-card__edit"
