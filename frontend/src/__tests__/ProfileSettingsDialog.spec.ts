@@ -27,6 +27,7 @@ const baseUser: CurrentUser = {
   expiresAt: null,
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
+  remainingTenantCreations: null,
   appointmentBufferMinutes: 15,
 }
 

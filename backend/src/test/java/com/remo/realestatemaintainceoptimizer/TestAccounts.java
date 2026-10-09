@@ -50,10 +50,22 @@ public final class TestAccounts {
     }
 
     /**
-     * Saves a demo account with a unique username, the given expiry and the given remaining creation limits.
+     * Saves a demo account with a unique username, the given expiry and the given remaining property and appointment creation limits, without a tenant limit.
      */
     public static User saveDemoAccount(
             UserRepository userRepository, Instant expiresAt, int remainingPropertyCreations, int remainingAppointmentCreations) {
+        return saveDemoAccount(userRepository, expiresAt, remainingPropertyCreations, remainingAppointmentCreations, null);
+    }
+
+    /**
+     * Saves a demo account with a unique username, the given expiry and the given remaining creation limits (null for none).
+     */
+    public static User saveDemoAccount(
+            UserRepository userRepository,
+            Instant expiresAt,
+            int remainingPropertyCreations,
+            int remainingAppointmentCreations,
+            Integer remainingTenantCreations) {
         String id = UUID.randomUUID().toString();
         return userRepository.save(new User(
                 id,
@@ -64,7 +76,8 @@ public final class TestAccounts {
                 Instant.now().truncatedTo(ChronoUnit.MICROS),
                 expiresAt.truncatedTo(ChronoUnit.MICROS),
                 remainingPropertyCreations,
-                remainingAppointmentCreations));
+                remainingAppointmentCreations,
+                remainingTenantCreations));
     }
 
     /**

@@ -6,11 +6,12 @@ export interface CurrentUser {
   expiresAt: Date | null
   remainingPropertyCreations: number | null
   remainingAppointmentCreations: number | null
+  remainingTenantCreations: number | null
   appointmentBufferMinutes: number
 }
 
 /** Resource kind a demo account may only create a limited number of. */
-export type DemoQuotaResource = 'properties' | 'appointments'
+export type DemoQuotaResource = 'properties' | 'appointments' | 'tenants'
 
 /** Why a login or demo account request failed, mapped to a translatable message. */
 export type AuthFailureReason = 'invalidCredentials' | 'tooManyRequests' | 'generic'

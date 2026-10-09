@@ -14,6 +14,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Apartment;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
@@ -22,6 +23,8 @@ import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,14 +188,43 @@ class ApartmentServiceTest {
 
     @Test
     void rejectsAnApartmentBeyondThePropertyLimit() {
-        for (int index = 0; index < ApartmentService.MAX_APARTMENTS_PER_PROPERTY; index++) {
-            apartmentRepository.save(new Apartment(
-                    "apartment-" + index, property, 1, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO));
-        }
+        apartmentRepository.saveAll(IntStream.range(0, ApartmentService.MAX_APARTMENTS_PER_PROPERTY)
+                .mapToObj(index -> new Apartment(
+                        "apartment-" + index, property, 1, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO))
+                .toList());
 
         assertThatThrownBy(() -> service.create(owner.id(), "property-1", request(1, "Zu", "Viel")))
                 .isInstanceOfSatisfying(TenantLimitExceededException.class,
                         exception -> assertThat(exception.reasonCode()).isEqualTo(TenantLimitExceededException.REASON_APARTMENT_LIMIT));
+    }
+
+    @Test
+    void aDemoAccountCanOnlyCreateAsManyTenantsAsItsRemainingLimit() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0, 2);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
+        ApartmentResponse created = service.create(demo.id(), "demo-property", request(1, "Erika", "Mustermann"));
+        service.addTenant(demo.id(), created.id(), new TenantDetailsRequest("Max", "Mustermann"));
+
+        assertThatThrownBy(() -> service.addTenant(demo.id(), created.id(), new TenantDetailsRequest("Zu", "Viel")))
+                .isInstanceOf(CreationQuotaExceededException.class)
+                .extracting("resource").isEqualTo(CreationQuotaExceededException.RESOURCE_TENANT);
+        assertThatThrownBy(() -> service.create(demo.id(), "demo-property", request(2, "Zu", "Viel")))
+                .isInstanceOf(CreationQuotaExceededException.class);
+        assertThat(service.listByProperty(demo.id(), "demo-property")).hasSize(1);
+        assertThat(service.listByProperty(demo.id(), "demo-property").get(0).tenants()).hasSize(2);
+        assertThat(userRepository.findById(demo.id()).orElseThrow().remainingTenantCreations()).isZero();
+    }
+
+    @Test
+    void editingAndDeletingTenantsNeverUsesUpTheDemoLimit() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0, 1);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
+        ApartmentResponse created = service.create(demo.id(), "demo-property", request(1, "Erika", "Mustermann"));
+
+        service.updateTenant(demo.id(), created.tenants().get(0).id(), request(2, "Erika", "Musterfrau"));
+        service.deleteTenant(demo.id(), created.tenants().get(0).id());
+
+        assertThat(userRepository.findById(demo.id()).orElseThrow().remainingTenantCreations()).isZero();
     }
 
     private ApartmentWithTenantRequest request(int floor, String firstName, String lastName) {

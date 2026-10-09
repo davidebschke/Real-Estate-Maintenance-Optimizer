@@ -364,6 +364,7 @@ function logInDemoAccount(remainingAppointmentCreations: number) {
     expiresAt: new Date(),
     remainingPropertyCreations: 3,
     remainingAppointmentCreations,
+    remainingTenantCreations: 10,
     appointmentBufferMinutes: 15,
   }
 }

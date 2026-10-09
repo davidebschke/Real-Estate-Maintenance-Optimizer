@@ -1,6 +1,7 @@
 import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as apartmentService from '@/services/apartmentService'
+import { useAuthStore } from '@/stores/auth'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { Apartment, ApartmentWithTenantPayload, Tenant, TenantDetails } from '@/types/apartment'
 
@@ -64,14 +65,21 @@ export const useTenantsStore = defineStore('tenants', () => {
     )
   }
 
+  /** Sends a change that creates a tenant and, for a demo account, refreshes its remaining tenant creations afterwards. */
+  async function applyTenantCreation(propertyId: string, request: () => Promise<unknown>): Promise<boolean> {
+    const succeeded = await applyChange(propertyId, request, hasSaveError)
+    if (succeeded) await useAuthStore().refreshDemoQuota()
+    return succeeded
+  }
+
   /** Creates a new apartment in the given property together with its first tenant. */
   function createApartment(propertyId: string, payload: ApartmentWithTenantPayload): Promise<boolean> {
-    return applyChange(propertyId, () => apartmentService.createApartment(propertyId, payload), hasSaveError)
+    return applyTenantCreation(propertyId, () => apartmentService.createApartment(propertyId, payload))
   }
 
   /** Adds a further tenant to the given apartment. */
   function addTenant(propertyId: string, apartmentId: string, payload: TenantDetails): Promise<boolean> {
-    return applyChange(propertyId, () => apartmentService.addTenant(apartmentId, payload), hasSaveError)
+    return applyTenantCreation(propertyId, () => apartmentService.addTenant(apartmentId, payload))
   }
 
   /** Updates the given tenant together with the data of their apartment. */

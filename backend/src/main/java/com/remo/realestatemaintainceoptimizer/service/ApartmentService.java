@@ -8,6 +8,7 @@ import com.remo.realestatemaintainceoptimizer.dto.TenantResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Apartment;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.Tenant;
+import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
@@ -15,6 +16,7 @@ import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
+import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ApartmentService {
 
-    static final int MAX_APARTMENTS_PER_PROPERTY = 200;
+    static final int MAX_APARTMENTS_PER_PROPERTY = 500;
     static final int MAX_TENANTS_PER_APARTMENT = 10;
 
     private static final Comparator<TenantResponse> TENANT_ORDER = Comparator
@@ -45,14 +47,17 @@ public class ApartmentService {
     private final ApartmentRepository apartmentRepository;
     private final TenantRepository tenantRepository;
     private final PropertyRepository propertyRepository;
+    private final UserRepository userRepository;
 
     public ApartmentService(
             ApartmentRepository apartmentRepository,
             TenantRepository tenantRepository,
-            PropertyRepository propertyRepository) {
+            PropertyRepository propertyRepository,
+            UserRepository userRepository) {
         this.apartmentRepository = apartmentRepository;
         this.tenantRepository = tenantRepository;
         this.propertyRepository = propertyRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -68,7 +73,7 @@ public class ApartmentService {
     }
 
     /**
-     * Creates a new apartment in the given property together with its first tenant, rejecting it when the property already has the maximum number of apartments.
+     * Creates a new apartment in the given property together with its first tenant, rejecting it when the property already has the maximum number of apartments or a demo account used up its tenant creations.
      */
     public ApartmentResponse create(String ownerId, String propertyId, ApartmentWithTenantRequest request) {
         Property property = loadPropertyOrThrow(ownerId, propertyId);
@@ -85,12 +90,12 @@ public class ApartmentService {
                 details.totalRent(),
                 details.coldRent(),
                 details.additionalCosts());
-        addTenantTo(apartment, request.tenant());
+        addTenantTo(ownerId, apartment, request.tenant());
         return toResponse(apartmentRepository.save(apartment));
     }
 
     /**
-     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
+     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants or a demo account used up its tenant creations; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
      */
     public ApartmentResponse addTenant(String ownerId, String apartmentId, TenantDetailsRequest request) {
         Apartment apartment = apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
@@ -99,7 +104,7 @@ public class ApartmentService {
             throw new TenantLimitExceededException(
                     TenantLimitExceededException.REASON_TENANT_LIMIT, MAX_TENANTS_PER_APARTMENT);
         }
-        addTenantTo(apartment, request);
+        addTenantTo(ownerId, apartment, request);
         return toResponse(apartment);
     }
 
@@ -140,7 +145,10 @@ public class ApartmentService {
         }
     }
 
-    private void addTenantTo(Apartment apartment, TenantDetailsRequest request) {
+    private void addTenantTo(String ownerId, Apartment apartment, TenantDetailsRequest request) {
+        userRepository.findById(ownerId)
+                .orElseThrow(() -> new AccountNotFoundException(ownerId))
+                .consumeTenantCreation();
         apartment.addTenant(UUID.randomUUID().toString(), request.firstName(), request.lastName());
     }
 

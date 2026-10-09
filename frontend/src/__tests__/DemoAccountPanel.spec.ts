@@ -44,6 +44,7 @@ describe('DemoAccountPanel', () => {
       expiresAt: new Date('2026-09-29T16:00:00Z'),
       remainingPropertyCreations: 3,
       remainingAppointmentCreations: 3,
+      remainingTenantCreations: 10,
       appointmentBufferMinutes: 15,
     })
     const wrapper = mountPanel()

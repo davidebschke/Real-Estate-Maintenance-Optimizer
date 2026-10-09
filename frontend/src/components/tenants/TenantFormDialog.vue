@@ -6,8 +6,10 @@ import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
+import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 import { useTenantsStore } from '@/stores/tenants'
 import { useLocale } from '@/composables/useLocale'
+import { useDemoQuota } from '@/composables/useDemoQuota'
 import { useTouchedFields } from '@/composables/useTouchedFields'
 import type { ApartmentDetails } from '@/types/apartment'
 
@@ -58,6 +60,11 @@ const { touched, markTouched, resetTouched } = useTouchedFields([
 const isSubmitting = ref(false)
 
 const mode = computed(() => store.formTarget?.mode ?? 'create')
+
+const { isExhausted: isCreationQuotaExhausted } = useDemoQuota('tenants')
+
+/** Whether a demo account already used up its tenant creations, which blocks creating and adding but never editing. */
+const isBlockedByQuota = computed(() => mode.value !== 'edit' && isCreationQuotaExhausted.value)
 
 /** Whether the apartment fields only display the apartment's data, which is shared and edited through its existing tenants. */
 const isApartmentReadOnly = computed(() => mode.value === 'add')
@@ -118,7 +125,7 @@ function resetForm() {
 async function submit() {
   const target = store.formTarget
   const apartment = apartmentDetails.value
-  if (!isValid.value || !target || !apartment || isSubmitting.value) return
+  if (!isValid.value || !target || !apartment || isSubmitting.value || isBlockedByQuota.value) return
 
   const tenant = { firstName: form.firstName.trim(), lastName: form.lastName.trim() }
   isSubmitting.value = true
@@ -266,10 +273,12 @@ function cancel() {
       {{ store.lastChangeErrorMessage ?? t('tenants.form.error') }}
     </p>
 
+    <DemoQuotaHint v-if="mode !== 'edit'" resource="tenants" />
+
     <p class="tenant-form-dialog__required-legend">{{ t('tenants.form.requiredFieldsLegend') }}</p>
 
     <div class="tenant-form-dialog__actions">
-      <Button :label="submitLabel" :disabled="!isValid || isSubmitting" @click="submit" />
+      <Button :label="submitLabel" :disabled="!isValid || isSubmitting || isBlockedByQuota" @click="submit" />
       <button type="button" class="tenant-form-dialog__cancel" @click="cancel">
         {{ t('tenants.form.cancel') }}
       </button>

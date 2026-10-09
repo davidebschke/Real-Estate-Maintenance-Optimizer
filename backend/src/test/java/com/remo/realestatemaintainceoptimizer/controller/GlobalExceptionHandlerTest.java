@@ -88,6 +88,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void anExhaustedTenantCreationLimitReturnsALocalizedForbidden() throws Exception {
+        mockMvc.perform(get("/tenant-quota-exceeded").header("Accept-Language", "de"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("Ein Demo-Account kann höchstens 10 zusätzliche Mieter anlegen.")));
+    }
+
+    @Test
     void anExceededRouteRequestLimitReturnsALocalizedTooManyRequests() throws Exception {
         mockMvc.perform(get("/route-rate-limit-exceeded").header("Accept-Language", "en"))
                 .andExpect(status().isTooManyRequests())
@@ -205,6 +212,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/creation-quota-exceeded")
         String failWithCreationQuotaExceeded() {
             throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_PROPERTY);
+        }
+
+        @GetMapping("/tenant-quota-exceeded")
+        String failWithTenantQuotaExceeded() {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_TENANT);
         }
 
         @GetMapping("/optimistic-locking-failure")

@@ -7,6 +7,7 @@ import Button from 'primevue/button'
 import { i18n } from '@/i18n'
 import TenantFormDialog from '@/components/tenants/TenantFormDialog.vue'
 import { useTenantsStore } from '@/stores/tenants'
+import { useAuthStore } from '@/stores/auth'
 import * as apartmentService from '@/services/apartmentService'
 import type { Apartment } from '@/types/apartment'
 
@@ -51,6 +52,20 @@ async function mountDialog(openForm: (store: ReturnType<typeof useTenantsStore>)
 }
 
 type DialogWrapper = Awaited<ReturnType<typeof mountDialog>>
+
+/** Logs in a demo account with the given number of remaining tenant creations directly in the store. */
+function logInDemoAccount(remainingTenantCreations: number) {
+  useAuthStore().currentUser = {
+    username: 'demo-1',
+    displayName: 'Demo',
+    demoAccount: true,
+    expiresAt: new Date(),
+    remainingPropertyCreations: 3,
+    remainingAppointmentCreations: 3,
+    remainingTenantCreations,
+    appointmentBufferMinutes: 15,
+  }
+}
 
 /** Finds an element inside the Dialog's teleported content by CSS selector. */
 function bodyField(selector: string): DOMWrapper<Element> {
@@ -253,6 +268,31 @@ describe('TenantFormDialog', () => {
     await enter('#tenant-floor', '2,5')
 
     expect(Number.isInteger(Number((bodyField('#tenant-floor').element as HTMLInputElement).value.replace(',', '.')))).toBe(true)
+  })
+
+  it('tells a demo account how many more tenants it may create and blocks creating once they are used up', async () => {
+    logInDemoAccount(1)
+    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
+    expect(document.body.querySelector('.demo-quota-hint')?.textContent).toContain('noch einen weiteren Mieter')
+    await fillAllFields()
+    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeUndefined()
+
+    logInDemoAccount(0)
+    await flushPromises()
+
+    expect(document.body.querySelector('.demo-quota-hint--exhausted')).not.toBeNull()
+    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
+    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    expect(apartmentService.createApartment).not.toHaveBeenCalled()
+  })
+
+  it('still lets a demo account without tenant creations left edit a tenant', async () => {
+    logInDemoAccount(0)
+    const apartment = createApartment()
+    const wrapper = await mountDialog((store) => store.openEditDialog(apartment, apartment.tenants[0]!))
+
+    expect(document.body.querySelector('.demo-quota-hint')).toBeNull()
+    expect(buttonLabelled(wrapper, 'Speichern').attributes('disabled')).toBeUndefined()
   })
 
   it('closes without saving when cancelled', async () => {

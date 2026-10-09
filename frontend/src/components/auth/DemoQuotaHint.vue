@@ -9,7 +9,13 @@ const props = defineProps<{ resource: DemoQuotaResource }>()
 const { t } = useI18n()
 const { remaining, isLimited, isExhausted } = useDemoQuota(props.resource)
 
-const resourceKey = computed(() => (props.resource === 'properties' ? 'Properties' : 'Appointments'))
+const RESOURCE_KEYS: Record<DemoQuotaResource, string> = {
+  properties: 'Properties',
+  appointments: 'Appointments',
+  tenants: 'Tenants',
+}
+
+const resourceKey = computed(() => RESOURCE_KEYS[props.resource])
 
 const message = computed(() => {
   if (isExhausted.value) return t(`auth.quota.exhausted${resourceKey.value}`)

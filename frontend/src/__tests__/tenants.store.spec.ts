@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { AxiosError, type AxiosResponse } from 'axios'
 import { useTenantsStore } from '@/stores/tenants'
+import { useAuthStore } from '@/stores/auth'
 import * as apartmentService from '@/services/apartmentService'
 import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
 
@@ -210,6 +211,22 @@ describe('useTenantsStore', () => {
     store.isFormDialogOpen = false
 
     expect(store.formTarget).toBeNull()
+  })
+
+  it('refreshes the remaining tenant creations of a demo account only after a successful creation', async () => {
+    const refreshDemoQuota = vi.spyOn(useAuthStore(), 'refreshDemoQuota').mockResolvedValue()
+    const store = useTenantsStore()
+    vi.mocked(apartmentService.createApartment).mockRejectedValueOnce(new Error('403'))
+    await store.createApartment('property-1', payload)
+    expect(refreshDemoQuota).not.toHaveBeenCalled()
+
+    await store.createApartment('property-1', payload)
+    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    expect(refreshDemoQuota).toHaveBeenCalledTimes(2)
+
+    await store.updateTenant('property-1', 'tenant-1', payload)
+    await store.deleteTenant('property-1', 'tenant-1')
+    expect(refreshDemoQuota).toHaveBeenCalledTimes(2)
   })
 
   it('keeps the localized message of a failed save and clears it with the next successful one', async () => {

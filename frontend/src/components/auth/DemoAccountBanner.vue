@@ -10,11 +10,13 @@ const authStore = useAuthStore()
 const { sessionEndTime } = useAccountPresentation()
 const { remaining: remainingProperties } = useDemoQuota('properties')
 const { remaining: remainingAppointments } = useDemoQuota('appointments')
+const { remaining: remainingTenants } = useDemoQuota('tenants')
 
 const remainingText = computed(() =>
   t('auth.banner.remaining', {
     properties: t('auth.quota.properties', remainingProperties.value ?? 0),
     appointments: t('auth.quota.appointments', remainingAppointments.value ?? 0),
+    tenants: t('auth.quota.tenants', remainingTenants.value ?? 0),
   }),
 )
 </script>

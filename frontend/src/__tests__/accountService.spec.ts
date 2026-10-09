@@ -27,6 +27,7 @@ const userDto = {
   expiresAt: null,
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
+  remainingTenantCreations: null,
   appointmentBufferMinutes: 30,
 }
 

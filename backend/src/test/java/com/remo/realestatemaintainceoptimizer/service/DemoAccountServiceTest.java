@@ -72,11 +72,12 @@ class DemoAccountServiceTest {
     }
 
     @Test
-    void givesTheDemoAccountThreeMorePropertyAndAppointmentCreations() {
+    void givesTheDemoAccountThreeMorePropertyAndAppointmentCreationsAndTenTenants() {
         User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
 
         assertThat(demo.remainingPropertyCreations()).isEqualTo(3);
         assertThat(demo.remainingAppointmentCreations()).isEqualTo(3);
+        assertThat(demo.remainingTenantCreations()).isEqualTo(10);
     }
 
     @Test

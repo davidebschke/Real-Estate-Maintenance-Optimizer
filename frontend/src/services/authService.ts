@@ -9,6 +9,7 @@ export interface CurrentUserResponseDto {
   expiresAt: string | null
   remainingPropertyCreations: number | null
   remainingAppointmentCreations: number | null
+  remainingTenantCreations: number | null
   appointmentBufferMinutes: number
 }
 
@@ -62,6 +63,7 @@ export function toCurrentUser(dto: CurrentUserResponseDto): CurrentUser {
     expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
     remainingPropertyCreations: dto.remainingPropertyCreations,
     remainingAppointmentCreations: dto.remainingAppointmentCreations,
+    remainingTenantCreations: dto.remainingTenantCreations,
     appointmentBufferMinutes: dto.appointmentBufferMinutes,
   }
 }

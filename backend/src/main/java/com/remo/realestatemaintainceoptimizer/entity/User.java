@@ -45,6 +45,9 @@ public class User {
     @Column(name = "remaining_appointment_creations")
     private Integer remainingAppointmentCreations;
 
+    @Column(name = "remaining_tenant_creations")
+    private Integer remainingTenantCreations;
+
     @Column(name = "sessions_valid_from")
     private Instant sessionsValidFrom;
 
@@ -66,7 +69,8 @@ public class User {
             Instant createdAt,
             Instant expiresAt,
             Integer remainingPropertyCreations,
-            Integer remainingAppointmentCreations) {
+            Integer remainingAppointmentCreations,
+            Integer remainingTenantCreations) {
         this.id = id;
         this.username = normalizeUsername(username);
         this.passwordHash = passwordHash;
@@ -76,13 +80,31 @@ public class User {
         this.expiresAt = expiresAt;
         this.remainingPropertyCreations = remainingPropertyCreations;
         this.remainingAppointmentCreations = remainingAppointmentCreations;
+        this.remainingTenantCreations = remainingTenantCreations;
+    }
+
+    /**
+     * Creates an account with the given property and appointment limits and no tenant limit.
+     */
+    public User(
+            String id,
+            String username,
+            String passwordHash,
+            String displayName,
+            boolean demoAccount,
+            Instant createdAt,
+            Instant expiresAt,
+            Integer remainingPropertyCreations,
+            Integer remainingAppointmentCreations) {
+        this(id, username, passwordHash, displayName, demoAccount, createdAt, expiresAt,
+                remainingPropertyCreations, remainingAppointmentCreations, null);
     }
 
     /**
      * Creates a regular, never-expiring account without creation limits.
      */
     public static User regular(String id, String username, String passwordHash, String displayName, Instant createdAt) {
-        return new User(id, username, passwordHash, displayName, false, createdAt, null, null, null);
+        return new User(id, username, passwordHash, displayName, false, createdAt, null, null, null, null);
     }
 
     /**
@@ -160,6 +182,19 @@ public class User {
         remainingAppointmentCreations--;
     }
 
+    /**
+     * Uses up one tenant creation, rejecting it when this account's limit is already exhausted.
+     */
+    public void consumeTenantCreation() {
+        if (remainingTenantCreations == null) {
+            return;
+        }
+        if (remainingTenantCreations <= 0) {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_TENANT);
+        }
+        remainingTenantCreations--;
+    }
+
     public String id() {
         return id;
     }
@@ -198,5 +233,9 @@ public class User {
 
     public Integer remainingAppointmentCreations() {
         return remainingAppointmentCreations;
+    }
+
+    public Integer remainingTenantCreations() {
+        return remainingTenantCreations;
     }
 }

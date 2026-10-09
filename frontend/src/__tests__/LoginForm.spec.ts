@@ -67,6 +67,7 @@ describe('LoginForm', () => {
       expiresAt: null,
       remainingPropertyCreations: null,
       remainingAppointmentCreations: null,
+      remainingTenantCreations: null,
       appointmentBufferMinutes: 15,
     })
     const wrapper = mountForm()

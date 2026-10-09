@@ -21,6 +21,7 @@ import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import com.remo.realestatemaintainceoptimizer.security.JwtService;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,6 +186,20 @@ class ApartmentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"firstName\": \"Max\", \"lastName\": \" \"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void aDemoAccountBeyondItsTenantLimitGetsALocalizedForbidden() throws Exception {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0, 0);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
+
+        TestAccounts.mockMvcAs(context, jwtService, demo).perform(post("/api/properties/{id}/apartments", "demo-property")
+                        .header("Accept-Language", "de")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_BODY))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("Ein Demo-Account kann höchstens 10 zusätzliche Mieter anlegen.")));
+        assertThat(apartmentRepository.count()).isZero();
     }
 
     @Test
