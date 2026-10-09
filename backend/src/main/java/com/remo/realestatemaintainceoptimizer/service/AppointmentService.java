@@ -143,6 +143,22 @@ public class AppointmentService {
      * schedule that overlaps with or comes closer than the configured buffer to another of the account's appointments.
      */
     public AppointmentResponse move(String ownerId, String id, MoveAppointmentRequest request) {
+        return reschedule(ownerId, id, request, HistoryEventType.MOVED);
+    }
+
+    /**
+     * Reschedules an unlocked appointment to the slot of an accepted AI optimization proposal like {@link #move}, recording the move as an optimization and, for a recurring occurrence, remembering the start it was originally planned for.
+     */
+    public AppointmentResponse applyOptimizedSchedule(String ownerId, String id, MoveAppointmentRequest request) {
+        Appointment appointment = loadOrThrow(ownerId, id);
+        if (appointment.recurring()) {
+            appointment.anchorRecurrenceStart();
+        }
+        return reschedule(ownerId, id, request, HistoryEventType.OPTIMIZED);
+    }
+
+    private AppointmentResponse reschedule(
+            String ownerId, String id, MoveAppointmentRequest request, HistoryEventType historyEventType) {
         Appointment appointment = loadOrThrow(ownerId, id);
         if (appointment.locked()) {
             throw new AppointmentLockedException(id);
@@ -155,7 +171,7 @@ public class AppointmentService {
         }
         HistoryEntry moveEntry = new HistoryEntry(
                 currentInstant(),
-                HistoryEventType.MOVED,
+                historyEventType,
                 List.of(formatRange(appointment.start(), appointment.end()), formatRange(newStart, newEnd)));
 
         appointment.reschedule(newStart, newEnd, moveEntry);
@@ -412,6 +428,7 @@ public class AppointmentService {
             case COMPLETED -> "appointment.history.completed";
             case REOPENED -> "appointment.history.reopened";
             case EDITED -> "appointment.history.edited";
+            case OPTIMIZED -> "appointment.history.optimized";
         };
         return messageSource.getMessage(messageKey, entry.messageArgs().toArray(), locale);
     }

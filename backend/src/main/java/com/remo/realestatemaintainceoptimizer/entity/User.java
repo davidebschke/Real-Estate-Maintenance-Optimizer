@@ -48,6 +48,9 @@ public class User {
     @Column(name = "remaining_tenant_creations")
     private Integer remainingTenantCreations;
 
+    @Column(name = "remaining_ai_optimizations")
+    private Integer remainingAiOptimizations;
+
     @Column(name = "sessions_valid_from")
     private Instant sessionsValidFrom;
 
@@ -70,7 +73,8 @@ public class User {
             Instant expiresAt,
             Integer remainingPropertyCreations,
             Integer remainingAppointmentCreations,
-            Integer remainingTenantCreations) {
+            Integer remainingTenantCreations,
+            Integer remainingAiOptimizations) {
         this.id = id;
         this.username = normalizeUsername(username);
         this.passwordHash = passwordHash;
@@ -81,6 +85,25 @@ public class User {
         this.remainingPropertyCreations = remainingPropertyCreations;
         this.remainingAppointmentCreations = remainingAppointmentCreations;
         this.remainingTenantCreations = remainingTenantCreations;
+        this.remainingAiOptimizations = remainingAiOptimizations;
+    }
+
+    /**
+     * Creates an account with the given property, appointment and tenant limits and no AI optimization limit.
+     */
+    public User(
+            String id,
+            String username,
+            String passwordHash,
+            String displayName,
+            boolean demoAccount,
+            Instant createdAt,
+            Instant expiresAt,
+            Integer remainingPropertyCreations,
+            Integer remainingAppointmentCreations,
+            Integer remainingTenantCreations) {
+        this(id, username, passwordHash, displayName, demoAccount, createdAt, expiresAt,
+                remainingPropertyCreations, remainingAppointmentCreations, remainingTenantCreations, null);
     }
 
     /**
@@ -104,7 +127,7 @@ public class User {
      * Creates a regular, never-expiring account without creation limits.
      */
     public static User regular(String id, String username, String passwordHash, String displayName, Instant createdAt) {
-        return new User(id, username, passwordHash, displayName, false, createdAt, null, null, null, null);
+        return new User(id, username, passwordHash, displayName, false, createdAt, null, null, null, null, null);
     }
 
     /**
@@ -195,6 +218,26 @@ public class User {
         remainingTenantCreations--;
     }
 
+    /**
+     * Rejects starting an AI optimization run when this account's limit is already exhausted, without using one up.
+     */
+    public void requireAiOptimizationAvailable() {
+        if (remainingAiOptimizations != null && remainingAiOptimizations <= 0) {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_AI_OPTIMIZATION);
+        }
+    }
+
+    /**
+     * Uses up one AI optimization run, rejecting it when this account's limit is already exhausted.
+     */
+    public void consumeAiOptimization() {
+        if (remainingAiOptimizations == null) {
+            return;
+        }
+        requireAiOptimizationAvailable();
+        remainingAiOptimizations--;
+    }
+
     public String id() {
         return id;
     }
@@ -237,5 +280,9 @@ public class User {
 
     public Integer remainingTenantCreations() {
         return remainingTenantCreations;
+    }
+
+    public Integer remainingAiOptimizations() {
+        return remainingAiOptimizations;
     }
 }

@@ -27,6 +27,7 @@ public class DemoAccountService {
     static final int DEMO_PROPERTY_CREATIONS = 3;
     static final int DEMO_APPOINTMENT_CREATIONS = 3;
     static final int DEMO_TENANT_CREATIONS = 10;
+    static final int DEMO_AI_OPTIMIZATIONS = 1;
 
     static final long DEMO_ACCOUNT_CREATION_LOCK_KEY = 0x72656D6F64656D6FL;
 
@@ -49,7 +50,7 @@ public class DemoAccountService {
 
     /**
      * Creates a demo account that expires after one session and may create only a few more properties,
-     * appointments and tenants, rejecting it when too many demo accounts exist or this client created too many recently; creations
+     * appointments and tenants and start a single AI optimization run, rejecting it when too many demo accounts exist or this client created too many recently; creations
      * are serialized by a database lock so concurrent requests cannot exceed the global limit together.
      */
     public User createDemoAccount(String clientAddress) {
@@ -73,7 +74,8 @@ public class DemoAccountService {
                     createdAt.plus(authProperties.sessionDuration()),
                     DEMO_PROPERTY_CREATIONS,
                     DEMO_APPOINTMENT_CREATIONS,
-                    DEMO_TENANT_CREATIONS));
+                    DEMO_TENANT_CREATIONS,
+                    DEMO_AI_OPTIMIZATIONS));
             demoDataSeeder.seed(account.id(), LocalDate.now());
             return account;
         } catch (RuntimeException exception) {

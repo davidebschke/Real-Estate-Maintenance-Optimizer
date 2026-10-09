@@ -71,6 +71,9 @@ public class Appointment {
     @Column(name = "actual_end")
     private LocalDateTime actualEnd;
 
+    @Column(name = "recurrence_anchor_start")
+    private LocalDateTime recurrenceAnchorStart;
+
     @Version
     private Long version;
 
@@ -120,6 +123,22 @@ public class Appointment {
         this.start = newStart;
         this.end = newEnd;
         history.add(historyEntry);
+    }
+
+    /**
+     * Remembers the current start as the start this occurrence was originally planned for, unless an earlier automatic move already did.
+     */
+    public void anchorRecurrenceStart() {
+        if (recurrenceAnchorStart == null) {
+            recurrenceAnchorStart = start;
+        }
+    }
+
+    /**
+     * Returns the start automatic moves of this occurrence are bounded around: the originally planned start once an automatic move happened, the current start otherwise.
+     */
+    public LocalDateTime recurrenceAnchor() {
+        return recurrenceAnchorStart != null ? recurrenceAnchorStart : start;
     }
 
     /**

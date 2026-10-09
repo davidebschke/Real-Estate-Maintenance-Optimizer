@@ -124,12 +124,13 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.remainingPropertyCreations", equalTo(3)))
                 .andExpect(jsonPath("$.remainingAppointmentCreations", equalTo(3)))
                 .andExpect(jsonPath("$.remainingTenantCreations", equalTo(10)))
+                .andExpect(jsonPath("$.remainingAiOptimizations", equalTo(1)))
                 .andExpect(jsonPath("$.expiresAt").isNotEmpty())
                 .andReturn();
         Cookie sessionCookie = result.getResponse().getCookie(SessionCookieManager.COOKIE_NAME);
 
         mockMvc.perform(get("/api/properties").cookie(sessionCookie)).andExpect(jsonPath("$", hasSize(5)));
-        mockMvc.perform(get("/api/appointments").cookie(sessionCookie)).andExpect(jsonPath("$", hasSize(30)));
+        mockMvc.perform(get("/api/appointments").cookie(sessionCookie)).andExpect(jsonPath("$", hasSize(42)));
     }
 
     @Test

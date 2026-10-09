@@ -3,6 +3,8 @@ package com.remo.realestatemaintainceoptimizer.controller;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentConflictResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.AiDisabledException;
+import com.remo.realestatemaintainceoptimizer.exception.AiUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
@@ -14,6 +16,9 @@ import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsExcept
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCurrentPasswordException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidNewPasswordException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotPendingException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutdatedException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
@@ -157,6 +162,38 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRoutingUnavailable(Locale locale) {
         String message = messageSource.getMessage("routing.error.unavailable", null, locale);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(AiDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleAiDisabled(Locale locale) {
+        String message = messageSource.getMessage("ai.error.disabled", null, locale);
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(AiUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleAiUnavailable(Locale locale) {
+        String message = messageSource.getMessage("ai.error.unavailable", null, locale);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(OptimizationProposalNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOptimizationProposalNotFound(
+            OptimizationProposalNotFoundException exception, Locale locale) {
+        String message = messageSource.getMessage(
+                "optimization.error.proposalNotFound", new Object[] {exception.proposalId()}, locale);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(OptimizationProposalNotPendingException.class)
+    public ResponseEntity<ErrorResponse> handleOptimizationProposalNotPending(Locale locale) {
+        String message = messageSource.getMessage("optimization.error.proposalNotPending", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(OptimizationProposalOutdatedException.class)
+    public ResponseEntity<ErrorResponse> handleOptimizationProposalOutdated(Locale locale) {
+        String message = messageSource.getMessage("optimization.error.proposalOutdated", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})

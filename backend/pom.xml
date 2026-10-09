@@ -23,6 +23,7 @@
         <!-- LTS target per CLAUDE.md tech stack -->
         <java.version>25</java.version>
         <jjwt.version>0.13.0</jjwt.version>
+        <langchain4j.version>1.22.0</langchain4j.version>
     </properties>
 
     <dependencies>
@@ -77,6 +78,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Claude (Anthropic) chat model for the AI appointment optimization, used without the Spring Boot starter so it stays independent of the Spring Boot major version -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
 
         <!-- PostgreSQL JDBC driver (local docker-compose database and Supabase in production) -->

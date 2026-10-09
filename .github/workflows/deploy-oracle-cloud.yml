@@ -57,6 +57,14 @@ jobs:
             echo "::warning::REMO_ROUTING_API_KEY is not set; road routing stays disabled and the map keeps drawing straight lines"
           fi
 
+      - name: Check AI optimization secret
+        env:
+          REMO_AI_API_KEY: ${{ secrets.REMO_AI_API_KEY }}
+        run: |
+          if [ -z "$REMO_AI_API_KEY" ]; then
+            echo "::warning::REMO_AI_API_KEY is not set; the AI appointment optimization stays disabled"
+          fi
+
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
@@ -111,6 +119,7 @@ jobs:
           REMO_AUTH_JWT_SECRET: ${{ secrets.REMO_AUTH_JWT_SECRET }}
           REMO_AUTH_INITIAL_USER_PASSWORD: ${{ secrets.REMO_AUTH_INITIAL_USER_PASSWORD }}
           REMO_ROUTING_API_KEY: ${{ secrets.REMO_ROUTING_API_KEY }}
+          REMO_AI_API_KEY: ${{ secrets.REMO_AI_API_KEY }}
           # Only set the repository variable to "false" while the site is still served over plain HTTP
           REMO_AUTH_COOKIE_SECURE: ${{ vars.REMO_AUTH_COOKIE_SECURE || 'true' }}
         run: |
@@ -123,7 +132,9 @@ jobs:
             env_line REMO_AUTH_INITIAL_USER_PASSWORD "$REMO_AUTH_INITIAL_USER_PASSWORD"
             env_line REMO_AUTH_COOKIE_SECURE "$REMO_AUTH_COOKIE_SECURE"
             env_line REMO_ROUTING_API_KEY "$REMO_ROUTING_API_KEY"
-            env_line REMO_ROUTING_ENABLED "$([ -n "$REMO_ROUTING_API_KEY" ] && echo true || echo false)"; } \
+            env_line REMO_ROUTING_ENABLED "$([ -n "$REMO_ROUTING_API_KEY" ] && echo true || echo false)"
+            env_line REMO_AI_API_KEY "$REMO_AI_API_KEY"
+            env_line REMO_AI_ENABLED "$([ -n "$REMO_AI_API_KEY" ] && [ -n "$REMO_ROUTING_API_KEY" ] && echo true || echo false)"; } \
             | ssh -i ~/.ssh/oracle_deploy_key -p "$ORACLE_SSH_PORT" "$ORACLE_SSH_USER@$ORACLE_HOST" \
               "umask 077 && cat > '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && chmod 600 '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && mv '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' '$ORACLE_BACKEND_DEPLOY_PATH/backend.env'"
 
