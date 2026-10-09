@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import * as optimizationService from '@/services/optimizationService'
+import { useAppointmentsStore } from '@/stores/appointments'
 import { useAuthStore } from '@/stores/auth'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { OptimizationProposal, OptimizationRun } from '@/types/optimization'
@@ -65,9 +66,20 @@ export const useOptimizationStore = defineStore('optimization', () => {
     }
   }
 
-  /** Accepts a proposal, moving its appointment, and removes it from the pending list. */
-  function acceptProposal(id: string): Promise<boolean> {
-    return decide(id, optimizationService.acceptProposal)
+  /** Accepts a proposal, moving its appointment, removes it from the pending list and reloads the appointments so the move shows up everywhere. */
+  async function acceptProposal(id: string): Promise<boolean> {
+    const accepted = await decide(id, optimizationService.acceptProposal)
+    if (accepted) await refreshAppointments()
+    return accepted
+  }
+
+  /** Reloads the appointments after a move, leaving them as they are if that fails since the calendar and the overview reload them whenever they are opened. */
+  async function refreshAppointments() {
+    try {
+      await useAppointmentsStore().fetchAppointments()
+    } catch {
+      return
+    }
   }
 
   /** Rejects a proposal and removes it from the pending list. */

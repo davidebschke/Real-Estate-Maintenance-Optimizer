@@ -4,11 +4,13 @@ import { useOptimizationStore } from '@/stores/optimization'
 import { useAuthStore } from '@/stores/auth'
 import * as optimizationService from '@/services/optimizationService'
 import * as authService from '@/services/authService'
+import * as appointmentService from '@/services/appointmentService'
 import { httpError } from '@/__tests__/httpError'
 import { createProposal } from '@/__tests__/optimizationFixtures'
 
 vi.mock('@/services/optimizationService')
 vi.mock('@/services/authService')
+vi.mock('@/services/appointmentService')
 
 const firstProposal = createProposal({ id: 'proposal-1' })
 const secondProposal = createProposal({ id: 'proposal-2', appointmentId: 'appointment-2' })
@@ -20,6 +22,7 @@ beforeEach(() => {
   vi.mocked(optimizationService.acceptProposal).mockReset()
   vi.mocked(optimizationService.rejectProposal).mockReset()
   vi.mocked(authService.fetchCurrentUser).mockReset()
+  vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
 })
 
 describe('optimization store', () => {
@@ -104,6 +107,28 @@ describe('optimization store', () => {
     expect(optimizationService.acceptProposal).toHaveBeenCalledWith('proposal-1')
     expect(optimizationService.rejectProposal).toHaveBeenCalledWith('proposal-2')
     expect(store.pendingProposals).toEqual([])
+    expect(store.hasDecisionError).toBe(false)
+  })
+
+  it('reloads the appointments after an accepted proposal but not after a declined one', async () => {
+    vi.mocked(optimizationService.acceptProposal).mockResolvedValue({ ...firstProposal, status: 'ACCEPTED' })
+    vi.mocked(optimizationService.rejectProposal).mockResolvedValue({ ...secondProposal, status: 'REJECTED' })
+    vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+    const store = useOptimizationStore()
+
+    await store.rejectProposal('proposal-2')
+    expect(appointmentService.fetchAppointments).not.toHaveBeenCalled()
+
+    await store.acceptProposal('proposal-1')
+    expect(appointmentService.fetchAppointments).toHaveBeenCalledTimes(1)
+  })
+
+  it('still reports an accepted proposal as applied when reloading the appointments fails', async () => {
+    vi.mocked(optimizationService.acceptProposal).mockResolvedValue({ ...firstProposal, status: 'ACCEPTED' })
+    vi.mocked(appointmentService.fetchAppointments).mockRejectedValue(new Error('offline'))
+    const store = useOptimizationStore()
+
+    expect(await store.acceptProposal('proposal-1')).toBe(true)
     expect(store.hasDecisionError).toBe(false)
   })
 
