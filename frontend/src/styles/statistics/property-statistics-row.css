@@ -1,0 +1,60 @@
+.property-statistics-row > * {
+  border-bottom: 1px solid var(--remo-calendar-border-color, #24282e);
+  padding: 0.875rem 1rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.property-statistics-row:last-child > * {
+  border-bottom: none;
+}
+
+.property-statistics-row__property {
+  font-weight: 400;
+}
+
+.property-statistics-row__name {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.property-statistics-row__address {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  display: block;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.property-statistics-row__open,
+.property-statistics-row__completed {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.property-statistics-row__next-link {
+  background: none;
+  border: none;
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 0.2rem;
+  padding: 0;
+  text-align: left;
+}
+
+.property-statistics-row__next-link:hover {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.property-statistics-row__next-title {
+  font-weight: 600;
+}
+
+.property-statistics-row__no-next {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}

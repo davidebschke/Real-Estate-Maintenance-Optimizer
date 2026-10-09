@@ -32,3 +32,14 @@ export function formatDurationMinutes(totalMinutes: number, locale: string): str
 export function formatLocalizedTime(date: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
 }
+
+/** Formats a date with its time as localized numeric day, month, year, hours and minutes (e.g. "20.08.2026, 09:00"). */
+export function formatLocalizedDateTime(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}

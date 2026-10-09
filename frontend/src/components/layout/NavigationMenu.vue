@@ -4,10 +4,8 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { NavigationKey } from '@/router'
 
-/** List of top-level navigation entries rendered in a fixed, reusable order, hiding the still-placeholder statistics page outside development. */
-const navigationEntries: NavigationKey[] = (
-  ['overview', 'calendar', 'statistics', 'properties'] satisfies NavigationKey[]
-).filter((entry) => entry !== 'statistics' || import.meta.env.DEV)
+/** List of top-level navigation entries rendered in a fixed, reusable order. */
+const navigationEntries: NavigationKey[] = ['overview', 'calendar', 'statistics', 'properties']
 
 const { t } = useI18n()
 const isMobileMenuOpen = ref(false)

@@ -9,9 +9,11 @@ import TenantFormDialog from '@/components/tenants/TenantFormDialog.vue'
 import { useTenantsStore } from '@/stores/tenants'
 import { useAuthStore } from '@/stores/auth'
 import * as apartmentService from '@/services/apartmentService'
+import * as propertyService from '@/services/propertyService'
 import type { Apartment } from '@/types/apartment'
 
 vi.mock('@/services/apartmentService')
+vi.mock('@/services/propertyService')
 
 /** Builds a sample apartment with one tenant, with overridable fields. */
 function createApartment(overrides: Partial<Apartment> = {}): Apartment {
@@ -32,6 +34,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   i18n.global.locale.value = 'de'
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
+  vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.createApartment).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.addTenant).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.updateTenant).mockReset().mockResolvedValue(createApartment())

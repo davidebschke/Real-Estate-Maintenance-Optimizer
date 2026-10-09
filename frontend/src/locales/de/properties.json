@@ -7,20 +7,20 @@
       "deleteError": "Das Objekt konnte nicht gelöscht werden."
     },
     "card": {
-      "openAppointments": "Offene Aufträge",
-      "completedAppointments": "Erledigte Aufträge",
-      "nextAppointment": "Nächster Termin: {title}",
-      "noNextAppointment": "Kein anstehender Termin",
+      "tenantCount": "Mieter",
       "detailsButton": "Details und Mieter von {name} anzeigen",
-      "tenantsButton": "Mieter",
-      "editButton": "Bearbeiten",
-      "deleteButton": "Löschen",
       "deleteConfirm": {
         "header": "Objekt löschen",
         "message": "Soll das Objekt „{name}“ wirklich gelöscht werden? Dabei werden auch alle zugehörigen Termine, Wohnungen und Mieter gelöscht.",
         "confirm": "Löschen",
         "cancel": "Abbrechen"
       }
+    },
+    "controls": {
+      "label": "Objektverwaltung",
+      "manageTenants": "Mieter verwalten",
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
     },
     "create": {
       "cardLabel": "Neues Objekt anlegen",

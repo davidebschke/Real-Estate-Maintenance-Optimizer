@@ -43,7 +43,7 @@
   background-color: var(--remo-header-hover-color, #374151);
 }
 
-.navigation-menu__link.router-link-exact-active {
+.navigation-menu__link.router-link-active {
   background-color: var(--remo-header-hover-color, #374151);
 }
 

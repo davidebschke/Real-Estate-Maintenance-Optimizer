@@ -1,0 +1,11 @@
+.property-card-controls {
+  border-top: 1px solid var(--remo-calendar-border-color, #24282e);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1.125rem;
+}
+
+.property-card-controls__delete {
+  margin-left: auto;
+}

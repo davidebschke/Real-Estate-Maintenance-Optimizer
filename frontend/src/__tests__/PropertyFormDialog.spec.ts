@@ -21,6 +21,7 @@ function createExistingProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: null,
     longitude: null,
+    tenantCount: 0,
     ...overrides,
   }
 }
@@ -326,6 +327,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: null,
       longitude: null,
+      tenantCount: 0,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -366,6 +368,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: 50.9420135,
       longitude: 6.8771884,
+      tenantCount: 0,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -389,6 +392,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: 50.97,
       longitude: 6.95,
+      tenantCount: 0,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -416,6 +420,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: null,
       longitude: null,
+      tenantCount: 0,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()

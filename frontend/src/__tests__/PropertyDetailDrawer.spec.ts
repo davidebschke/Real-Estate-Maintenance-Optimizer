@@ -8,10 +8,12 @@ import PropertyDetailDrawer from '@/components/properties/PropertyDetailDrawer.v
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
 import * as apartmentService from '@/services/apartmentService'
+import * as propertyService from '@/services/propertyService'
 import type { Apartment } from '@/types/apartment'
 import type { Property } from '@/types/property'
 
 vi.mock('@/services/apartmentService')
+vi.mock('@/services/propertyService')
 vi.mock('primevue/useconfirm')
 
 /** Builds a sample property for tests, with overridable fields. */
@@ -23,6 +25,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: 50.94,
     longitude: 6.88,
+    tenantCount: 0,
     ...overrides,
   }
 }
@@ -46,6 +49,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   i18n.global.locale.value = 'de'
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
+  vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.deleteTenant).mockReset().mockResolvedValue()
   vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
   document.body.innerHTML = ''

@@ -1,5 +1,25 @@
 {
   "statistics": {
-    "content": "Here is the statistics page"
+    "heading": "Statistics",
+    "menu": {
+      "label": "Statistics sections",
+      "properties": {
+        "title": "Property statistics",
+        "description": "Open and completed appointments and the next appointment per property"
+      }
+    },
+    "properties": {
+      "heading": "Property statistics",
+      "back": "Back to statistics",
+      "empty": "No properties have been added yet.",
+      "loadError": "The properties could not be loaded.",
+      "columns": {
+        "property": "Property",
+        "open": "Open appointments",
+        "completed": "Completed appointments",
+        "next": "Next appointment"
+      },
+      "noNextAppointment": "No upcoming appointment"
+    }
   }
 }

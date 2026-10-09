@@ -1,4 +1,3 @@
-import process from 'node:process'
 import { test, expect } from '@playwright/test'
 
 test.describe('main navigation', () => {
@@ -22,26 +21,22 @@ test.describe('main navigation', () => {
     await expect(page).toHaveURL('/properties')
   })
 
-  test('hides the statistics nav entry in the production build', async ({ page }) => {
-    test.skip(!process.env.CI, 'only CI runs against the production preview build')
-
+  test('shows the statistics nav entry and opens the property statistics list from it', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.getByRole('link', { name: 'Statistik' })).toHaveCount(0)
+    await page.getByRole('link', { name: 'Statistik' }).click()
+    await expect(page.getByRole('heading', { name: 'Statistik' })).toBeVisible()
+    await expect(page).toHaveURL('/statistics')
+
+    await page.getByRole('link', { name: /Objektstatistik/ }).click()
+    await expect(page.getByRole('heading', { name: 'Objektstatistik' })).toBeVisible()
+    await expect(page).toHaveURL('/statistics/properties')
   })
 
-  test('shows the statistics nav entry when developing locally', async ({ page }) => {
-    test.skip(!!process.env.CI, 'CI runs the production build, where this entry is hidden')
+  test('keeps the property statistics route directly reachable by URL', async ({ page }) => {
+    await page.goto('/statistics/properties')
 
-    await page.goto('/')
-
-    await expect(page.getByRole('link', { name: 'Statistik' })).toBeVisible()
-  })
-
-  test('keeps the statistics route directly reachable by URL', async ({ page }) => {
-    await page.goto('/statistics')
-
-    await expect(page.getByText('Hier ist die Statistikseite')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Objektstatistik' })).toBeVisible()
   })
 
   test('returns to the overview page when the logo or brand name is clicked', async ({ page }) => {

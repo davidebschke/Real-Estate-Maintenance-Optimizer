@@ -1,0 +1,31 @@
+.property-statistics-list {
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+}
+
+.property-statistics-list__table {
+  border-collapse: collapse;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  min-width: 40rem;
+  width: 100%;
+}
+
+.property-statistics-list__table thead th {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 92%, white 8%);
+  border-bottom: 1px solid var(--remo-calendar-border-color, #24282e);
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.property-statistics-list__empty,
+.property-statistics-list__error {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}
+
+.property-statistics-list__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+}
