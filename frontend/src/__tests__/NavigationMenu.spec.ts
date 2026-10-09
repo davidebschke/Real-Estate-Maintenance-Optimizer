@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { i18n } from '@/i18n'
@@ -10,10 +10,6 @@ function createTestRouter() {
 }
 
 describe('NavigationMenu', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs()
-  })
-
   it('renders every navigation entry label', async () => {
     const router = createTestRouter()
     const wrapper = mount(NavigationMenu, {
@@ -25,17 +21,6 @@ describe('NavigationMenu', () => {
     expect(wrapper.text()).toContain('Kalender')
     expect(wrapper.text()).toContain('Statistik')
     expect(wrapper.text()).toContain('Immobilien')
-  })
-
-  it('hides the statistics entry outside development', async () => {
-    vi.stubEnv('DEV', false)
-    const router = createTestRouter()
-    const wrapper = mount(NavigationMenu, {
-      global: { plugins: [i18n, router] },
-    })
-    await router.isReady()
-
-    expect(wrapper.text()).not.toContain('Statistik')
   })
 
   it('navigates to the matching route when an entry is clicked', async () => {
@@ -63,6 +48,19 @@ describe('NavigationMenu', () => {
     const statisticsLink = wrapper.findAll('.navigation-menu__link')[2]
 
     expect(statisticsLink!.classes()).toContain('router-link-exact-active')
+  })
+
+  it('keeps the statistics link active on the pages below statistics', async () => {
+    const router = createTestRouter()
+    await router.push({ name: 'statistics-properties' })
+    const wrapper = mount(NavigationMenu, {
+      global: { plugins: [i18n, router] },
+    })
+    await router.isReady()
+
+    const statisticsLink = wrapper.findAll('.navigation-menu__link')[2]
+
+    expect(statisticsLink!.classes()).toContain('router-link-active')
   })
 
   it('toggles the collapsed mobile navigation list open and closed', async () => {

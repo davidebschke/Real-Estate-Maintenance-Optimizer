@@ -1,5 +1,26 @@
 {
   "statistics": {
-    "content": "Hier ist die Statistikseite"
+    "heading": "Statistik",
+    "menu": {
+      "label": "Statistikbereiche",
+      "properties": {
+        "title": "Objektstatistik",
+        "description": "Offene und erledigte Aufträge sowie der nächste Auftrag je Objekt"
+      }
+    },
+    "properties": {
+      "heading": "Objektstatistik",
+      "back": "Zurück zur Statistik",
+      "empty": "Es sind noch keine Objekte hinterlegt.",
+      "loadError": "Die Objekte konnten nicht geladen werden.",
+      "appointmentsLoadError": "Die Aufträge konnten nicht geladen werden, die Zahlen sind unvollständig.",
+      "columns": {
+        "property": "Objekt",
+        "open": "Offene Aufträge",
+        "completed": "Erledigte Aufträge",
+        "next": "Nächster Auftrag"
+      },
+      "noNextAppointment": "Kein anstehender Auftrag"
+    }
   }
 }

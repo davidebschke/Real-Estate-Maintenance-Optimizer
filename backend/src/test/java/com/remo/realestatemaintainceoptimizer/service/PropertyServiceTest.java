@@ -2,20 +2,25 @@ package com.remo.realestatemaintainceoptimizer.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.CreateAppointmentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.CreatePropertyRequest;
+import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
+import com.remo.realestatemaintainceoptimizer.entity.Apartment;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +45,9 @@ class PropertyServiceTest {
 
     @Autowired
     private PropertyRepository repository;
+
+    @Autowired
+    private ApartmentRepository apartmentRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -86,6 +94,30 @@ class PropertyServiceTest {
 
         assertThat(response.latitude()).isEqualTo(50.94);
         assertThat(response.longitude()).isEqualTo(6.88);
+    }
+
+    @Test
+    void reportsTheNumberOfTenantsOfEachPropertyWhenListingAndWhenLookingItUp() {
+        repository.save(new Property("1", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
+        Property withTenants = repository.save(
+                new Property("2", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        Apartment apartment = new Apartment(
+                "apartment-1", withTenants, 1, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN);
+        apartment.addTenant("tenant-1", "Erika", "Mustermann");
+        apartment.addTenant("tenant-2", "Max", "Mustermann");
+        apartmentRepository.save(apartment);
+
+        assertThat(service.listAll(owner.id()))
+                .extracting(PropertyResponse::name, PropertyResponse::tenantCount)
+                .containsExactly(tuple("Wohnanlage Rheinblick", 0L), tuple("Wohnanlage Sonnenhof", 2L));
+        assertThat(service.getById(owner.id(), "2").tenantCount()).isEqualTo(2);
+    }
+
+    @Test
+    void aNewlyCreatedPropertyHasNoTenants() {
+        var response = service.create(owner.id(), new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3", null, null));
+
+        assertThat(response.tenantCount()).isZero();
     }
 
     @Test

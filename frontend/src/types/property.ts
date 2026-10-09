@@ -6,6 +6,8 @@ export interface Property {
   icon: string
   latitude: number | null
   longitude: number | null
+  /** Number of tenants living in the apartments of this property. */
+  tenantCount: number
 }
 
 /** Payload for creating a new property. */

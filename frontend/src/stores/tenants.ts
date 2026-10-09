@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as apartmentService from '@/services/apartmentService'
 import { useAuthStore } from '@/stores/auth'
+import { usePropertiesStore } from '@/stores/properties'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { Apartment, ApartmentWithTenantPayload, Tenant, TenantDetails } from '@/types/apartment'
 
@@ -41,7 +42,7 @@ export const useTenantsStore = defineStore('tenants', () => {
     }
   }
 
-  /** Sends one change to the backend, recording on the given error flag whether it failed, and reloads the property's apartments afterwards so their order and content stay authoritative. */
+  /** Sends one change to the backend, recording on the given error flag whether it failed, and reloads the property's apartments and the properties (whose tenant counts changed) afterwards so their order and content stay authoritative. */
   async function applyChange(propertyId: string, request: () => Promise<unknown>, errorFlag: Ref<boolean>): Promise<boolean> {
     const requestEpoch = sessionEpoch
     try {
@@ -54,7 +55,7 @@ export const useTenantsStore = defineStore('tenants', () => {
     if (requestEpoch !== sessionEpoch) return false
     errorFlag.value = false
     lastChangeErrorMessage.value = null
-    await fetchApartments(propertyId)
+    await Promise.all([fetchApartments(propertyId), usePropertiesStore().fetchProperties()])
     return true
   }
 

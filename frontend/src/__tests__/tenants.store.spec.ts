@@ -4,9 +4,11 @@ import { AxiosError, type AxiosResponse } from 'axios'
 import { useTenantsStore } from '@/stores/tenants'
 import { useAuthStore } from '@/stores/auth'
 import * as apartmentService from '@/services/apartmentService'
+import * as propertyService from '@/services/propertyService'
 import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
 
 vi.mock('@/services/apartmentService')
+vi.mock('@/services/propertyService')
 
 /** Builds a sample apartment with one tenant, with overridable fields. */
 function createApartment(overrides: Partial<Apartment> = {}): Apartment {
@@ -31,6 +33,7 @@ const payload: ApartmentWithTenantPayload = {
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
+  vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.createApartment).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.addTenant).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.updateTenant).mockReset().mockResolvedValue(createApartment())
@@ -95,6 +98,23 @@ describe('useTenantsStore', () => {
     expect(apartmentService.createApartment).toHaveBeenCalledWith('property-1', payload)
     expect(store.apartmentsByProperty['property-1']).toEqual([createApartment()])
     expect(store.hasSaveError).toBe(false)
+  })
+
+  it('reloads the properties after a change so their tenant counts stay current', async () => {
+    const store = useTenantsStore()
+
+    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+
+    expect(propertyService.fetchProperties).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not reload the properties when a change fails', async () => {
+    vi.mocked(apartmentService.deleteTenant).mockRejectedValue(new Error('500'))
+    const store = useTenantsStore()
+
+    await store.deleteTenant('property-1', 'tenant-1')
+
+    expect(propertyService.fetchProperties).not.toHaveBeenCalled()
   })
 
   it('adds a tenant to an apartment and reloads the property afterwards', async () => {

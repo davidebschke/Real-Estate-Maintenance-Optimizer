@@ -7,11 +7,12 @@ function createTestRouter() {
 }
 
 describe('router', () => {
-  it.each<[NavigationKey, string]>([
+  it.each<[NavigationKey | 'statistics-properties', string]>([
     ['overview', '/'],
     ['calendar', '/calendar'],
     ['statistics', '/statistics'],
     ['properties', '/properties'],
+    ['statistics-properties', '/statistics/properties'],
   ])('resolves the %s route to path %s', async (name, path) => {
     const router = createTestRouter()
     await router.push({ name })

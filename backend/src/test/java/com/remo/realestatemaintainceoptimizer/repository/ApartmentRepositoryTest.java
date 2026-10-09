@@ -1,6 +1,7 @@
 package com.remo.realestatemaintainceoptimizer.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
@@ -10,6 +11,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -161,10 +163,51 @@ class ApartmentRepositoryTest {
         assertThat(tenantRepository.findById("tenant-1")).isEmpty();
     }
 
+    @Test
+    void countsTheTenantsOfEveryApartmentOfOnePropertyOnly() {
+        Apartment firstApartment = newApartment("apartment-1");
+        firstApartment.addTenant("tenant-1", "Erika", "Mustermann");
+        firstApartment.addTenant("tenant-2", "Max", "Mustermann");
+        Apartment secondApartment = newApartment("apartment-2");
+        secondApartment.addTenant("tenant-3", "Lena", "Beispiel");
+        apartmentRepository.saveAll(List.of(firstApartment, secondApartment));
+        Property otherProperty = propertyRepository.save(
+                new Property("property-2", owner.id(), "Wohnpark Lindenthal", "Lindenallee 4", "pi-building"));
+        Apartment otherApartment = newApartment("apartment-3", otherProperty);
+        otherApartment.addTenant("tenant-4", "Otto", "Normal");
+        apartmentRepository.save(otherApartment);
+        flushAndClear();
+
+        assertThat(tenantRepository.countByApartmentPropertyId("property-1")).isEqualTo(3);
+        assertThat(tenantRepository.countByApartmentPropertyId("property-2")).isEqualTo(1);
+        assertThat(tenantRepository.countByApartmentPropertyId("unknown")).isZero();
+    }
+
+    @Test
+    void countsTenantsPerPropertyOnlyForThePropertiesOfTheGivenAccount() {
+        User otherOwner = TestAccounts.saveRegularAccount(userRepository);
+        Property foreignProperty = propertyRepository.save(
+                new Property("property-2", otherOwner.id(), "Fremdes Objekt", "Fremdstr. 1", "pi-building"));
+        Apartment ownApartment = newApartment("apartment-1");
+        ownApartment.addTenant("tenant-1", "Erika", "Mustermann");
+        Apartment foreignApartment = newApartment("apartment-2", foreignProperty);
+        foreignApartment.addTenant("tenant-2", "Otto", "Normal");
+        apartmentRepository.saveAll(List.of(ownApartment, foreignApartment));
+        flushAndClear();
+
+        assertThat(tenantRepository.countTenantsPerPropertyByOwnerId(owner.id()))
+                .extracting(PropertyTenantCount::getPropertyId, PropertyTenantCount::getTenantCount)
+                .containsExactly(tuple("property-1", 1L));
+    }
+
     private Apartment newApartment(String id) {
+        return newApartment(id, property);
+    }
+
+    private Apartment newApartment(String id, Property owningProperty) {
         return new Apartment(
                 id,
-                property,
+                owningProperty,
                 2,
                 new BigDecimal("64.50"),
                 new BigDecimal("850.00"),

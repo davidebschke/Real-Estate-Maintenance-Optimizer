@@ -2,8 +2,6 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePropertiesStore } from '@/stores/properties'
-import { useAppointmentsStore } from '@/stores/appointments'
-import { usePropertyAppointmentSummaries } from '@/composables/usePropertyAppointmentSummaries'
 import { usePropertyDeleteConfirmation } from '@/composables/usePropertyDeleteConfirmation'
 import PropertyCard from '@/components/properties/PropertyCard.vue'
 import PropertyCreateCard from '@/components/properties/PropertyCreateCard.vue'
@@ -11,13 +9,10 @@ import type { Property } from '@/types/property'
 
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
-const appointmentsStore = useAppointmentsStore()
-const { getSummaryFor } = usePropertyAppointmentSummaries()
 const { confirmDelete } = usePropertyDeleteConfirmation()
 
 onMounted(() => {
   propertiesStore.fetchProperties()
-  appointmentsStore.fetchAppointments()
 })
 
 function handleDeleteProperty(property: Property) {
@@ -45,9 +40,7 @@ function handleDeleteProperty(property: Property) {
       v-for="property in propertiesStore.properties"
       :key="property.id"
       :property="property"
-      v-bind="getSummaryFor(property.id)"
       @open-detail="propertiesStore.openDetail"
-      @open-appointment="appointmentsStore.openDetail"
       @edit-property="propertiesStore.openEditDialog"
       @delete-property="handleDeleteProperty"
     />

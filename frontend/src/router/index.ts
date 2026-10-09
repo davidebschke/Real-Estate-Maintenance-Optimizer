@@ -1,7 +1,8 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, RouterView, type RouteRecordRaw } from 'vue-router'
 import OverviewView from '@/views/OverviewView.vue'
 import CalendarView from '@/views/CalendarView.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
+import PropertyStatisticsView from '@/views/PropertyStatisticsView.vue'
 import PropertiesView from '@/views/PropertiesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import { installAuthGuard } from '@/router/authGuard'
@@ -38,8 +39,19 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/statistics',
-    name: 'statistics' satisfies NavigationKey,
-    component: StatisticsView,
+    component: RouterView,
+    children: [
+      {
+        path: '',
+        name: 'statistics' satisfies NavigationKey,
+        component: StatisticsView,
+      },
+      {
+        path: 'properties',
+        name: 'statistics-properties',
+        component: PropertyStatisticsView,
+      },
+    ],
   },
   {
     path: '/properties',

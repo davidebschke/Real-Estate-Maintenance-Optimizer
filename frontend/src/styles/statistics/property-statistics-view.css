@@ -1,0 +1,23 @@
+.property-statistics-view__back {
+  align-items: center;
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  display: inline-flex;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.property-statistics-view__back:hover,
+.property-statistics-view__back:focus-visible {
+  text-decoration: underline;
+}
+
+.property-statistics-view__heading {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 1.4rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.property-statistics-view__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  margin: 0 0 1rem;
+}

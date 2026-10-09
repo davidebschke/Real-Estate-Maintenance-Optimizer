@@ -1,40 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocale } from '@/composables/useLocale'
 import { useCardTilt } from '@/composables/useCardTilt'
+import PropertyCardControls from '@/components/properties/PropertyCardControls.vue'
 import type { Property } from '@/types/property'
-import type { Appointment } from '@/types/appointment'
 
-const props = defineProps<{
+defineProps<{
   property: Property
-  openCount: number
-  completedCount: number
-  nextAppointment: Appointment | null
 }>()
 
 defineEmits<{
   'open-detail': [propertyId: string]
-  'open-appointment': [appointmentId: string]
   'edit-property': [property: Property]
   'delete-property': [property: Property]
 }>()
 
 const { t } = useI18n()
-const { currentLocale } = useLocale()
 const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
-
-const nextAppointmentLabel = computed(() => {
-  if (!props.nextAppointment) return ''
-  const formatter = new Intl.DateTimeFormat(currentLocale.value, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  return formatter.format(props.nextAppointment.start)
-})
 </script>
 
 <template>
@@ -63,61 +44,16 @@ const nextAppointmentLabel = computed(() => {
 
     <div class="property-card__stats">
       <div class="property-card__stat">
-        <span class="property-card__stat-value">{{ openCount }}</span>
-        <span class="property-card__stat-label">{{ t('properties.card.openAppointments') }}</span>
-      </div>
-      <div class="property-card__stat">
-        <span class="property-card__stat-value">{{ completedCount }}</span>
-        <span class="property-card__stat-label">{{
-          t('properties.card.completedAppointments')
-        }}</span>
+        <span class="property-card__stat-value">{{ property.tenantCount }}</span>
+        <span class="property-card__stat-label">{{ t('properties.card.tenantCount') }}</span>
       </div>
     </div>
 
-    <button
-      v-if="nextAppointment"
-      type="button"
-      class="property-card__next-appointment"
-      @click="$emit('open-appointment', nextAppointment.id)"
-    >
-      <span class="property-card__next-appointment-label">{{
-        t('properties.card.nextAppointment', { title: nextAppointment.title })
-      }}</span>
-      <span class="property-card__next-appointment-value">{{ nextAppointmentLabel }}</span>
-    </button>
-    <p v-else class="property-card__no-next-appointment">
-      {{ t('properties.card.noNextAppointment') }}
-    </p>
-
-    <button
-      v-tooltip.top="t('properties.card.tenantsButton')"
-      type="button"
-      class="property-card__tenants"
-      :aria-label="t('properties.card.tenantsButton')"
-      @click="$emit('open-detail', property.id)"
-    >
-      <i class="pi pi-users" aria-hidden="true"></i>
-    </button>
-
-    <button
-      v-tooltip.top="t('properties.card.editButton')"
-      type="button"
-      class="property-card__edit"
-      :aria-label="t('properties.card.editButton')"
-      @click="$emit('edit-property', property)"
-    >
-      <i class="pi pi-pencil" aria-hidden="true"></i>
-    </button>
-
-    <button
-      v-tooltip.top="t('properties.card.deleteButton')"
-      type="button"
-      class="property-card__delete"
-      :aria-label="t('properties.card.deleteButton')"
-      @click="$emit('delete-property', property)"
-    >
-      <i class="pi pi-trash" aria-hidden="true"></i>
-    </button>
+    <PropertyCardControls
+      @manage-tenants="$emit('open-detail', property.id)"
+      @edit="$emit('edit-property', property)"
+      @delete="$emit('delete-property', property)"
+    />
   </div>
 </template>
 

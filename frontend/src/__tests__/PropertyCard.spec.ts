@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import PrimeVue from 'primevue/config'
 import { i18n } from '@/i18n'
 import PropertyCard from '@/components/properties/PropertyCard.vue'
+import PropertyCardControls from '@/components/properties/PropertyCardControls.vue'
 import type { Property } from '@/types/property'
-import type { Appointment } from '@/types/appointment'
 
 /** Builds a sample property for tests, with overridable fields. */
 function createProperty(overrides: Partial<Property> = {}): Property {
@@ -14,30 +15,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: 50.94,
     longitude: 6.88,
-    ...overrides,
-  }
-}
-
-/** Builds a sample appointment for tests, with overridable fields. */
-function createAppointment(overrides: Partial<Appointment> = {}): Appointment {
-  return {
-    id: '1',
-    seriesId: null,
-    title: 'Heizungswartung',
-    propertyId: '1',
-    propertyName: 'Wohnanlage Sonnenhof',
-    propertyAddress: 'Aachener Str. 512, 50933 Köln-Braunsenfeld',
-    description: '',
-    category: 'maintenance',
-    start: new Date(2026, 7, 20, 9, 0),
-    end: new Date(2026, 7, 20, 10, 0),
-    locked: false,
-    recurring: false,
-    recurrenceIntervalMonths: null,
-    materials: [],
-    history: [],
-    actualEnd: null,
-    completed: false,
+    tenantCount: 0,
     ...overrides,
   }
 }
@@ -46,17 +24,12 @@ afterEach(() => {
   i18n.global.locale.value = 'de'
 })
 
-const globalMountOptions = { plugins: [i18n], directives: { tooltip: {} } }
+const globalMountOptions = { plugins: [PrimeVue, i18n], directives: { tooltip: {} } }
 
 describe('PropertyCard', () => {
-  it('renders the icon, name, address and appointment counts', () => {
+  it('renders the icon, name, address and tenant count', () => {
     const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty(),
-        openCount: 3,
-        completedCount: 12,
-        nextAppointment: null,
-      },
+      props: { property: createProperty({ tenantCount: 7 }) },
       global: globalMountOptions,
     })
 
@@ -65,21 +38,36 @@ describe('PropertyCard', () => {
     expect(wrapper.find('.property-card__address').text()).toBe(
       'Aachener Str. 512, 50933 Köln-Braunsenfeld',
     )
-    const statValues = wrapper.findAll('.property-card__stat-value')
-    expect(statValues[0]!.text()).toBe('3')
-    expect(statValues[1]!.text()).toBe('12')
+    expect(wrapper.find('.property-card__stat-value').text()).toBe('7')
+    expect(wrapper.find('.property-card__stat-label').text()).toBe('Mieter')
+  })
+
+  it('shows a tenant count of zero for a property without tenants', () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ tenantCount: 0 }) },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.find('.property-card__stat-value').text()).toBe('0')
+  })
+
+  it('no longer shows appointment statistics or the next appointment', () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty() },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.text()).not.toContain('Offene Aufträge')
+    expect(wrapper.text()).not.toContain('Erledigte Aufträge')
+    expect(wrapper.text()).not.toContain('Nächster')
+    expect(wrapper.text()).not.toContain('anstehender')
   })
 
   it('renders a very long name and address in full without truncating the content', () => {
     const longName = 'Wohnanlage '.repeat(20).trim()
     const longAddress = 'Sehr lange Musterstraße '.repeat(10).trim()
     const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty({ name: longName, address: longAddress }),
-        openCount: 0,
-        completedCount: 0,
-        nextAppointment: null,
-      },
+      props: { property: createProperty({ name: longName, address: longAddress }) },
       global: globalMountOptions,
     })
 
@@ -87,50 +75,9 @@ describe('PropertyCard', () => {
     expect(wrapper.find('.property-card__address').text()).toBe(longAddress)
   })
 
-  it('shows a placeholder when there is no next appointment', () => {
-    const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty(),
-        openCount: 0,
-        completedCount: 2,
-        nextAppointment: null,
-      },
-      global: globalMountOptions,
-    })
-
-    expect(wrapper.find('.property-card__next-appointment').exists()).toBe(false)
-    expect(wrapper.find('.property-card__no-next-appointment').exists()).toBe(true)
-  })
-
-  it('shows the next appointment as a clickable link and emits its id when clicked', async () => {
-    const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty(),
-        openCount: 1,
-        completedCount: 0,
-        nextAppointment: createAppointment({ id: '42', title: 'Heizungswartung' }),
-      },
-      global: globalMountOptions,
-    })
-
-    const link = wrapper.find('.property-card__next-appointment')
-    expect(link.exists()).toBe(true)
-    expect(link.text()).toContain('Nächster Termin: Heizungswartung')
-    expect(link.text()).toContain('20.08.2026')
-
-    await link.trigger('click')
-
-    expect(wrapper.emitted('open-appointment')).toEqual([['42']])
-  })
-
   it('emits the property id when the name is clicked to open the details, keeping the name a heading', async () => {
     const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty({ id: '7' }),
-        openCount: 0,
-        completedCount: 0,
-        nextAppointment: null,
-      },
+      props: { property: createProperty({ id: '7' }) },
       global: globalMountOptions,
     })
 
@@ -143,55 +90,40 @@ describe('PropertyCard', () => {
     expect(wrapper.emitted('open-detail')).toEqual([['7']])
   })
 
-  it('emits the property id when the visible tenants button is clicked', async () => {
+  it('renders the control panel below the tenant count', () => {
     const wrapper = mount(PropertyCard, {
-      props: {
-        property: createProperty({ id: '7' }),
-        openCount: 0,
-        completedCount: 0,
-        nextAppointment: null,
-      },
+      props: { property: createProperty() },
       global: globalMountOptions,
     })
 
-    const tenantsButton = wrapper.find('button.property-card__tenants')
-    expect(tenantsButton.attributes('aria-label')).toBe('Mieter')
+    expect(wrapper.findComponent(PropertyCardControls).exists()).toBe(true)
+  })
 
-    await tenantsButton.trigger('click')
+  it('emits the property id when the control panel asks to manage the tenants', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ id: '7' }) },
+      global: globalMountOptions,
+    })
+
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('manage-tenants')
 
     expect(wrapper.emitted('open-detail')).toEqual([['7']])
   })
 
-  it('emits the property when the edit button is clicked', async () => {
+  it('emits the property when the control panel asks to edit it', async () => {
     const property = createProperty()
-    const wrapper = mount(PropertyCard, {
-      props: {
-        property,
-        openCount: 0,
-        completedCount: 0,
-        nextAppointment: null,
-      },
-      global: globalMountOptions,
-    })
+    const wrapper = mount(PropertyCard, { props: { property }, global: globalMountOptions })
 
-    await wrapper.find('.property-card__edit').trigger('click')
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('edit')
 
     expect(wrapper.emitted('edit-property')).toEqual([[property]])
   })
 
-  it('emits the property when the delete button is clicked', async () => {
+  it('emits the property when the control panel asks to delete it', async () => {
     const property = createProperty()
-    const wrapper = mount(PropertyCard, {
-      props: {
-        property,
-        openCount: 0,
-        completedCount: 0,
-        nextAppointment: null,
-      },
-      global: globalMountOptions,
-    })
+    const wrapper = mount(PropertyCard, { props: { property }, global: globalMountOptions })
 
-    await wrapper.find('.property-card__delete').trigger('click')
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('delete')
 
     expect(wrapper.emitted('delete-property')).toEqual([[property]])
   })

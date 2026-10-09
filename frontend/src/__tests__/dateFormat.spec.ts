@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatDurationMinutes, formatLocalizedTime, isSameDay } from '@/utils/dateFormat'
+import {
+  formatDurationMinutes,
+  formatLocalizedDateTime,
+  formatLocalizedTime,
+  isSameDay,
+} from '@/utils/dateFormat'
 
 describe('formatLocalizedTime', () => {
   it('formats the time of day with two-digit hours and minutes in German', () => {
@@ -36,5 +41,15 @@ describe('formatDurationMinutes', () => {
 
   it('formats a zero-minute duration', () => {
     expect(formatDurationMinutes(0, 'de')).toBe('0 Min')
+  })
+})
+
+describe('formatLocalizedDateTime', () => {
+  it('formats the date and time with two-digit parts in German', () => {
+    expect(formatLocalizedDateTime(new Date(2026, 7, 20, 9, 5), 'de')).toBe('20.08.2026, 09:05')
+  })
+
+  it('formats the date and time in English', () => {
+    expect(formatLocalizedDateTime(new Date(2026, 7, 20, 16, 30), 'en')).toMatch(/08\/20\/2026,\s*04:30\s?PM/)
   })
 })
