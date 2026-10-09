@@ -2,7 +2,7 @@
   border: 1px solid var(--remo-calendar-border-color, #24282e);
   border-radius: 0.75rem;
   color: var(--remo-calendar-text-color, #f5f5f5);
-  /* only the "next appointment" link below and the delete button are clickable, not the card itself */
+  /* only the header, the "next appointment" link below and the edit/delete buttons are clickable, not the card itself */
   cursor: default;
   display: flex;
   flex-direction: column;
@@ -13,8 +13,19 @@
 
 .property-card__header {
   align-items: flex-start;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
   display: flex;
+  font: inherit;
   gap: 1.125rem;
+  padding: 0;
+  text-align: left;
+}
+
+.property-card__header:hover .property-card__name {
+  color: var(--remo-calendar-accent-color, #3b82f6);
 }
 
 .property-card__icon {
@@ -24,13 +35,14 @@
 }
 
 .property-card__heading {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
 .property-card__name {
   font-size: 1.6rem;
   font-weight: 700;
-  margin: 0;
   overflow-wrap: break-word;
 }
 

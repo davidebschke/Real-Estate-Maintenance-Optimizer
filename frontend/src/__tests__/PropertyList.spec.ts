@@ -130,6 +130,17 @@ describe('PropertyList', () => {
     expect(propertiesStore.isCreateDialogOpen).toBe(true)
   })
 
+  it('opens the property detail view when a card header is clicked', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+    const propertiesStore = usePropertiesStore()
+
+    await wrapper.find('.property-card__header').trigger('click')
+
+    expect(propertiesStore.activeDetailPropertyId).toBe('1')
+  })
+
   it('opens the property edit dialog with the clicked property', async () => {
     const property = createProperty({ id: '1' })
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([property])

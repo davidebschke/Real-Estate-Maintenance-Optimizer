@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
+  'open-detail': [propertyId: string]
   'open-appointment': [appointmentId: string]
   'edit-property': [property: Property]
   'delete-property': [property: Property]
@@ -43,13 +44,18 @@ const nextAppointmentLabel = computed(() => {
     @pointermove="onPointerMove"
     @pointerleave="onPointerLeave"
   >
-    <div class="property-card__header">
+    <button
+      type="button"
+      class="property-card__header"
+      :aria-label="t('properties.card.detailsButton', { name: property.name })"
+      @click="$emit('open-detail', property.id)"
+    >
       <i class="pi property-card__icon" :class="property.icon" aria-hidden="true"></i>
-      <div class="property-card__heading">
-        <h3 class="property-card__name">{{ property.name }}</h3>
-        <p class="property-card__address">{{ property.address }}</p>
-      </div>
-    </div>
+      <span class="property-card__heading">
+        <span class="property-card__name">{{ property.name }}</span>
+        <span class="property-card__address">{{ property.address }}</span>
+      </span>
+    </button>
 
     <div class="property-card__stats">
       <div class="property-card__stat">

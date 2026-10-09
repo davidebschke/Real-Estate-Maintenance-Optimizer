@@ -3,6 +3,7 @@ package com.remo.realestatemaintainceoptimizer.controller;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentConflictResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentConflictException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentLockedException;
 import com.remo.realestatemaintainceoptimizer.exception.AppointmentNotFoundException;
@@ -17,6 +18,8 @@ import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundExceptio
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
+import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.UsernameAlreadyTakenException;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
@@ -76,6 +79,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(PropertyNotFoundException exception, Locale locale) {
         String message = messageSource.getMessage("property.error.notFound", new Object[] {exception.propertyId()}, locale);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(ApartmentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleApartmentNotFound(ApartmentNotFoundException exception, Locale locale) {
+        String message = messageSource.getMessage("apartment.error.notFound", new Object[] {exception.apartmentId()}, locale);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(TenantNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTenantNotFound(TenantNotFoundException exception, Locale locale) {
+        String message = messageSource.getMessage("tenant.error.notFound", new Object[] {exception.tenantId()}, locale);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(TenantLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTenantLimitExceeded(TenantLimitExceededException exception, Locale locale) {
+        String message = messageSource.getMessage("tenant.error." + exception.reasonCode(), null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

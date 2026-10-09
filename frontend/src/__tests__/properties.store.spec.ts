@@ -170,6 +170,31 @@ describe('usePropertiesStore', () => {
     expect(store.isFormDialogOpen).toBe(false)
   })
 
+  it('opens and closes the detail view of a property', () => {
+    const store = usePropertiesStore()
+
+    expect(store.activeDetailPropertyId).toBeNull()
+
+    store.openDetail('1')
+    expect(store.activeDetailPropertyId).toBe('1')
+
+    store.closeDetail()
+    expect(store.activeDetailPropertyId).toBeNull()
+  })
+
+  it('closes the detail view of a property when that property is deleted, but not that of another one', async () => {
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' }), createProperty({ id: '2', name: 'Aachener Hof' })]
+    store.openDetail('2')
+
+    await store.deleteProperty('1')
+    expect(store.activeDetailPropertyId).toBe('2')
+
+    await store.deleteProperty('2')
+    expect(store.activeDetailPropertyId).toBeNull()
+  })
+
   it('closes both the create and edit dialog when the shared form dialog is closed', () => {
     const store = usePropertiesStore()
     store.openCreateDialog()
@@ -278,6 +303,7 @@ describe('usePropertiesStore', () => {
     store.properties = [createProperty()]
     store.hasCreateError = true
     store.openEditDialog(createProperty())
+    store.openDetail('1')
     const pendingFetch = store.fetchProperties()
 
     store.reset()
@@ -287,6 +313,7 @@ describe('usePropertiesStore', () => {
     expect(store.properties).toEqual([])
     expect(store.hasCreateError).toBe(false)
     expect(store.isFormDialogOpen).toBe(false)
+    expect(store.activeDetailPropertyId).toBeNull()
   })
 
   it('does not add a property to the list when its creation is answered only after an account change', async () => {

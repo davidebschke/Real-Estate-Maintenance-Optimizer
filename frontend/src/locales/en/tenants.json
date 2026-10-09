@@ -1,0 +1,65 @@
+{
+  "tenants": {
+    "detail": {
+      "back": "Back",
+      "tenantsHeading": "Tenants",
+      "empty": "No tenants have been added to this property yet.",
+      "loadError": "The tenants could not be loaded.",
+      "deleteError": "The tenant could not be deleted.",
+      "createButton": "Add tenant"
+    },
+    "apartment": {
+      "floorGround": "Ground floor",
+      "floorUpper": "Floor {level}",
+      "floorBasement": "Basement level {level}",
+      "totalRentLabel": "Rent",
+      "coldRentLabel": "Base rent",
+      "additionalCostsLabel": "Service charges",
+      "tenantsHeading": "Tenants",
+      "addTenantButton": "Add another tenant",
+      "editTenantButton": "Edit tenant {name}",
+      "deleteTenantButton": "Delete tenant {name}"
+    },
+    "form": {
+      "createTitle": "Add new tenant",
+      "addTitle": "Add another tenant",
+      "editTitle": "Edit tenant",
+      "tenantSection": "Tenant details",
+      "apartmentSection": "Apartment details",
+      "sharedApartmentHint": "The apartment details apply to all tenants of this apartment.",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "e.g. Erika",
+      "firstNameRequiredError": "Please enter a first name.",
+      "lastNameLabel": "Last name",
+      "lastNamePlaceholder": "e.g. Mustermann",
+      "lastNameRequiredError": "Please enter a last name.",
+      "floorLabel": "Floor",
+      "floorPlaceholder": "e.g. 2",
+      "floorHint": "0 is the ground floor, negative numbers are basement levels.",
+      "floorRequiredError": "Please enter a floor.",
+      "areaLabel": "Living area",
+      "areaPlaceholder": "e.g. 64.5",
+      "areaRequiredError": "Please enter a living area greater than 0.",
+      "totalRentLabel": "Rent",
+      "totalRentPlaceholder": "e.g. 850",
+      "coldRentLabel": "Base rent",
+      "coldRentPlaceholder": "e.g. 650",
+      "additionalCostsLabel": "Service charges",
+      "additionalCostsPlaceholder": "e.g. 200",
+      "amountRequiredError": "Please enter an amount.",
+      "error": "The tenant could not be saved.",
+      "submitCreate": "Add tenant",
+      "submitAdd": "Add tenant",
+      "submitEdit": "Save",
+      "cancel": "Cancel",
+      "requiredFieldsLegend": "* Required field"
+    },
+    "deleteConfirm": {
+      "header": "Delete tenant",
+      "message": "Do you really want to delete the tenant \"{name}\"?",
+      "lastTenantMessage": "Do you really want to delete the tenant \"{name}\"? As the last tenant of the apartment, the apartment details will be deleted as well.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  }
+}

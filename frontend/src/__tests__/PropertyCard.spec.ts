@@ -123,6 +123,26 @@ describe('PropertyCard', () => {
     expect(wrapper.emitted('open-appointment')).toEqual([['42']])
   })
 
+  it('emits the property id when the header is clicked to open the details', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: {
+        property: createProperty({ id: '7' }),
+        openCount: 0,
+        completedCount: 0,
+        nextAppointment: null,
+      },
+      global: globalMountOptions,
+    })
+
+    const header = wrapper.find('.property-card__header')
+    expect(header.element.tagName).toBe('BUTTON')
+    expect(header.attributes('aria-label')).toBe('Details und Mieter von Wohnanlage Sonnenhof anzeigen')
+
+    await header.trigger('click')
+
+    expect(wrapper.emitted('open-detail')).toEqual([['7']])
+  })
+
   it('emits the property when the edit button is clicked', async () => {
     const property = createProperty()
     const wrapper = mount(PropertyCard, {

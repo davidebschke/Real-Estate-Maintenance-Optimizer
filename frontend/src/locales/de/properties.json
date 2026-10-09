@@ -11,6 +11,7 @@
       "completedAppointments": "Erledigte Aufträge",
       "nextAppointment": "Nächster Termin: {title}",
       "noNextAppointment": "Kein anstehender Termin",
+      "detailsButton": "Details und Mieter von {name} anzeigen",
       "editButton": "Bearbeiten",
       "deleteButton": "Löschen",
       "deleteConfirm": {

@@ -11,6 +11,7 @@
       "completedAppointments": "Completed appointments",
       "nextAppointment": "Next appointment: {title}",
       "noNextAppointment": "No upcoming appointment",
+      "detailsButton": "Show details and tenants of {name}",
       "editButton": "Edit",
       "deleteButton": "Delete",
       "deleteConfirm": {
