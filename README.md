@@ -79,6 +79,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 #### 3. 🗺️ Location-Based Planning (`Automatic planning Place`)
 - Smart location grouping to **minimize driving time** between service calls.
 - Dynamically slots smaller tasks near the previous job site into the daily schedule.
+- **AI appointment optimization:** from four weeks ahead, Claude (via LangChain4j) proposes moves that save kilometres and driving time and still leave enough driving time to the next appointment; every move is only applied after the user confirms it, and a demo account can use it once.
 
 #### 4. ⏱️ Time-Based Planning (`Automatic planning Time`)
 - Automated scheduling and rescheduling maintaining safe buffer times.
@@ -89,12 +90,14 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 #### 6. 🚗 Route Optimization (`Fast route planning`)
 - Route optimization and map display run via **Leaflet** (road routes calculated via **openrouteservice**), embedded directly in the appointment summary.
+- The kilometres and driving time saved by accepted AI proposals are charted per week or month in the statistics.
 
 #### 7. 🔒 Fixed Appointments (`Unrescheduled terms`)
 - Lock specific appointments so automated AI scheduling leaves them untouched.
 
 #### 8. 🔄 Recurring Appointments (`Recurring appointments`)
 - Set up automatic recurring schedules (e.g., maintenance every 3 months) without manual oversight.
+- The AI optimization moves a recurring appointment by at most two weeks.
 
 ---
 
@@ -163,6 +166,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: password of the account `account_default`, applied on the first start (afterwards stored as a BCrypt hash; changing the value later has no effect).
 - `REMO_AUTH_COOKIE_SECURE=false`: locally you work over `http://localhost` instead of HTTPS, so the "Secure" flag of the login cookie has to be switched off (in production it stays on).
 - Write the values without quotation marks, and save the file without a BOM (UTF-8 without signature). Visual Studio Code does this by default; in Windows PowerShell 5.1 therefore do not use `Out-File`/`Set-Content` without `-Encoding ascii`.
+- Optional: `REMO_ROUTING_ENABLED=true` with `REMO_ROUTING_API_KEY=<openrouteservice-key>` enables road routes, and additionally `REMO_AI_ENABLED=true` with `REMO_AI_API_KEY=<anthropic-key>` the AI appointment optimization (it needs road routing for the travel matrix; see `backend/.env.example`).
 
 #### 5. Start the backend
 
@@ -263,6 +267,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 #### 3. 🗺️ Ortsabhängige Planung
 - Intelligent abgestimmte Routen zur **Reduzierung von Fahrzeiten** zwischen Einsatzorten.
 - Effizientes Einschieben kleinerer Aufträge in der Nähe des vorherigen Einsatzorts.
+- **KI-Terminoptimierung:** Ab vier Wochen im Voraus schlägt Claude (über LangChain4j) Verschiebungen vor, die Kilometer und Fahrzeit sparen und trotzdem genug Fahrzeit zum nächsten Termin lassen; jede Verschiebung wird erst nach Bestätigung übernommen, ein Demo-Account kann sie einmal nutzen.
 
 #### 4. ⏱️ Zeitbasierte Planung
 - Automatische Terminvergabe und Umplanung mit konfigurierbarem zeitlichem Abstand.
@@ -273,12 +278,14 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 #### 6. 🚗 Routenoptimierung 
 - Routenoptimierung und Kartenanzeige laufen über **Leaflet** (Straßenrouten berechnet über **openrouteservice**), direkt in der Terminübersicht eingebettet.
+- Die durch übernommene KI-Vorschläge gesparten Kilometer und Fahrzeiten zeigt die Statistik als Liniendiagramm je Woche oder Monat.
 
 #### 7. 🔒 Unverschiebbare Termine 
 - Fixierte Termine werden durch den KI-Optimierungsalgorithmus nicht verändert.
 
 #### 8. 🔄 Wiederkehrende Termine
 - Automatische Daueraufträge (z. B. Inspektion alle 3 Monate), ohne manuell daran denken zu müssen.
+- Die KI-Optimierung verschiebt einen wiederkehrenden Termin höchstens um zwei Wochen.
 ---
 
 ### 📋 Backlog & Zukünftige Features (`Backlog/Issues`)
@@ -346,6 +353,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: Passwort des Accounts `account_default`, das beim ersten Start gesetzt wird (danach als BCrypt-Hash gespeichert; eine spätere Änderung des Werts hat keine Wirkung mehr).
 - `REMO_AUTH_COOKIE_SECURE=false`: lokal wird über `http://localhost` statt HTTPS gearbeitet, daher muss das Sicherheitsmerkmal „Secure" des Anmelde-Cookies ausgeschaltet sein (in Produktion bleibt es an).
 - Die Werte stehen ohne Anführungszeichen in der Datei, und sie muss ohne BOM (UTF-8 ohne Signatur) gespeichert sein. In Visual Studio Code ist das der Standard; in Windows PowerShell 5.1 daher nicht `Out-File`/`Set-Content` ohne `-Encoding ascii` verwenden.
+- Optional: `REMO_ROUTING_ENABLED=true` mit `REMO_ROUTING_API_KEY=<openrouteservice-key>` schaltet Straßenrouten ein, zusätzlich `REMO_AI_ENABLED=true` mit `REMO_AI_API_KEY=<anthropic-key>` die KI-Terminoptimierung (sie braucht das Straßenrouting für die Reisematrix; siehe `backend/.env.example`).
 
 #### 5. Backend starten
 
@@ -426,6 +434,7 @@ Damit läuft das Projekt vollständig lokal.
 * **UI Components:** PrimeVue 4
 * **Calendar:** Vue.cal
 * **Map:** Leaflet
+* **Charts:** Chart.js (via PrimeVue `Chart`)
 * **State, Routing & i18n:** Pinia, Vue Router, vue-i18n, Axios
 * **Tests:** Vitest, Playwright
 
@@ -433,12 +442,12 @@ Damit läuft das Projekt vollständig lokal.
 * **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
 * **Data Access:** Spring Data JPA
-* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim, Straßenrouting via openrouteservice)
+* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim, Straßenrouting und Reisematrix via openrouteservice)
 * **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
 ### 🗄️ Datenbank
 * **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
-* **Framework:** LangChain4j (geplant / planned)
+* **Framework:** LangChain4j (`langchain4j-anthropic`) mit Claude Haiku 4.5 (KI-Terminoptimierung / AI appointment optimization)
 
