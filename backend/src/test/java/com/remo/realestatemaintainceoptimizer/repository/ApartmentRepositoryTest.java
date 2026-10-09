@@ -173,8 +173,7 @@ class ApartmentRepositoryTest {
         apartmentRepository.saveAll(List.of(firstApartment, secondApartment));
         Property otherProperty = propertyRepository.save(
                 new Property("property-2", owner.id(), "Wohnpark Lindenthal", "Lindenallee 4", "pi-building"));
-        Apartment otherApartment = new Apartment(
-                "apartment-3", otherProperty, 0, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN);
+        Apartment otherApartment = newApartment("apartment-3", otherProperty);
         otherApartment.addTenant("tenant-4", "Otto", "Normal");
         apartmentRepository.save(otherApartment);
         flushAndClear();
@@ -191,8 +190,7 @@ class ApartmentRepositoryTest {
                 new Property("property-2", otherOwner.id(), "Fremdes Objekt", "Fremdstr. 1", "pi-building"));
         Apartment ownApartment = newApartment("apartment-1");
         ownApartment.addTenant("tenant-1", "Erika", "Mustermann");
-        Apartment foreignApartment = new Apartment(
-                "apartment-2", foreignProperty, 0, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN);
+        Apartment foreignApartment = newApartment("apartment-2", foreignProperty);
         foreignApartment.addTenant("tenant-2", "Otto", "Normal");
         apartmentRepository.saveAll(List.of(ownApartment, foreignApartment));
         flushAndClear();
@@ -203,9 +201,13 @@ class ApartmentRepositoryTest {
     }
 
     private Apartment newApartment(String id) {
+        return newApartment(id, property);
+    }
+
+    private Apartment newApartment(String id, Property owningProperty) {
         return new Apartment(
                 id,
-                property,
+                owningProperty,
                 2,
                 new BigDecimal("64.50"),
                 new BigDecimal("850.00"),
