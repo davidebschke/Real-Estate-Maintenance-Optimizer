@@ -33,7 +33,7 @@ const savedText = computed(() =>
 </script>
 
 <template>
-  <article class="optimization-proposal-card">
+  <article class="optimization-proposal-card card-3d">
     <header class="optimization-proposal-card__header">
       <h3 class="optimization-proposal-card__title">{{ proposal.appointmentTitle }}</h3>
       <span v-if="proposal.recurring" class="optimization-proposal-card__badge">
@@ -87,4 +87,5 @@ const savedText = computed(() =>
   </article>
 </template>
 
+<style scoped src="@/styles/card-3d.css"></style>
 <style scoped src="@/styles/optimization/optimization-proposal-card.css"></style>

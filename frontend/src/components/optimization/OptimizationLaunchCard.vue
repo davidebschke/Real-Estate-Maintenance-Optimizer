@@ -39,7 +39,7 @@ const lastRunSummary = computed(() => {
 </script>
 
 <template>
-  <section class="optimization-launch-card" :aria-label="t('optimization.launch.title')">
+  <section class="optimization-launch-card card-3d" :aria-label="t('optimization.launch.title')">
     <h2 class="optimization-launch-card__title">
       <i class="pi pi-sparkles" aria-hidden="true"></i>
       {{ t('optimization.rules.title') }}
@@ -72,4 +72,5 @@ const lastRunSummary = computed(() => {
   </section>
 </template>
 
+<style scoped src="@/styles/card-3d.css"></style>
 <style scoped src="@/styles/optimization/optimization-launch-card.css"></style>
