@@ -16,7 +16,7 @@
       "deleteButton": "Delete",
       "deleteConfirm": {
         "header": "Delete property",
-        "message": "Do you really want to delete the property \"{name}\"? This will also delete all of its appointments.",
+        "message": "Do you really want to delete the property \"{name}\"? This will also delete all of its appointments, apartments and tenants.",
         "confirm": "Delete",
         "cancel": "Cancel"
       }

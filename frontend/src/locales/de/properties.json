@@ -16,7 +16,7 @@
       "deleteButton": "Löschen",
       "deleteConfirm": {
         "header": "Objekt löschen",
-        "message": "Soll das Objekt „{name}“ wirklich gelöscht werden? Dabei werden auch alle zugehörigen Termine gelöscht.",
+        "message": "Soll das Objekt „{name}“ wirklich gelöscht werden? Dabei werden auch alle zugehörigen Termine, Wohnungen und Mieter gelöscht.",
         "confirm": "Löschen",
         "cancel": "Abbrechen"
       }
