@@ -68,11 +68,11 @@ Real-Estate-Maintenance-Optimizer/
 │   │   ├── ai/                     # LangChain4j integration (AiChatModelConfig for the Claude chat model, OptimizationAdvisor with AdvisorCandidate/AdvisorSelection selecting the AI optimization's moves)
 │   │   └── ...                    # further Java source code
 │   ├── src/main/resources/
-│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.auth.*, optional import of a local .env, local spring.datasource defaults, JPA/Flyway settings)
+│   │   ├── application.yml        # Spring Boot configuration (incl. spring.messages.basename, remo.frontend.base-url, remo.auth.*, remo.routing.*, remo.ai.*, remo.optimization.*, optional import of a local .env, local spring.datasource defaults, JPA/Flyway settings)
 │   │   ├── db/migration/           # Flyway migrations (V<n>__*.sql) owning the PostgreSQL schema "remo", applied on startup
 │   │   └── locales/                # German/English translations for dynamic (server-generated) text, Spring MessageSource convention: messages.properties (fallback bundle, English), messages_de.properties, messages_en.properties
 │   ├── docker-compose.yml           # local PostgreSQL 17 for development, matching the application.yml datasource defaults
-│   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* and the REMO_AUTH_* environment variables (a local copy as backend/.env is git-ignored)
+│   ├── .env.example                 # documents the production (Supabase) SPRING_DATASOURCE_* and the REMO_AUTH_*, REMO_ROUTING_* and REMO_AI_* environment variables (a local copy as backend/.env is git-ignored)
 │   ├── src/test/java/...          # JUnit tests (TestcontainersConfiguration provides the PostgreSQL test database, TestAccounts creates accounts, session cookies and CSRF tokens, OptimizationFixtures provides optimization test properties, appointments and travel matrices)
 │   ├── src/test/resources/          # application.properties with the test-only JWT secret
 │   ├── pmd-exclusions.properties    # PMD baseline (see .claude/rules/linting.md), grandfathers the violations that existed when the linter was introduced

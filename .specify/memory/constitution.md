@@ -46,7 +46,7 @@ Every content-relevant change (not a pure typo/formatting fix) triggers a review
 
 ## Technology Constraints
 
-Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios. Backend: Java 25 (LTS), Spring Boot 4, Spring Security/JJWT, Spring Data JPA. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j (planned). See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
+Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios, Leaflet, Chart.js (via PrimeVue Chart). Backend: Java 25 (LTS), Spring Boot 4, Spring Security/JJWT, Spring Data JPA. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j (`langchain4j-anthropic`) with Claude Haiku 4.5 for the AI appointment optimization. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
 
 ## Governance
 
