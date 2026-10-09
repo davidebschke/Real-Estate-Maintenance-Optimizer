@@ -31,7 +31,7 @@ describe('DemoAccountPanel', () => {
 
     expect(text).toContain('5 Beispiel-Objekte')
     expect(text).toContain('30 Termine in den nächsten 3 Wochen')
-    expect(text).toContain('bis zu 3 Objekte und 3 Termine')
+    expect(text).toContain('bis zu 3 Objekte, 3 Termine und 10 Mieter')
     expect(text).toContain('Beim Abmelden')
     expect(text).toContain('8 Stunden')
   })
@@ -44,6 +44,7 @@ describe('DemoAccountPanel', () => {
       expiresAt: new Date('2026-09-29T16:00:00Z'),
       remainingPropertyCreations: 3,
       remainingAppointmentCreations: 3,
+      remainingTenantCreations: 10,
       appointmentBufferMinutes: 15,
     })
     const wrapper = mountPanel()

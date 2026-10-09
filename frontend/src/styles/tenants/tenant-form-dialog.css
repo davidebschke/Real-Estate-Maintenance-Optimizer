@@ -1,0 +1,147 @@
+/* PrimeVue injects its own `.p-dialog` background/border rule into the document on first mount, after
+   this stylesheet, so a plain single-class selector loses that tie; `.p-dialog` here isn't decoration,
+   it's what makes this override win regardless of injection order */
+.tenant-form-dialog.p-dialog {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
+  border-color: var(--remo-calendar-border-color, #24282e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  overflow: hidden;
+  width: min(36rem, 92vw);
+}
+
+.tenant-form-dialog .p-dialog-header,
+.tenant-form-dialog .p-dialog-content,
+.tenant-form-dialog .p-dialog-footer {
+  background: transparent;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  position: relative;
+  z-index: 1;
+}
+
+.tenant-form-dialog .p-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding-block: 1.5rem;
+}
+
+.tenant-form-dialog .p-dialog-close-button {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.tenant-form-dialog .p-dialog-close-button:hover {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.tenant-form-dialog .p-inputtext,
+.tenant-form-dialog .p-inputnumber-input {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-color: var(--remo-calendar-border-color, #3a3f47);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  width: 100%;
+}
+
+.tenant-form-dialog .p-inputtext::placeholder,
+.tenant-form-dialog .p-inputnumber-input::placeholder {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+}
+
+/* Explicit override, same reasoning as the `.p-dialog` rule above: PrimeVue's own `.p-invalid` border
+   color is injected after this stylesheet and would otherwise be masked by the plain input rule. */
+.tenant-form-dialog .p-inputtext.p-invalid,
+.tenant-form-dialog .p-inputnumber.p-invalid .p-inputnumber-input {
+  border-color: #f87171;
+}
+
+.tenant-form-dialog__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tenant-form-dialog__section-heading {
+  border-bottom: 1px solid var(--remo-calendar-border-color, #24282e);
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.tenant-form-dialog__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tenant-form-dialog__grid--amounts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tenant-form-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tenant-form-dialog__field label {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tenant-form-dialog__hint {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.tenant-form-dialog__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.tenant-form-dialog__field-error {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.tenant-form-dialog__required-legend {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.tenant-form-dialog__actions {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+}
+
+.tenant-form-dialog__cancel {
+  background: none;
+  border: none;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 30rem) {
+  .tenant-form-dialog {
+    width: 100vw;
+  }
+
+  .tenant-form-dialog__grid,
+  .tenant-form-dialog__grid--amounts {
+    grid-template-columns: 1fr;
+  }
+}

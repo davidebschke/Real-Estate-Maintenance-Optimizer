@@ -14,6 +14,7 @@ public record CurrentUserResponse(
         Instant expiresAt,
         Integer remainingPropertyCreations,
         Integer remainingAppointmentCreations,
+        Integer remainingTenantCreations,
         int appointmentBufferMinutes) {
 
     /**
@@ -27,6 +28,7 @@ public record CurrentUserResponse(
                 user.expiresAt(),
                 user.remainingPropertyCreations(),
                 user.remainingAppointmentCreations(),
+                user.remainingTenantCreations(),
                 schedulingProperties.bufferMinutesFor(user.appointmentBufferMinutes()));
     }
 }

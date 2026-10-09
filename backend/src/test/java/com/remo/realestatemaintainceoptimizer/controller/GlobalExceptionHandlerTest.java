@@ -6,11 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
+import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -85,6 +88,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void anExhaustedTenantCreationLimitReturnsALocalizedForbidden() throws Exception {
+        mockMvc.perform(get("/tenant-quota-exceeded").header("Accept-Language", "de"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("Ein Demo-Account kann höchstens 10 zusätzliche Mieter anlegen.")));
+    }
+
+    @Test
     void anExceededRouteRequestLimitReturnsALocalizedTooManyRequests() throws Exception {
         mockMvc.perform(get("/route-rate-limit-exceeded").header("Accept-Language", "en"))
                 .andExpect(status().isTooManyRequests())
@@ -113,8 +123,56 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message", equalTo("Road routing is not enabled on this server.")));
     }
 
+    @Test
+    void anUnknownApartmentReturnsALocalizedNotFound() throws Exception {
+        mockMvc.perform(get("/apartment-not-found").header("Accept-Language", "de"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", equalTo("Es existiert keine Wohnung mit der ID apartment-1.")));
+    }
+
+    @Test
+    void anUnknownTenantReturnsALocalizedNotFound() throws Exception {
+        mockMvc.perform(get("/tenant-not-found").header("Accept-Language", "en"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", equalTo("No tenant exists with id tenant-1.")));
+    }
+
+    @Test
+    void aReachedApartmentLimitReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/apartment-limit-reached").header("Accept-Language", "de"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("Ein Objekt kann höchstens 200 Wohnungen haben.")));
+    }
+
+    @Test
+    void aReachedTenantLimitReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/tenant-limit-reached").header("Accept-Language", "en"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("An apartment can have at most 10 tenants.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/apartment-not-found")
+        String failWithApartmentNotFound() {
+            throw new ApartmentNotFoundException("apartment-1");
+        }
+
+        @GetMapping("/tenant-not-found")
+        String failWithTenantNotFound() {
+            throw new TenantNotFoundException("tenant-1");
+        }
+
+        @GetMapping("/apartment-limit-reached")
+        String failWithApartmentLimitReached() {
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT, 200);
+        }
+
+        @GetMapping("/tenant-limit-reached")
+        String failWithTenantLimitReached() {
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_TENANT_LIMIT, 10);
+        }
 
         @GetMapping("/route-quota-exhausted")
         String failWithRouteQuotaExhausted() {
@@ -154,6 +212,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/creation-quota-exceeded")
         String failWithCreationQuotaExceeded() {
             throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_PROPERTY);
+        }
+
+        @GetMapping("/tenant-quota-exceeded")
+        String failWithTenantQuotaExceeded() {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_TENANT);
         }
 
         @GetMapping("/optimistic-locking-failure")

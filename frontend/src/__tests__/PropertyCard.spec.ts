@@ -123,6 +123,45 @@ describe('PropertyCard', () => {
     expect(wrapper.emitted('open-appointment')).toEqual([['42']])
   })
 
+  it('emits the property id when the name is clicked to open the details, keeping the name a heading', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: {
+        property: createProperty({ id: '7' }),
+        openCount: 0,
+        completedCount: 0,
+        nextAppointment: null,
+      },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.find('h3').text()).toBe('Wohnanlage Sonnenhof')
+    const details = wrapper.find('h3 button.property-card__details')
+    expect(details.text()).toBe('Wohnanlage Sonnenhof')
+
+    await details.trigger('click')
+
+    expect(wrapper.emitted('open-detail')).toEqual([['7']])
+  })
+
+  it('emits the property id when the visible tenants button is clicked', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: {
+        property: createProperty({ id: '7' }),
+        openCount: 0,
+        completedCount: 0,
+        nextAppointment: null,
+      },
+      global: globalMountOptions,
+    })
+
+    const tenantsButton = wrapper.find('button.property-card__tenants')
+    expect(tenantsButton.attributes('aria-label')).toBe('Mieter')
+
+    await tenantsButton.trigger('click')
+
+    expect(wrapper.emitted('open-detail')).toEqual([['7']])
+  })
+
   it('emits the property when the edit button is clicked', async () => {
     const property = createProperty()
     const wrapper = mount(PropertyCard, {

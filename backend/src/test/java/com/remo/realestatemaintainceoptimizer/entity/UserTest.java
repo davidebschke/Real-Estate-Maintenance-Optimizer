@@ -28,6 +28,7 @@ class UserTest {
         assertThat(user.isExpiredAt(NOW.plusSeconds(1_000_000))).isFalse();
         assertThat(user.remainingPropertyCreations()).isNull();
         assertThat(user.remainingAppointmentCreations()).isNull();
+        assertThat(user.remainingTenantCreations()).isNull();
         for (int index = 0; index < 10; index++) {
             user.consumePropertyCreation();
             user.consumeAppointmentCreation();
@@ -53,6 +54,19 @@ class UserTest {
                 .isInstanceOf(CreationQuotaExceededException.class)
                 .extracting("resource").isEqualTo(CreationQuotaExceededException.RESOURCE_PROPERTY);
         assertThat(user.remainingAppointmentCreations()).isEqualTo(5);
+    }
+
+    @Test
+    void consumesTenantCreationsUntilTheLimitIsExhausted() {
+        User user = new User("id", "demo-1", null, "Demo", true, NOW, NOW.plusSeconds(60), 5, 5, 1);
+
+        user.consumeTenantCreation();
+
+        assertThat(user.remainingTenantCreations()).isZero();
+        assertThatThrownBy(user::consumeTenantCreation)
+                .isInstanceOf(CreationQuotaExceededException.class)
+                .extracting("resource").isEqualTo(CreationQuotaExceededException.RESOURCE_TENANT);
+        assertThat(user.remainingPropertyCreations()).isEqualTo(5);
     }
 
     @Test

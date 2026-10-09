@@ -56,7 +56,7 @@ test.describe('authentication', () => {
     await page.goto('/login')
     await page.getByRole('tab', { name: 'Demo-Account' }).click()
     await expect(page.getByText('30 Termine in den nächsten 3 Wochen')).toBeVisible()
-    await expect(page.getByText('bis zu 3 Objekte und 3 Termine')).toBeVisible()
+    await expect(page.getByText('bis zu 3 Objekte, 3 Termine und 10 Mieter')).toBeVisible()
 
     await page.getByRole('button', { name: 'Demo-Account erstellen' }).click()
 

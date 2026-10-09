@@ -11,6 +11,8 @@ import statisticsDe from '@/locales/de/statistics.json'
 import statisticsEn from '@/locales/en/statistics.json'
 import propertiesDe from '@/locales/de/properties.json'
 import propertiesEn from '@/locales/en/properties.json'
+import tenantsDe from '@/locales/de/tenants.json'
+import tenantsEn from '@/locales/en/tenants.json'
 import appointmentsDe from '@/locales/de/appointments.json'
 import appointmentsEn from '@/locales/en/appointments.json'
 import authDe from '@/locales/de/auth.json'
@@ -27,6 +29,7 @@ const messages = {
     ...calendarDe,
     ...statisticsDe,
     ...propertiesDe,
+    ...tenantsDe,
     ...appointmentsDe,
     ...authDe,
     ...profileDe,
@@ -38,6 +41,7 @@ const messages = {
     ...calendarEn,
     ...statisticsEn,
     ...propertiesEn,
+    ...tenantsEn,
     ...appointmentsEn,
     ...authEn,
     ...profileEn,

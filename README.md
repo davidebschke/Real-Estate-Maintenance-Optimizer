@@ -69,6 +69,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 - **Detailed View:** Full job context and addresses available upon selection.
 - **Completion Tracking:** Mark a job as done directly from the detail view; it is recolored and its calendar block is drawn to the actual end time.
 - **Daily Overview:** Today's appointments as a sorted list next to a map with numbered, connected markers.
+- **Properties & Tenants:** List of all properties; each one opens a detail view with its apartments (floor, living area, rent, base rent, service charges) and tenants. Several tenants can share one apartment.
 
 #### 2. ➕ Appointment Creation (`Term creation`)
 - **Standard Input Form:** Fast manual entry interface.
@@ -251,6 +252,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 - **Detailansicht:** Ein Klick öffnet sämtliche Kunden- und Auftragsdetails.
 - **Erledigt-Status:** Ein Auftrag kann direkt in der Detailansicht als erledigt markiert werden; er wird daraufhin farblich hervorgehoben und im Kalender bis zur tatsächlichen Endzeit dargestellt.
 - **Tagesübersicht:** Die heutigen Termine als sortierte Liste neben einer Karte mit nummerierten, verbundenen Markern.
+- **Objekte & Mieter:** Liste aller Objekte; jedes öffnet eine Detailansicht mit seinen Wohnungen (Stockwerk, Wohnfläche, Mietpreis, Kaltmiete, Nebenkosten) und Mietern. Mehrere Mieter können sich eine Wohnung teilen.
 
 #### 2. ➕ Terminerstellung
 - **Eingabemaske:** Schnelle manuelle Erstellung von Aufträgen.

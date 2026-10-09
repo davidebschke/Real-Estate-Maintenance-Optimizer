@@ -1,0 +1,116 @@
+.apartment-card {
+  background: var(--remo-calendar-hover-bg-color, #1f242b);
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.625rem;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+}
+
+.apartment-card__header {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.apartment-card__floor {
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.apartment-card__area {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 1rem;
+}
+
+.apartment-card__figures {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.apartment-card__figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.apartment-card__figure dt {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+}
+
+.apartment-card__figure dd {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.apartment-card__tenants-heading {
+  border-top: 1px solid var(--remo-calendar-border-color, #24282e);
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-top: 0.75rem;
+  text-transform: uppercase;
+}
+
+.apartment-card__tenants {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.apartment-card__tenant {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.apartment-card__tenant-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.apartment-card__tenant-edit,
+.apartment-card__tenant-delete {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  cursor: pointer;
+  display: flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.apartment-card__tenant-edit:hover {
+  background: var(--remo-calendar-border-color, #24282e);
+  color: var(--remo-calendar-accent-color, #3b82f6);
+}
+
+.apartment-card__tenant-delete:hover {
+  background: var(--remo-calendar-border-color, #24282e);
+  color: #ef4444;
+}
+
+.apartment-card__add-tenant {
+  align-self: flex-start;
+}
+
+@media (max-width: 30rem) {
+  .apartment-card__figures {
+    grid-template-columns: 1fr;
+  }
+}

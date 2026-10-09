@@ -15,6 +15,7 @@ function logInAs(overrides: Partial<CurrentUser>) {
     expiresAt: new Date(2026, 8, 29, 16, 30),
     remainingPropertyCreations: 3,
     remainingAppointmentCreations: 3,
+    remainingTenantCreations: 10,
     appointmentBufferMinutes: 15,
     ...overrides,
   }
@@ -35,15 +36,17 @@ describe('DemoAccountBanner', () => {
     expect(text).toContain('beim Abmelden gelöscht, spätestens um 16:30 Uhr')
     expect(text).toContain('2 weitere Objekte')
     expect(text).toContain('ein weiterer Termin')
+    expect(text).toContain('10 weitere Mieter')
   })
 
   it('says so once nothing more can be created', () => {
-    logInAs({ remainingPropertyCreations: 0, remainingAppointmentCreations: 0 })
+    logInAs({ remainingPropertyCreations: 0, remainingAppointmentCreations: 0, remainingTenantCreations: 0 })
 
     const text = mount(DemoAccountBanner, { global: { plugins: [i18n] } }).text()
 
     expect(text).toContain('kein weiteres Objekt')
     expect(text).toContain('kein weiterer Termin')
+    expect(text).toContain('kein weiterer Mieter')
   })
 
   it('is not shown for a regular account', () => {

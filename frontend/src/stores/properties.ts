@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useAuthStore } from '@/stores/auth'
+import { useTenantsStore } from '@/stores/tenants'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -14,6 +15,7 @@ export const usePropertiesStore = defineStore('properties', () => {
   const hasDeleteError = ref(false)
   const isCreateDialogOpen = ref(false)
   const editingProperty = ref<Property | null>(null)
+  const activeDetailPropertyId = ref<string | null>(null)
   /** Bumped by every state-changing operation so an in-flight fetchProperties() started before it cannot overwrite its result once that fetch resolves. */
   let latestChangeToken = 0
   /** Bumped by reset(), so a create/update/delete answered only after the account changed never touches the new account's list. */
@@ -80,6 +82,8 @@ export const usePropertiesStore = defineStore('properties', () => {
     if (requestEpoch !== sessionEpoch) return false
     latestChangeToken++
     properties.value = properties.value.filter((property) => property.id !== id)
+    if (activeDetailPropertyId.value === id) closeDetail()
+    useTenantsStore().forgetProperty(id)
     hasDeleteError.value = false
     await refreshAppointmentsAfterDelete()
     return true
@@ -114,6 +118,16 @@ export const usePropertiesStore = defineStore('properties', () => {
     editingProperty.value = null
   }
 
+  /** Opens the detail view of the given property. */
+  function openDetail(id: string) {
+    activeDetailPropertyId.value = id
+  }
+
+  /** Closes the property detail view. */
+  function closeDetail() {
+    activeDetailPropertyId.value = null
+  }
+
   /** Forgets every property, error flag and open form, and ignores any still in-flight fetch, e.g. when the logged-in account changes. */
   function reset() {
     sessionEpoch++
@@ -125,6 +139,7 @@ export const usePropertiesStore = defineStore('properties', () => {
     hasDeleteError.value = false
     isCreateDialogOpen.value = false
     editingProperty.value = null
+    activeDetailPropertyId.value = null
   }
 
   /** Whether the shared property form dialog (create or edit) should be visible; closing it also resets both modes. */
@@ -145,6 +160,7 @@ export const usePropertiesStore = defineStore('properties', () => {
     hasDeleteError,
     isCreateDialogOpen,
     editingProperty,
+    activeDetailPropertyId,
     isFormDialogOpen,
     fetchProperties,
     createProperty,
@@ -154,6 +170,8 @@ export const usePropertiesStore = defineStore('properties', () => {
     closeCreateDialog,
     openEditDialog,
     closeEditDialog,
+    openDetail,
+    closeDetail,
     reset,
   }
 })

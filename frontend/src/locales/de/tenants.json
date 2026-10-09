@@ -1,0 +1,65 @@
+{
+  "tenants": {
+    "detail": {
+      "back": "Zurück",
+      "tenantsHeading": "Mieter",
+      "empty": "Für dieses Objekt sind noch keine Mieter hinterlegt.",
+      "loadError": "Die Mieter konnten nicht geladen werden.",
+      "deleteError": "Der Mieter konnte nicht gelöscht werden.",
+      "createButton": "Mieter anlegen"
+    },
+    "apartment": {
+      "floorGround": "Erdgeschoss",
+      "floorUpper": "{level}. Stockwerk",
+      "floorBasement": "{level}. Untergeschoss",
+      "totalRentLabel": "Mietpreis",
+      "coldRentLabel": "Kaltmiete",
+      "additionalCostsLabel": "Nebenkosten",
+      "tenantsHeading": "Mieter",
+      "addTenantButton": "Weiteren Mieter hinzufügen",
+      "editTenantButton": "Mieter {name} bearbeiten",
+      "deleteTenantButton": "Mieter {name} löschen"
+    },
+    "form": {
+      "createTitle": "Neuen Mieter anlegen",
+      "addTitle": "Weiteren Mieter hinzufügen",
+      "editTitle": "Mieter bearbeiten",
+      "tenantSection": "Daten des Mieters",
+      "apartmentSection": "Daten der Wohnung",
+      "sharedApartmentHint": "Die Wohnungsdaten gelten für alle Mieter dieser Wohnung.",
+      "firstNameLabel": "Vorname",
+      "firstNamePlaceholder": "z. B. Erika",
+      "firstNameRequiredError": "Bitte einen Vornamen eingeben.",
+      "lastNameLabel": "Nachname",
+      "lastNamePlaceholder": "z. B. Mustermann",
+      "lastNameRequiredError": "Bitte einen Nachnamen eingeben.",
+      "floorLabel": "Stockwerk",
+      "floorPlaceholder": "z. B. 2",
+      "floorHint": "0 ist das Erdgeschoss, negative Zahlen sind Untergeschosse.",
+      "floorRequiredError": "Bitte ein Stockwerk eingeben.",
+      "areaLabel": "Wohnfläche",
+      "areaPlaceholder": "z. B. 64,5",
+      "areaRequiredError": "Bitte eine Wohnfläche größer als 0 eingeben.",
+      "totalRentLabel": "Mietpreis",
+      "totalRentPlaceholder": "z. B. 850",
+      "coldRentLabel": "Kaltmiete",
+      "coldRentPlaceholder": "z. B. 650",
+      "additionalCostsLabel": "Nebenkosten",
+      "additionalCostsPlaceholder": "z. B. 200",
+      "amountRequiredError": "Bitte einen Betrag eingeben.",
+      "error": "Der Mieter konnte nicht gespeichert werden.",
+      "submitCreate": "Mieter anlegen",
+      "submitAdd": "Mieter hinzufügen",
+      "submitEdit": "Speichern",
+      "cancel": "Abbrechen",
+      "requiredFieldsLegend": "* Pflichtfeld"
+    },
+    "deleteConfirm": {
+      "header": "Mieter löschen",
+      "message": "Soll der Mieter „{name}“ wirklich gelöscht werden?",
+      "lastTenantMessage": "Soll der Mieter „{name}“ wirklich gelöscht werden? Da er der letzte Mieter der Wohnung ist, werden auch die Wohnungsdaten gelöscht.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    }
+  }
+}

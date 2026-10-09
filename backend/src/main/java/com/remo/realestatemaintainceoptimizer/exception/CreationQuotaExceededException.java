@@ -7,6 +7,7 @@ public class CreationQuotaExceededException extends RuntimeException {
 
     public static final String RESOURCE_PROPERTY = "property";
     public static final String RESOURCE_APPOINTMENT = "appointment";
+    public static final String RESOURCE_TENANT = "tenant";
 
     private final String resource;
 

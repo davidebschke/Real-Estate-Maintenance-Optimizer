@@ -29,6 +29,7 @@ const regularUserDto = {
   expiresAt: null,
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
+  remainingTenantCreations: null,
   appointmentBufferMinutes: 15,
 }
 
@@ -81,6 +82,7 @@ describe('authService', () => {
         expiresAt: '2026-09-29T16:00:00Z',
         remainingPropertyCreations: 3,
         remainingAppointmentCreations: 3,
+        remainingTenantCreations: 10,
         appointmentBufferMinutes: 15,
       },
     })

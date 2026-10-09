@@ -123,6 +123,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.demoAccount", equalTo(true)))
                 .andExpect(jsonPath("$.remainingPropertyCreations", equalTo(3)))
                 .andExpect(jsonPath("$.remainingAppointmentCreations", equalTo(3)))
+                .andExpect(jsonPath("$.remainingTenantCreations", equalTo(10)))
                 .andExpect(jsonPath("$.expiresAt").isNotEmpty())
                 .andReturn();
         Cookie sessionCookie = result.getResponse().getCookie(SessionCookieManager.COOKIE_NAME);

@@ -13,6 +13,7 @@ function logInAs(overrides: Partial<CurrentUser>) {
     expiresAt: new Date(),
     remainingPropertyCreations: 3,
     remainingAppointmentCreations: 3,
+    remainingTenantCreations: 10,
     appointmentBufferMinutes: 15,
     ...overrides,
   }
@@ -24,11 +25,19 @@ beforeEach(() => {
 
 describe('useDemoQuota', () => {
   it('reports the remaining creations of a demo account per resource', () => {
-    logInAs({ remainingPropertyCreations: 2, remainingAppointmentCreations: 1 })
+    logInAs({ remainingPropertyCreations: 2, remainingAppointmentCreations: 1, remainingTenantCreations: 7 })
 
     expect(useDemoQuota('properties').remaining.value).toBe(2)
     expect(useDemoQuota('appointments').remaining.value).toBe(1)
+    expect(useDemoQuota('tenants').remaining.value).toBe(7)
     expect(useDemoQuota('properties').isLimited.value).toBe(true)
+    expect(useDemoQuota('properties').isExhausted.value).toBe(false)
+  })
+
+  it('reports an exhausted tenant limit', () => {
+    logInAs({ remainingTenantCreations: 0 })
+
+    expect(useDemoQuota('tenants').isExhausted.value).toBe(true)
     expect(useDemoQuota('properties').isExhausted.value).toBe(false)
   })
 

@@ -49,7 +49,7 @@ class UserRepositoryTest {
     @Test
     void persistsAndReloadsEveryAccountField() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
-        repository.save(new User("user-1", "Debschke", "hash", "David Ebschke", true, now, now.plusSeconds(60), 3, 2));
+        repository.save(new User("user-1", "Debschke", "hash", "David Ebschke", true, now, now.plusSeconds(60), 3, 2, 10));
         flushAndClear();
 
         User reloaded = repository.findById("user-1").orElseThrow();
@@ -62,6 +62,7 @@ class UserRepositoryTest {
         assertThat(reloaded.expiresAt()).isEqualTo(now.plusSeconds(60));
         assertThat(reloaded.remainingPropertyCreations()).isEqualTo(3);
         assertThat(reloaded.remainingAppointmentCreations()).isEqualTo(2);
+        assertThat(reloaded.remainingTenantCreations()).isEqualTo(10);
     }
 
     @Test

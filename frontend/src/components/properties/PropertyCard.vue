@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 defineEmits<{
+  'open-detail': [propertyId: string]
   'open-appointment': [appointmentId: string]
   'edit-property': [property: Property]
   'delete-property': [property: Property]
@@ -46,7 +47,16 @@ const nextAppointmentLabel = computed(() => {
     <div class="property-card__header">
       <i class="pi property-card__icon" :class="property.icon" aria-hidden="true"></i>
       <div class="property-card__heading">
-        <h3 class="property-card__name">{{ property.name }}</h3>
+        <h3 class="property-card__name">
+          <button
+            v-tooltip.top="t('properties.card.detailsButton', { name: property.name })"
+            type="button"
+            class="property-card__details"
+            @click="$emit('open-detail', property.id)"
+          >
+            {{ property.name }}
+          </button>
+        </h3>
         <p class="property-card__address">{{ property.address }}</p>
       </div>
     </div>
@@ -78,6 +88,16 @@ const nextAppointmentLabel = computed(() => {
     <p v-else class="property-card__no-next-appointment">
       {{ t('properties.card.noNextAppointment') }}
     </p>
+
+    <button
+      v-tooltip.top="t('properties.card.tenantsButton')"
+      type="button"
+      class="property-card__tenants"
+      :aria-label="t('properties.card.tenantsButton')"
+      @click="$emit('open-detail', property.id)"
+    >
+      <i class="pi pi-users" aria-hidden="true"></i>
+    </button>
 
     <button
       v-tooltip.top="t('properties.card.editButton')"

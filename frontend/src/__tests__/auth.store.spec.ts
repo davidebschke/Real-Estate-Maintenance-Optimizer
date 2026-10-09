@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
+import { useTenantsStore } from '@/stores/tenants'
 import * as authService from '@/services/authService'
 import * as accountService from '@/services/accountService'
 import type { CurrentUser } from '@/types/auth'
@@ -19,6 +20,7 @@ function createUser(overrides: Partial<CurrentUser> = {}): CurrentUser {
     expiresAt: null,
     remainingPropertyCreations: null,
     remainingAppointmentCreations: null,
+    remainingTenantCreations: null,
     appointmentBufferMinutes: 15,
     ...overrides,
   }
@@ -31,6 +33,7 @@ const demoUser = createUser({
   expiresAt: new Date('2026-09-29T16:00:00Z'),
   remainingPropertyCreations: 3,
   remainingAppointmentCreations: 3,
+  remainingTenantCreations: 10,
   appointmentBufferMinutes: 15,
 })
 
@@ -45,10 +48,11 @@ beforeEach(() => {
   vi.mocked(accountService.changeAppointmentBuffer).mockReset()
 })
 
-/** Fills both data stores as if a previous account had loaded its data. */
+/** Fills every data store as if a previous account had loaded its data. */
 function fillDataStoresOfPreviousAccount() {
   useAppointmentsStore().appointments = [{ id: 'old' } as never]
   usePropertiesStore().properties = [{ id: 'old' } as never]
+  useTenantsStore().apartmentsByProperty = { old: [] }
 }
 
 describe('useAuthStore', () => {
@@ -92,6 +96,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(true)
     expect(useAppointmentsStore().appointments).toEqual([])
     expect(usePropertiesStore().properties).toEqual([])
+    expect(useTenantsStore().apartmentsByProperty).toEqual({})
   })
 
   it('keeps the user logged out when the login is rejected', async () => {
@@ -123,6 +128,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(useAppointmentsStore().appointments).toEqual([])
     expect(usePropertiesStore().properties).toEqual([])
+    expect(useTenantsStore().apartmentsByProperty).toEqual({})
   })
 
   it('forgets the account locally even when the logout request fails', async () => {
@@ -177,6 +183,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.isSessionChecked).toBe(true)
     expect(usePropertiesStore().properties).toEqual([])
+    expect(useTenantsStore().apartmentsByProperty).toEqual({})
     expect(authService.logout).not.toHaveBeenCalled()
   })
 

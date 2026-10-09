@@ -4,6 +4,7 @@ import * as authService from '@/services/authService'
 import * as accountService from '@/services/accountService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
+import { useTenantsStore } from '@/stores/tenants'
 import type { CurrentUser } from '@/types/auth'
 
 /** Holds the logged-in account and every session transition (restore, login, demo account, logout, expiry). */
@@ -79,12 +80,14 @@ export const useAuthStore = defineStore('auth', () => {
     isSessionChecked.value = true
     useAppointmentsStore().reset()
     usePropertiesStore().reset()
+    useTenantsStore().reset()
   }
 
   /** Switches to the given account, dropping any data cached for a previous one. */
   function startSession(user: CurrentUser) {
     useAppointmentsStore().reset()
     usePropertiesStore().reset()
+    useTenantsStore().reset()
     currentUser.value = user
     isSessionChecked.value = true
   }

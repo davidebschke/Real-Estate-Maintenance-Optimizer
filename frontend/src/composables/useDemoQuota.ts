@@ -1,6 +1,15 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import type { DemoQuotaResource } from '@/types/auth'
+import type { CurrentUser, DemoQuotaResource } from '@/types/auth'
+
+/** Maps each limited resource to the number of creations the given account has left. */
+function remainingByResource(user: CurrentUser): Record<DemoQuotaResource, number | null> {
+  return {
+    properties: user.remainingPropertyCreations,
+    appointments: user.remainingAppointmentCreations,
+    tenants: user.remainingTenantCreations,
+  }
+}
 
 /** Exposes how many more of the given resource the logged-in demo account may create; unlimited (null) for regular accounts. */
 export function useDemoQuota(resource: DemoQuotaResource) {
@@ -9,7 +18,7 @@ export function useDemoQuota(resource: DemoQuotaResource) {
   const remaining = computed<number | null>(() => {
     const user = authStore.currentUser
     if (!user?.demoAccount) return null
-    return resource === 'properties' ? user.remainingPropertyCreations : user.remainingAppointmentCreations
+    return remainingByResource(user)[resource]
   })
 
   const isLimited = computed(() => remaining.value !== null)
