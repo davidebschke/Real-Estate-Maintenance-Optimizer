@@ -3,6 +3,8 @@ import OverviewView from '@/views/OverviewView.vue'
 import CalendarView from '@/views/CalendarView.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
 import PropertyStatisticsView from '@/views/PropertyStatisticsView.vue'
+import SavingsStatisticsView from '@/views/SavingsStatisticsView.vue'
+import OptimizationView from '@/views/OptimizationView.vue'
 import PropertiesView from '@/views/PropertiesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import { installAuthGuard } from '@/router/authGuard'
@@ -17,7 +19,7 @@ declare module 'vue-router' {
 }
 
 /** Identifier of a top-level page reachable from the main navigation. */
-export type NavigationKey = 'overview' | 'calendar' | 'statistics' | 'properties'
+export type NavigationKey = 'overview' | 'calendar' | 'optimization' | 'statistics' | 'properties'
 
 /** Route definitions for the main application pages, shared between the app router and router-aware tests. */
 export const routes: RouteRecordRaw[] = [
@@ -38,6 +40,11 @@ export const routes: RouteRecordRaw[] = [
     component: CalendarView,
   },
   {
+    path: '/optimization',
+    name: 'optimization' satisfies NavigationKey,
+    component: OptimizationView,
+  },
+  {
     path: '/statistics',
     component: RouterView,
     children: [
@@ -50,6 +57,11 @@ export const routes: RouteRecordRaw[] = [
         path: 'properties',
         name: 'statistics-properties',
         component: PropertyStatisticsView,
+      },
+      {
+        path: 'savings',
+        name: 'statistics-savings',
+        component: SavingsStatisticsView,
       },
     ],
   },

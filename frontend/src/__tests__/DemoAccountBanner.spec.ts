@@ -16,6 +16,7 @@ function logInAs(overrides: Partial<CurrentUser>) {
     remainingPropertyCreations: 3,
     remainingAppointmentCreations: 3,
     remainingTenantCreations: 10,
+    remainingAiOptimizations: 1,
     appointmentBufferMinutes: 15,
     ...overrides,
   }

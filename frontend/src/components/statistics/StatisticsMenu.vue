@@ -17,6 +17,12 @@ const menuEntries: StatisticsMenuEntry[] = [
     titleKey: 'statistics.menu.properties.title',
     descriptionKey: 'statistics.menu.properties.description',
   },
+  {
+    routeName: 'statistics-savings',
+    icon: 'pi-chart-line',
+    titleKey: 'statistics.menu.savings.title',
+    descriptionKey: 'statistics.menu.savings.description',
+  },
 ]
 
 const { t } = useI18n()

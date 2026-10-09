@@ -13,6 +13,7 @@ const RESOURCE_KEYS: Record<DemoQuotaResource, string> = {
   properties: 'Properties',
   appointments: 'Appointments',
   tenants: 'Tenants',
+  aiOptimizations: 'AiOptimizations',
 }
 
 const resourceKey = computed(() => RESOURCE_KEYS[props.resource])

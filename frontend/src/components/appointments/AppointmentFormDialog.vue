@@ -9,7 +9,6 @@ import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
 import AppointmentPropertySelect from '@/components/appointments/AppointmentPropertySelect.vue'
 import AppointmentMaterialInput from '@/components/appointments/AppointmentMaterialInput.vue'
-import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
 import AppointmentConflictNotice from '@/components/appointments/AppointmentConflictNotice.vue'
 import RequiredFieldLabel from '@/components/forms/RequiredFieldLabel.vue'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
@@ -287,7 +286,6 @@ function cancel() {
 
     <AppointmentMaterialInput v-model="form.materials" />
 
-    <AppointmentAiSuggestionBanner v-if="!isEditMode" />
 
     <AppointmentConflictNotice
       v-if="!isEditMode && store.appointmentConflict"

@@ -18,11 +18,15 @@ async function mountMenu() {
 }
 
 describe('StatisticsMenu', () => {
-  it('lists the property statistics entry with its description', async () => {
+  it('lists the property statistics and the AI savings entries with their descriptions', async () => {
     const { wrapper } = await mountMenu()
 
     const entries = wrapper.findAll('.statistics-menu__entry')
-    expect(entries).toHaveLength(1)
+    expect(entries).toHaveLength(2)
+    expect(entries[1]!.find('.statistics-menu__title').text()).toBe('Einsparungen durch KI')
+    expect(entries[1]!.find('.statistics-menu__description').text()).toBe(
+      'Gesparte Kilometer und Fahrzeit der übernommenen KI-Vorschläge im Verlauf',
+    )
     expect(entries[0]!.find('.statistics-menu__title').text()).toBe('Objektstatistik')
     expect(entries[0]!.find('.statistics-menu__description').text()).toBe(
       'Offene und erledigte Aufträge sowie der nächste Auftrag je Objekt',
@@ -43,5 +47,14 @@ describe('StatisticsMenu', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/statistics/properties')
+  })
+
+  it('opens the AI savings statistics when its entry is clicked', async () => {
+    const { wrapper, router } = await mountMenu()
+
+    await wrapper.findAll('.statistics-menu__entry')[1]!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/statistics/savings')
   })
 })

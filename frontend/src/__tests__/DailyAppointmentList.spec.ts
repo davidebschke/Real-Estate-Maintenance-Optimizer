@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { i18n } from '@/i18n'
 import DailyAppointmentList from '@/components/overview/DailyAppointmentList.vue'
+import OptimizationBanner from '@/components/optimization/OptimizationBanner.vue'
 import { useAppointmentsStore } from '@/stores/appointments'
 import * as appointmentService from '@/services/appointmentService'
 import { useAppointmentMapMarkers } from '@/composables/useAppointmentMapMarkers'
@@ -62,7 +63,7 @@ afterEach(() => {
 
 describe('DailyAppointmentList', () => {
   it('shows an empty-state message when there are no appointments today', async () => {
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     expect(wrapper.find('.daily-appointment-list__empty').text()).toBe(
@@ -82,7 +83,7 @@ describe('DailyAppointmentList', () => {
     ])
     mockRouteLegs(new Map([['2', { distanceMeters: 6400, durationSeconds: 721 }]]))
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     const cards = wrapper.findAll('.daily-appointment-card')
@@ -94,7 +95,7 @@ describe('DailyAppointmentList', () => {
     vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([
       createAppointment({ id: '1', title: 'Heute' }),
     ])
-    const todayWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const todayWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     expect(todayWrapper.findAll('.daily-appointment-card__route-link')).toHaveLength(1)
@@ -108,7 +109,7 @@ describe('DailyAppointmentList', () => {
         end: new Date(2026, 7, 11, 10, 0),
       }),
     ])
-    const tomorrowWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const tomorrowWrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     expect(tomorrowWrapper.findAll('.daily-appointment-card')).toHaveLength(1)
@@ -126,7 +127,7 @@ describe('DailyAppointmentList', () => {
       }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     expect(wrapper.findAll('.daily-appointment-card__position').map((node) => node.text())).toEqual(
@@ -139,7 +140,7 @@ describe('DailyAppointmentList', () => {
       createAppointment({ id: '1', title: 'Erledigt', completed: true }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     expect(wrapper.findAll('.daily-appointment-card')).toHaveLength(0)
@@ -166,7 +167,7 @@ describe('DailyAppointmentList', () => {
       }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     const titles = wrapper.findAll('.daily-appointment-card__title').map((node) => node.text())
@@ -192,7 +193,7 @@ describe('DailyAppointmentList', () => {
       }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     const titles = wrapper.findAll('.daily-appointment-card__title').map((node) => node.text())
@@ -222,7 +223,7 @@ describe('DailyAppointmentList', () => {
       }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
 
     const titles = wrapper.findAll('.daily-appointment-card__title').map((node) => node.text())
@@ -235,12 +236,19 @@ describe('DailyAppointmentList', () => {
       createAppointment({ id: '10' }),
     ])
 
-    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n] } })
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
     await flushPromises()
     const appointmentsStore = useAppointmentsStore()
 
     await wrapper.find('.daily-appointment-card').trigger('click')
 
     expect(appointmentsStore.activeDetailAppointmentId).toBe('10')
+  })
+
+  it('ends with the AI optimization banner', async () => {
+    const wrapper = mount(DailyAppointmentList, { global: { plugins: [i18n], stubs: { OptimizationBanner: true } } })
+    await flushPromises()
+
+    expect(wrapper.findComponent(OptimizationBanner).exists()).toBe(true)
   })
 })

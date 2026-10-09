@@ -1,0 +1,30 @@
+.optimization-view__heading {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 1.4rem;
+  margin: 0 0 0.5rem;
+}
+
+.optimization-view__intro {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  margin: 0 0 1.25rem;
+  max-width: 60rem;
+}
+
+.optimization-view__layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* side by side once there is room for the rules panel next to readable proposal cards */
+@media (min-width: 64rem) {
+  .optimization-view__layout {
+    align-items: start;
+    grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+  }
+
+  .optimization-view__launch {
+    position: sticky;
+    top: 1rem;
+  }
+}

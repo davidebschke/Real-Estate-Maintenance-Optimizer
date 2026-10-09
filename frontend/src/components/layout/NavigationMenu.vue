@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import type { NavigationKey } from '@/router'
 
 /** List of top-level navigation entries rendered in a fixed, reusable order. */
-const navigationEntries: NavigationKey[] = ['overview', 'calendar', 'statistics', 'properties']
+const navigationEntries: NavigationKey[] = ['overview', 'calendar', 'optimization', 'statistics', 'properties']
 
 const { t } = useI18n()
 const isMobileMenuOpen = ref(false)

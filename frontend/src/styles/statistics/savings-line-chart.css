@@ -1,0 +1,30 @@
+.savings-line-chart {
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.75rem;
+  margin: 0;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.savings-line-chart__caption {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+/* Chart.js sizes the canvas to this box (maintainAspectRatio: false), so the height decides how tall the chart is */
+.savings-line-chart__canvas {
+  height: 18rem;
+  position: relative;
+}
+
+/* PrimeVue wraps the canvas in its own div, which must fill the box for Chart.js to use the full height */
+.savings-line-chart__chart {
+  height: 100%;
+}
+
+@media (min-width: 48rem) {
+  .savings-line-chart__canvas {
+    height: 24rem;
+  }
+}

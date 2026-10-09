@@ -28,6 +28,7 @@ const userDto = {
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
   remainingTenantCreations: null,
+  remainingAiOptimizations: null,
   appointmentBufferMinutes: 30,
 }
 

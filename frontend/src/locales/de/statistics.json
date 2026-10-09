@@ -6,6 +6,10 @@
       "properties": {
         "title": "Objektstatistik",
         "description": "Offene und erledigte Aufträge sowie der nächste Auftrag je Objekt"
+      },
+      "savings": {
+        "title": "Einsparungen durch KI",
+        "description": "Gesparte Kilometer und Fahrzeit der übernommenen KI-Vorschläge im Verlauf"
       }
     },
     "properties": {
@@ -21,6 +25,30 @@
         "next": "Nächster Auftrag"
       },
       "noNextAppointment": "Kein anstehender Auftrag"
+    },
+    "savings": {
+      "heading": "Einsparungen durch KI-Optimierung",
+      "back": "Zurück zur Statistik",
+      "granularity": {
+        "label": "Zeitraum",
+        "WEEK": "Wochen",
+        "MONTH": "Monate"
+      },
+      "totals": {
+        "distance": "Gesparte Kilometer",
+        "duration": "Gesparte Fahrzeit",
+        "accepted": "Übernommene Vorschläge"
+      },
+      "chart": {
+        "label": "Verlauf der Einsparungen",
+        "distance": "Kilometer (kumuliert)",
+        "duration": "Fahrzeit in Stunden (kumuliert)",
+        "distanceAxis": "km",
+        "durationAxis": "Std"
+      },
+      "empty": "Noch keine Einsparungen. Übernehmen Sie Vorschläge der KI-Optimierung, um hier den Verlauf zu sehen.",
+      "loadError": "Die Einsparungen konnten nicht geladen werden.",
+      "toOptimization": "Zur KI-Optimierung"
     }
   }
 }

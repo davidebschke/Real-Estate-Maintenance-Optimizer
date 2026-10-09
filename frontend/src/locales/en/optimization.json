@@ -1,0 +1,41 @@
+{
+  "optimization": {
+    "heading": "AI appointment optimization",
+    "intro": "The AI rearranges your appointments so that fewer kilometres and less driving time are needed. Every move is only applied once you confirm it.",
+    "rules": {
+      "title": "How the AI plans",
+      "window": "Only appointments at least {minLeadDays} days ahead are moved, and the AI keeps an eye on the next {horizonDays} days.",
+      "locked": "Fixed appointments and completed appointments stay untouched.",
+      "recurring": "Recurring appointments are moved by at most {maxRecurringShiftDays} days.",
+      "travel": "Every proposal leaves enough driving time and buffer to the previous and the next appointment."
+    },
+    "launch": {
+      "title": "Start optimization",
+      "button": "Optimize appointments",
+      "running": "The AI is planning your appointments …",
+      "lastRun": "Last run: {analyzed} appointments checked, {candidates} possible moves assessed, {proposals} proposals.",
+      "noProposals": "The AI found no move that saves driving time or kilometres.",
+      "error": "The optimization could not be started."
+    },
+    "proposals": {
+      "heading": "Proposals awaiting confirmation",
+      "empty": "No open proposals. Start an optimization to get new ones.",
+      "loadError": "The proposals could not be loaded.",
+      "decisionError": "The decision could not be saved.",
+      "from": "Current",
+      "to": "New",
+      "saved": "Saving",
+      "savedValue": "{distance} km · {duration}",
+      "recurring": "Recurring",
+      "reason": "Reason given by the AI",
+      "accept": "Apply",
+      "reject": "Decline"
+    },
+    "banner": {
+      "pending": "The AI has no open proposal. | The AI has one proposal that saves driving time. | The AI has {count} proposals that save driving time.",
+      "idle": "The AI can optimize your appointments from four weeks ahead by driving time and kilometres.",
+      "reviewButton": "Review proposals",
+      "openButton": "Open optimization"
+    }
+  }
+}

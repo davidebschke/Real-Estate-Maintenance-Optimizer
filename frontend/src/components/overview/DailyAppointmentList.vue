@@ -8,7 +8,7 @@ import { useAppointmentRoute } from '@/composables/useAppointmentRoute'
 import { useLocale } from '@/composables/useLocale'
 import type { Appointment } from '@/types/appointment'
 import DailyAppointmentCard from '@/components/overview/DailyAppointmentCard.vue'
-import AppointmentAiSuggestionBanner from '@/components/appointments/AppointmentAiSuggestionBanner.vue'
+import OptimizationBanner from '@/components/optimization/OptimizationBanner.vue'
 
 const { t } = useI18n()
 const { currentLocale } = useLocale()
@@ -115,7 +115,7 @@ onMounted(() => {
       </div>
     </template>
 
-    <AppointmentAiSuggestionBanner class="daily-appointment-list__ai-suggestion" />
+    <OptimizationBanner class="daily-appointment-list__ai-suggestion" />
   </div>
 </template>
 

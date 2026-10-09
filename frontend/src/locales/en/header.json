@@ -4,6 +4,7 @@
     "nav": {
       "overview": "Overview",
       "calendar": "Calendar",
+      "optimization": "Optimization",
       "statistics": "Statistics",
       "properties": "Properties"
     },
