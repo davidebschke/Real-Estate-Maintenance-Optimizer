@@ -216,8 +216,21 @@ class GlobalExceptionHandlerTest {
                         "Das Tageslimit für Optimierungsläufe ist erreicht. Bitte versuchen Sie es morgen erneut.")));
     }
 
+    @Test
+    void aRunningOptimizationReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/optimization-in-progress").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Für diesen Account läuft bereits eine Optimierung. Bitte warten Sie auf ihr Ergebnis.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/optimization-in-progress")
+        void optimizationInProgress() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_IN_PROGRESS);
+        }
 
         @GetMapping("/ai-disabled")
         void aiDisabled() {

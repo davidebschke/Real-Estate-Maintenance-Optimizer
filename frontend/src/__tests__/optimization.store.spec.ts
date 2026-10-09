@@ -122,31 +122,56 @@ describe('optimization store', () => {
     expect(store.isDeciding('proposal-1')).toBe(false)
   })
 
-  it('drops an outdated proposal with the backend message but keeps one whose decision failed for another reason', async () => {
-    vi.mocked(optimizationService.acceptProposal)
-      .mockRejectedValueOnce(httpError(409, { message: 'Dieser Vorschlag ist veraltet.' }))
-      .mockRejectedValueOnce(httpError(503, {}))
+  it('reloads the pending list from the backend after a conflict or a missing proposal, keeping the backend message', async () => {
+    vi.mocked(optimizationService.acceptProposal).mockRejectedValue(
+      httpError(409, { message: 'Dieser Vorschlag ist veraltet.' }),
+    )
+    vi.mocked(optimizationService.rejectProposal).mockRejectedValue(httpError(404, { message: 'Nicht gefunden.' }))
+    const store = useOptimizationStore()
+    await store.fetchPendingProposals()
+    vi.mocked(optimizationService.fetchPendingProposals).mockResolvedValue([secondProposal])
+
+    expect(await store.acceptProposal('proposal-1')).toBe(false)
+
+    expect(store.decisionErrorMessage).toBe('Dieser Vorschlag ist veraltet.')
+    expect(optimizationService.fetchPendingProposals).toHaveBeenCalledTimes(2)
+    expect(store.pendingProposals.map((proposal) => proposal.id)).toEqual(['proposal-2'])
+
+    vi.mocked(optimizationService.fetchPendingProposals).mockResolvedValue([])
+    await store.rejectProposal('proposal-2')
+
+    expect(store.pendingProposals).toEqual([])
+  })
+
+  it('keeps the proposal of a decision that failed for another reason without reloading', async () => {
+    vi.mocked(optimizationService.acceptProposal).mockRejectedValue(httpError(503, {}))
     const store = useOptimizationStore()
     await store.fetchPendingProposals()
 
     expect(await store.acceptProposal('proposal-1')).toBe(false)
-    expect(store.decisionErrorMessage).toBe('Dieser Vorschlag ist veraltet.')
-    expect(store.pendingProposals.map((proposal) => proposal.id)).toEqual(['proposal-2'])
 
-    expect(await store.acceptProposal('proposal-2')).toBe(false)
     expect(store.hasDecisionError).toBe(true)
     expect(store.decisionErrorMessage).toBeNull()
-    expect(store.pendingProposals.map((proposal) => proposal.id)).toEqual(['proposal-2'])
+    expect(optimizationService.fetchPendingProposals).toHaveBeenCalledTimes(1)
+    expect(store.pendingProposals.map((proposal) => proposal.id)).toEqual(['proposal-1', 'proposal-2'])
   })
 
-  it('drops a proposal that no longer exists', async () => {
-    vi.mocked(optimizationService.rejectProposal).mockRejectedValue(httpError(404, { message: 'Nicht gefunden.' }))
+  it('keeps the result of a run even when the pending list was reloaded while the run was in flight', async () => {
+    let finishRun: (value: Awaited<ReturnType<typeof optimizationService.startOptimizationRun>>) => void = () => {}
+    vi.mocked(optimizationService.startOptimizationRun).mockReturnValue(new Promise((resolve) => (finishRun = resolve)))
+    let finishLoad: (value: (typeof firstProposal)[]) => void = () => {}
     const store = useOptimizationStore()
-    await store.fetchPendingProposals()
 
-    await store.rejectProposal('proposal-2')
+    const running = store.startRun()
+    vi.mocked(optimizationService.fetchPendingProposals).mockReturnValue(new Promise((resolve) => (finishLoad = resolve)))
+    const loading = store.fetchPendingProposals()
+    finishRun({ runId: 'run-2', createdAt: new Date(), analyzedAppointmentCount: 3, candidateCount: 1, proposals: [secondProposal] })
+    await running
+    finishLoad([firstProposal])
+    await loading
 
-    expect(store.pendingProposals.map((proposal) => proposal.id)).toEqual(['proposal-1'])
+    expect(store.lastRun?.runId).toBe('run-2')
+    expect(store.pendingProposals).toEqual([secondProposal])
   })
 
   it('forgets everything on reset and ignores a load that finishes afterwards', async () => {

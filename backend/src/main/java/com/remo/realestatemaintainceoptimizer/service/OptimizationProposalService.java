@@ -15,6 +15,7 @@ import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutd
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.OptimizationProposalRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import com.remo.realestatemaintainceoptimizer.service.DistanceMatrixService.Location;
 import com.remo.realestatemaintainceoptimizer.service.PlanningSnapshotFactory.PlanningSnapshot;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -25,7 +26,10 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Lists the pending AI optimization proposals of an account and applies the user's decision on one of them, re-validating an accepted move against the current schedule first.
@@ -44,6 +48,8 @@ public class OptimizationProposalService {
     private final DistanceMatrixService distanceMatrixService;
     private final OptimizationProperties optimizationProperties;
     private final AppointmentSchedulingProperties schedulingProperties;
+    private final TransactionTemplate writeTransaction;
+    private final TransactionTemplate readOnlyTransaction;
 
     public OptimizationProposalService(
             OptimizationProposalRepository proposalRepository,
@@ -54,7 +60,8 @@ public class OptimizationProposalService {
             PlanningSnapshotFactory snapshotFactory,
             DistanceMatrixService distanceMatrixService,
             OptimizationProperties optimizationProperties,
-            AppointmentSchedulingProperties schedulingProperties) {
+            AppointmentSchedulingProperties schedulingProperties,
+            PlatformTransactionManager transactionManager) {
         this.proposalRepository = proposalRepository;
         this.appointmentRepository = appointmentRepository;
         this.userRepository = userRepository;
@@ -64,6 +71,9 @@ public class OptimizationProposalService {
         this.distanceMatrixService = distanceMatrixService;
         this.optimizationProperties = optimizationProperties;
         this.schedulingProperties = schedulingProperties;
+        this.writeTransaction = new TransactionTemplate(transactionManager);
+        this.readOnlyTransaction = new TransactionTemplate(transactionManager);
+        this.readOnlyTransaction.setReadOnly(true);
     }
 
     /**
@@ -79,24 +89,33 @@ public class OptimizationProposalService {
     }
 
     /**
-     * Moves the proposal's appointment to the proposed slot once the move is confirmed to be still feasible and saving with the current schedule, storing the recalculated savings; an outdated proposal is marked expired (kept despite the thrown {@link OptimizationProposalOutdatedException}) and its appointment stays untouched.
+     * Moves the proposal's appointment to the proposed slot once the move is confirmed to be still feasible and saving with the current schedule, storing the recalculated savings; an outdated proposal is marked expired before {@link OptimizationProposalOutdatedException} is thrown and its appointment stays untouched, and the travel matrix is fetched before the account lock is taken so no lock or connection waits for openrouteservice.
      */
-    @Transactional(noRollbackFor = OptimizationProposalOutdatedException.class)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public OptimizationProposalResponse accept(String ownerId, String proposalId) {
+        List<Location> locations = readOnlyTransaction.execute(
+                status -> affectedDaysSnapshot(ownerId, loadPending(ownerId, proposalId)).locations());
+        TravelMatrix matrix = distanceMatrixService.matrix(locations);
+        Optional<OptimizationProposalResponse> accepted =
+                writeTransaction.execute(status -> applyIfStillValid(ownerId, proposalId, matrix));
+        return accepted.orElseThrow(() -> new OptimizationProposalOutdatedException(proposalId));
+    }
+
+    private Optional<OptimizationProposalResponse> applyIfStillValid(String ownerId, String proposalId, TravelMatrix matrix) {
         userRepository.acquireTransactionLock(ownerId.hashCode());
         OptimizationProposal proposal = loadPending(ownerId, proposalId);
         Instant now = currentInstant();
-        Optional<MoveOption> confirmedMove = revalidate(ownerId, proposal);
+        Optional<MoveOption> confirmedMove = revalidate(ownerId, proposal, matrix);
         if (confirmedMove.isEmpty()) {
             proposal.expire(now);
-            throw new OptimizationProposalOutdatedException(proposalId);
+            return Optional.empty();
         }
 
         MoveOption move = confirmedMove.get();
         appointmentService.applyOptimizedSchedule(
                 ownerId, proposal.appointmentId(), new MoveAppointmentRequest(move.newStart(), move.durationMinutes()));
         proposal.accept(move.savedDistanceMeters(), move.savedDurationSeconds(), now);
-        return OptimizationProposalResponse.from(proposal);
+        return Optional.of(OptimizationProposalResponse.from(proposal));
     }
 
     /**
@@ -109,9 +128,18 @@ public class OptimizationProposalService {
     }
 
     /**
-     * Returns the proposal's move recalculated against the account's current schedule, empty when the appointment is gone, was changed since the proposal was made, or the move is no longer feasible or saving.
+     * Returns the planning view of the account's appointments locating the properties visited on the proposal's original and proposed day.
      */
-    private Optional<MoveOption> revalidate(String ownerId, OptimizationProposal proposal) {
+    private PlanningSnapshot affectedDaysSnapshot(String ownerId, OptimizationProposal proposal) {
+        Set<LocalDate> affectedDays =
+                new HashSet<>(List.of(proposal.originalStart().toLocalDate(), proposal.proposedStart().toLocalDate()));
+        return snapshotFactory.snapshot(appointmentRepository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId), affectedDays::contains);
+    }
+
+    /**
+     * Returns the proposal's move recalculated against the account's current schedule with the given travel matrix, empty when the appointment is gone, was changed since the proposal was made, or the move is no longer feasible or saving.
+     */
+    private Optional<MoveOption> revalidate(String ownerId, OptimizationProposal proposal, TravelMatrix matrix) {
         if (proposal.appointmentId() == null) {
             return Optional.empty();
         }
@@ -123,12 +151,9 @@ public class OptimizationProposalService {
         }
 
         User owner = userRepository.findById(ownerId).orElseThrow(() -> new AccountNotFoundException(ownerId));
-        Set<LocalDate> affectedDays =
-                new HashSet<>(List.of(proposal.originalStart().toLocalDate(), proposal.proposedStart().toLocalDate()));
-        PlanningSnapshot snapshot = snapshotFactory.snapshot(
-                appointmentRepository.findAllByPropertyOwnerIdOrderByStartAsc(ownerId), affectedDays::contains);
+        PlanningSnapshot snapshot = affectedDaysSnapshot(ownerId, proposal);
         PlanningContext context = new PlanningContext(
-                distanceMatrixService.matrix(snapshot.locations()),
+                matrix,
                 schedulingProperties.bufferMinutesFor(owner.appointmentBufferMinutes()),
                 LocalDate.now(optimizationProperties.zone()));
         return snapshot.visits().stream()

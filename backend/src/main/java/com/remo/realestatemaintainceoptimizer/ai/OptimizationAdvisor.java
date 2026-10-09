@@ -34,7 +34,7 @@ public class OptimizationAdvisor {
             You are the scheduling assistant of a property maintenance company. You receive candidate moves of \
             maintenance appointments that the planning system has already checked: every candidate is feasible \
             (working hours, buffer and driving time to the neighbouring appointments, fixed appointments untouched, \
-            recurring appointments moved at most two weeks) and states how many kilometres and driving minutes it \
+            recurring appointments only within their allowed shift) and states how many kilometres and driving minutes it \
             saves on its own. Choose the moves to propose to the dispatcher.
 
             Rules:

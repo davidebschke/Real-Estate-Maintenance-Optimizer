@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -70,6 +72,7 @@ public class OptimizationService {
     private final TransactionTemplate readOnlyTransaction;
     private final SlidingWindowRateLimiter runsPerAccount;
     private final SlidingWindowRateLimiter runsPerDay;
+    private final Set<String> runningAccounts = ConcurrentHashMap.newKeySet();
 
     public OptimizationService(
             OptimizationPlanner planner,
@@ -103,11 +106,34 @@ public class OptimizationService {
     }
 
     /**
-     * Optimizes the given account's appointments inside the planning window and stores the confirmed moves as pending proposals, replacing every proposal still pending from an earlier run; a demo account uses up its single run only once the AI was actually consulted and the result stored.
+     * Optimizes the given account's appointments inside the planning window and stores the confirmed moves as pending proposals, replacing every proposal still pending from an earlier run; one run per account at a time, a run that never consulted the AI gives its run budget back, and a demo account uses up its single run only once the AI was actually consulted and the result stored.
      */
     public OptimizationRunResponse run(String ownerId, Locale locale) {
         advisor.requireEnabled();
-        acquireRunBudget(ownerId);
+        if (!runningAccounts.add(ownerId)) {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_IN_PROGRESS);
+        }
+        try {
+            acquireRunBudget(ownerId);
+            AtomicBoolean consultedAi = new AtomicBoolean(false);
+            try {
+                OptimizationRunResponse response = optimize(ownerId, locale, consultedAi);
+                if (!consultedAi.get()) {
+                    releaseRunBudget(ownerId);
+                }
+                return response;
+            } catch (RuntimeException exception) {
+                if (!consultedAi.get()) {
+                    releaseRunBudget(ownerId);
+                }
+                throw exception;
+            }
+        } finally {
+            runningAccounts.remove(ownerId);
+        }
+    }
+
+    private OptimizationRunResponse optimize(String ownerId, Locale locale, AtomicBoolean consultedAi) {
         LocalDate today = LocalDate.now(optimizationProperties.zone());
 
         PreparedRun prepared = readOnlyTransaction.execute(status -> prepare(ownerId, today));
@@ -116,6 +142,7 @@ public class OptimizationService {
         List<MoveOption> options = planner.findMoveOptions(prepared.snapshot().visits(), context);
         List<AdvisorCandidate> candidates = toCandidates(options, prepared.snapshot().labels());
         boolean consultsAi = !candidates.isEmpty();
+        consultedAi.set(consultsAi);
         List<AdvisorSelection> selections = consultsAi ? advisor.selectMoves(candidates, locale) : List.of();
         List<ConfirmedMove> confirmedMoves =
                 confirmSequentially(prepared.snapshot().visits(), candidates, options, selections, context);
@@ -131,6 +158,11 @@ public class OptimizationService {
             runsPerAccount.releaseLatest(ownerId);
             throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_QUOTA_EXHAUSTED);
         }
+    }
+
+    private void releaseRunBudget(String ownerId) {
+        runsPerAccount.releaseLatest(ownerId);
+        runsPerDay.releaseLatest(ALL_ACCOUNTS_KEY);
     }
 
     private PreparedRun prepare(String ownerId, LocalDate today) {

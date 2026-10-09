@@ -10,11 +10,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -55,6 +58,7 @@ public class OptimizationPlanner {
      * Returns the most saving feasible moves of every plannable visit onto days that already have appointments at known locations, at most the configured number per visit and overall, sorted by saved driving time and then distance.
      */
     public List<MoveOption> findMoveOptions(List<PlanningVisit> schedule, PlanningContext context) {
+        Map<LocalDate, List<PlanningVisit>> visitsByDay = visitsByDay(schedule);
         SortedSet<LocalDate> busyDays = new TreeSet<>();
         schedule.stream()
                 .filter(visit -> visit.located() && isInWindow(visit.date(), context.today()))
@@ -70,8 +74,8 @@ public class OptimizationPlanner {
                 if (!isAllowedDay(visit, day, context.today())) {
                     continue;
                 }
-                for (LocalDateTime candidateStart : candidateStarts(schedule, visit, day, context)) {
-                    evaluateMove(schedule, visit, candidateStart, context).ifPresent(visitOptions::add);
+                for (LocalDateTime candidateStart : candidateStarts(visitsByDay.get(day), visit, day, context)) {
+                    evaluateMove(visitsByDay, visit, candidateStart, context).ifPresent(visitOptions::add);
                 }
             }
             visitOptions.stream()
@@ -87,6 +91,14 @@ public class OptimizationPlanner {
      */
     public Optional<MoveOption> evaluateMove(
             List<PlanningVisit> schedule, PlanningVisit visit, LocalDateTime newStart, PlanningContext context) {
+        return evaluateMove(visitsByDay(schedule), visit, newStart, context);
+    }
+
+    /**
+     * Evaluates a move against the schedule indexed by day, looking only at the two affected days and rejecting the move when any appointment there has a location the travel matrix does not know, since its route could then not be priced or its driving time checked.
+     */
+    private Optional<MoveOption> evaluateMove(
+            Map<LocalDate, List<PlanningVisit>> visitsByDay, PlanningVisit visit, LocalDateTime newStart, PlanningContext context) {
         PlanningVisit moved = visit.movedTo(newStart);
         if (newStart.equals(visit.start())
                 || !isPlannable(visit, context.today())
@@ -94,7 +106,15 @@ public class OptimizationPlanner {
                 || !isAllowedDay(visit, newStart.toLocalDate(), context.today())) {
             return Optional.empty();
         }
-        List<PlanningVisit> others = schedule.stream()
+        Set<LocalDate> affectedDays = new HashSet<>(List.of(visit.date(), moved.date()));
+        List<PlanningVisit> affectedVisits = affectedDays.stream()
+                .flatMap(day -> visitsByDay.getOrDefault(day, List.of()).stream())
+                .distinct()
+                .toList();
+        if (affectedVisits.stream().anyMatch(other -> !other.located())) {
+            return Optional.empty();
+        }
+        List<PlanningVisit> others = affectedVisits.stream()
                 .filter(other -> !other.appointmentId().equals(visit.appointmentId()))
                 .toList();
         if (!fitsBetweenNeighbours(others, moved, context)) {
@@ -103,8 +123,7 @@ public class OptimizationPlanner {
 
         List<PlanningVisit> rescheduled = new ArrayList<>(others);
         rescheduled.add(moved);
-        Set<LocalDate> affectedDays = new HashSet<>(List.of(visit.date(), moved.date()));
-        Optional<Travel> costBefore = routeCost(schedule, affectedDays, context.matrix());
+        Optional<Travel> costBefore = routeCost(affectedVisits, affectedDays, context.matrix());
         Optional<Travel> costAfter = routeCost(rescheduled, affectedDays, context.matrix());
         if (costBefore.isEmpty() || costAfter.isEmpty()) {
             return Optional.empty();
@@ -130,6 +149,15 @@ public class OptimizationPlanner {
     }
 
     /**
+     * Groups the schedule by every day a visit touches, so a visit running past midnight is found on both days.
+     */
+    private static Map<LocalDate, List<PlanningVisit>> visitsByDay(List<PlanningVisit> schedule) {
+        return schedule.stream()
+                .flatMap(visit -> Stream.of(visit.date(), visit.end().toLocalDate()).distinct().map(day -> Map.entry(day, visit)))
+                .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+    }
+
+    /**
      * Returns whether the given visit may be placed on the given day: inside the window, not on a Sunday and, for a recurring occurrence, at most the configured number of days away from its originally planned date.
      */
     private boolean isAllowedDay(PlanningVisit visit, LocalDate day, LocalDate today) {
@@ -151,10 +179,10 @@ public class OptimizationPlanner {
      * Returns the starts worth trying on the given day: the start of the working day, right after each appointment of that day plus buffer and driving time, and just early enough before each of them.
      */
     private SortedSet<LocalDateTime> candidateStarts(
-            List<PlanningVisit> schedule, PlanningVisit visit, LocalDate day, PlanningContext context) {
+            List<PlanningVisit> dayVisits, PlanningVisit visit, LocalDate day, PlanningContext context) {
         SortedSet<LocalDateTime> starts = new TreeSet<>();
         starts.add(day.atTime(properties.workDayStart()));
-        for (PlanningVisit other : schedule) {
+        for (PlanningVisit other : dayVisits) {
             if (!other.date().equals(day) || other.appointmentId().equals(visit.appointmentId())) {
                 continue;
             }

@@ -28,6 +28,7 @@ import com.remo.realestatemaintainceoptimizer.exception.AiDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.AiUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.OptimizationProposalRepository;
 import com.remo.realestatemaintainceoptimizer.repository.OptimizationRunRepository;
@@ -248,7 +249,8 @@ class OptimizationServiceTest {
     }
 
     @Test
-    void limitsTheRunsOfOneAccountPerHour() {
+    void limitsTheRunsThatConsultedTheAiPerAccountAndHour() {
+        seedSplitSchedule(west, east);
         for (int run = 0; run < 5; run++) {
             service.run(owner.id(), Locale.GERMAN);
         }
@@ -256,6 +258,42 @@ class OptimizationServiceTest {
         assertThatThrownBy(() -> service.run(owner.id(), Locale.GERMAN))
                 .isInstanceOf(RateLimitExceededException.class)
                 .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_TOO_MANY_OPTIMIZATIONS);
+    }
+
+    @Test
+    void runsThatNeverConsultedTheAiDoNotCountAgainstTheRunLimit() {
+        for (int run = 0; run < 7; run++) {
+            service.run(owner.id(), Locale.GERMAN);
+        }
+
+        verify(advisor, never()).selectMoves(anyList(), any());
+    }
+
+    @Test
+    void runsFailingBeforeTheAiWasConsultedGiveTheirRunBudgetBack() {
+        seedSplitSchedule(west, east);
+        when(distanceMatrixService.matrix(anyList())).thenThrow(new RoutingUnavailableException("down"));
+
+        for (int run = 0; run < 7; run++) {
+            assertThatThrownBy(() -> service.run(owner.id(), Locale.GERMAN)).isInstanceOf(RoutingUnavailableException.class);
+        }
+    }
+
+    @Test
+    void rejectsASecondRunOfTheSameAccountWhileTheFirstIsStillRunning() {
+        seedSplitSchedule(west, east);
+        when(advisor.selectMoves(anyList(), any())).thenAnswer(invocation -> {
+            assertThatThrownBy(() -> service.run(owner.id(), Locale.GERMAN))
+                    .isInstanceOf(RateLimitExceededException.class)
+                    .extracting("reasonCode").isEqualTo(RateLimitExceededException.REASON_OPTIMIZATION_IN_PROGRESS);
+            return selectEveryCandidateOnDayTwo(invocation.getArgument(0));
+        });
+
+        OptimizationRunResponse response = service.run(owner.id(), Locale.GERMAN);
+
+        assertThat(response.proposals()).hasSize(1);
+        verify(advisor, times(1)).selectMoves(anyList(), any());
+        assertThat(service.run(owner.id(), Locale.GERMAN).proposals()).hasSize(1);
     }
 
     @Test

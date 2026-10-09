@@ -33,7 +33,7 @@
     },
     "banner": {
       "pending": "The AI has no open proposal. | The AI has one proposal that saves driving time. | The AI has {count} proposals that save driving time.",
-      "idle": "The AI can optimize your appointments from four weeks ahead by driving time and kilometres.",
+      "idle": "The AI can optimize your appointments from {minLeadDays} days ahead by driving time and kilometres.",
       "reviewButton": "Review proposals",
       "openButton": "Open optimization"
     }

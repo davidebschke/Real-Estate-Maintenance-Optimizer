@@ -57,6 +57,7 @@ test.describe('AI appointment optimization', () => {
   test('shows the backend message when an outdated proposal cannot be applied', async ({ page }) => {
     await mockPendingProposals(page, [proposalJson('proposal-1', 'Heizungswartung')])
     await page.route('**/api/optimizations/proposals/*/accept', async (route) => {
+      await mockPendingProposals(page, [])
       await route.fulfill({ status: 409, json: { message: 'Dieser Vorschlag ist veraltet.' } })
     })
     await page.goto('/optimization')

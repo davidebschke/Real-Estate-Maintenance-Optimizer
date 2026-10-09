@@ -6,8 +6,8 @@ import { useAuthStore } from '@/stores/auth'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { OptimizationProposal, OptimizationRun } from '@/types/optimization'
 
-/** HTTP statuses after which a decided proposal no longer belongs to the pending list: already decided or outdated (409) or gone (404). */
-const NO_LONGER_PENDING_STATUSES = [404, 409]
+/** HTTP statuses after which the pending list may be stale (the proposal was decided, expired or is gone, or the decision collided with another change), so it is reloaded from the backend. */
+const RELOAD_PENDING_STATUSES = [404, 409]
 
 /** Holds the AI optimization proposals awaiting the user's confirmation, the outcome of the latest run and the state of runs and decisions in flight. */
 export const useOptimizationStore = defineStore('optimization', () => {
@@ -22,37 +22,40 @@ export const useOptimizationStore = defineStore('optimization', () => {
   /** The localized message the backend gave for the last failed decision, e.g. an outdated proposal, or null if it gave none. */
   const decisionErrorMessage = ref<string | null>(null)
   const decidingProposalIds = ref<string[]>([])
-  /** Bumped by every fetch, run and reset(), so a response that arrives after a newer one or an account change is discarded. */
-  let latestChangeToken = 0
+  /** Bumped by every fetch, every finished run and reset(), so a list that a newer fetch or a run's result already replaced is discarded. */
+  let latestFetchToken = 0
+  /** Bumped by reset(), so a run or decision answered only after the account changed never touches the new account's data. */
+  let sessionEpoch = 0
 
   /** Loads every proposal still awaiting a decision, recording whether the request failed. */
   async function fetchPendingProposals() {
-    const requestToken = ++latestChangeToken
+    const requestToken = ++latestFetchToken
     try {
       const fetched = await optimizationService.fetchPendingProposals()
-      if (requestToken !== latestChangeToken) return
+      if (requestToken !== latestFetchToken) return
       pendingProposals.value = fetched
       hasLoadError.value = false
     } catch {
-      if (requestToken !== latestChangeToken) return
+      if (requestToken !== latestFetchToken) return
       hasLoadError.value = true
     }
   }
 
   /** Starts an optimization run whose proposals replace the pending ones, recording the backend's message if it fails and refreshing a demo account's remaining run afterwards. */
   async function startRun(): Promise<boolean> {
-    const requestToken = ++latestChangeToken
+    const requestEpoch = sessionEpoch
     isRunning.value = true
     hasRunError.value = false
     runErrorMessage.value = null
     try {
       const run = await optimizationService.startOptimizationRun()
-      if (requestToken !== latestChangeToken) return false
+      if (requestEpoch !== sessionEpoch) return false
+      latestFetchToken++
       lastRun.value = run
       pendingProposals.value = run.proposals
       return true
     } catch (error) {
-      if (requestToken !== latestChangeToken) return false
+      if (requestEpoch !== sessionEpoch) return false
       hasRunError.value = true
       runErrorMessage.value = getServerErrorMessage(error)
       return false
@@ -72,23 +75,23 @@ export const useOptimizationStore = defineStore('optimization', () => {
     return decide(id, optimizationService.rejectProposal)
   }
 
-  /** Sends a decision on one proposal, removing it from the pending list once decided or once the backend reports it is no longer pending, and recording the backend's message if the decision failed. */
+  /** Sends a decision on one proposal, removing it from the pending list once decided, recording the backend's message if the decision failed and reloading the pending list when the backend reports a conflict or a missing proposal, since only the backend knows whether it is still pending. */
   async function decide(id: string, request: (proposalId: string) => Promise<OptimizationProposal>): Promise<boolean> {
-    const requestToken = latestChangeToken
+    const requestEpoch = sessionEpoch
     decidingProposalIds.value = [...decidingProposalIds.value, id]
     try {
       await request(id)
-      if (requestToken !== latestChangeToken) return false
+      if (requestEpoch !== sessionEpoch) return false
       removePending(id)
       hasDecisionError.value = false
       decisionErrorMessage.value = null
       return true
     } catch (error) {
-      if (requestToken !== latestChangeToken) return false
+      if (requestEpoch !== sessionEpoch) return false
       hasDecisionError.value = true
       decisionErrorMessage.value = getServerErrorMessage(error)
-      if (axios.isAxiosError(error) && NO_LONGER_PENDING_STATUSES.includes(error.response?.status ?? 0)) {
-        removePending(id)
+      if (axios.isAxiosError(error) && RELOAD_PENDING_STATUSES.includes(error.response?.status ?? 0)) {
+        await fetchPendingProposals()
       }
       return false
     } finally {
@@ -107,7 +110,8 @@ export const useOptimizationStore = defineStore('optimization', () => {
 
   /** Forgets every proposal and run state, e.g. when the logged-in account changes. */
   function reset() {
-    latestChangeToken++
+    latestFetchToken++
+    sessionEpoch++
     pendingProposals.value = []
     lastRun.value = null
     isRunning.value = false

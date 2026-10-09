@@ -33,7 +33,7 @@ describe('OptimizationBanner', () => {
 
     expect(optimizationService.fetchPendingProposals).toHaveBeenCalledTimes(1)
     expect(wrapper.find('.optimization-banner__text').text()).toBe(
-      'Die KI kann Ihre Termine ab vier Wochen im Voraus nach Fahrzeit und Kilometern optimieren.',
+      'Die KI kann Ihre Termine ab 28 Tagen im Voraus nach Fahrzeit und Kilometern optimieren.',
     )
     expect(wrapper.find('.optimization-banner__action').text()).toBe('Zur Optimierung')
     expect(wrapper.classes()).not.toContain('optimization-banner--pending')

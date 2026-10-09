@@ -87,6 +87,32 @@ class OptimizationPlannerTest {
     }
 
     @Test
+    void neverPlansADayWithAnAppointmentWhoseLocationIsUnknown() {
+        PlanningVisit movable = visit("b-day-one", "B", DAY_ONE.atTime(10, 0), 60);
+        List<PlanningVisit> unknownStopOnTargetDay = new ArrayList<>(splitSchedule(movable));
+        unknownStopOnTargetDay.add(fixedVisit("unknown-day-two", null, DAY_TWO.atTime(12, 0), 60));
+        List<PlanningVisit> unknownStopOnOriginDay = new ArrayList<>(splitSchedule(movable));
+        unknownStopOnOriginDay.add(fixedVisit("unknown-day-one", null, DAY_ONE.atTime(14, 0), 60));
+
+        assertThat(planner.evaluateMove(unknownStopOnTargetDay, movable, DAY_TWO.atTime(9, 15), CONTEXT)).isEmpty();
+        assertThat(planner.evaluateMove(unknownStopOnOriginDay, movable, DAY_TWO.atTime(9, 15), CONTEXT)).isEmpty();
+        assertThat(planner.findMoveOptions(unknownStopOnTargetDay, CONTEXT)).isEmpty();
+    }
+
+    @Test
+    void keepsTheBufferToAnAppointmentRunningPastMidnightIntoTheTargetDay() {
+        LocalDate dayThree = DAY_TWO.plusDays(1);
+        PlanningVisit movable = visit("b-day-one", "B", DAY_ONE.atTime(10, 0), 60);
+        List<PlanningVisit> schedule = new ArrayList<>(splitSchedule(movable));
+        schedule.add(fixedVisit("b-day-three", "B", dayThree.atTime(12, 0), 60));
+        List<PlanningVisit> withOvernightVisit = new ArrayList<>(schedule);
+        withOvernightVisit.add(fixedVisit("overnight", "B", DAY_TWO.atTime(20, 0), 11 * 60 + 50));
+
+        assertThat(planner.evaluateMove(schedule, movable, dayThree.atTime(7, 0), CONTEXT)).isPresent();
+        assertThat(planner.evaluateMove(withOvernightVisit, movable, dayThree.atTime(7, 0), CONTEXT)).isEmpty();
+    }
+
+    @Test
     void leavesVisitsBeforeTheLeadTimeUntouchedAndNeverMovesIntoThatPeriod() {
         LocalDate tooSoon = TODAY.plusDays(26);
         PlanningVisit soonVisit = visit("b-soon", "B", tooSoon.atTime(10, 0), 60);

@@ -33,7 +33,7 @@
     },
     "banner": {
       "pending": "Die KI hat keinen offenen Vorschlag. | Die KI hat einen Vorschlag, der Fahrzeit spart. | Die KI hat {count} Vorschläge, die Fahrzeit sparen.",
-      "idle": "Die KI kann Ihre Termine ab vier Wochen im Voraus nach Fahrzeit und Kilometern optimieren.",
+      "idle": "Die KI kann Ihre Termine ab {minLeadDays} Tagen im Voraus nach Fahrzeit und Kilometern optimieren.",
       "reviewButton": "Vorschläge ansehen",
       "openButton": "Zur Optimierung"
     }
