@@ -85,6 +85,10 @@ test.describe('authentication', () => {
     expect(overflows).toBe(false)
 
     await page.getByRole('tab', { name: 'Demo-Account' }).click()
-    await expect(page.getByRole('button', { name: 'Demo-Account erstellen' })).toBeInViewport()
+    const createDemoButton = page.getByRole('button', { name: 'Demo-Account erstellen' })
+    await createDemoButton.scrollIntoViewIfNeeded()
+    await expect(createDemoButton).toBeInViewport({ ratio: 1 })
+    const demoTabOverflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
+    expect(demoTabOverflows).toBe(false)
   })
 })
