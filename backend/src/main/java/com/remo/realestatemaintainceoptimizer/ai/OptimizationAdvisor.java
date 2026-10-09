@@ -92,20 +92,18 @@ public class OptimizationAdvisor {
         String language = Locale.GERMAN.getLanguage().equals(locale.getLanguage()) ? "German" : "English";
         String userPrompt = "Write every reason in " + language + ".\n"
                 + jsonMapper.writeValueAsString(Map.of("candidates", candidates));
+        ChatResponse response;
         try {
-            ChatResponse response = chatModelProvider.getObject()
-                    .chat(SystemMessage.from(SYSTEM_PROMPT), UserMessage.from(userPrompt));
-            if (response == null || response.aiMessage() == null || response.aiMessage().text() == null) {
-                throw new AiUnavailableException("The AI model returned no text");
-            }
-            return response.aiMessage().text();
-        } catch (AiUnavailableException exception) {
-            log.warn("AI optimization answer was empty");
-            throw exception;
+            response = chatModelProvider.getObject().chat(SystemMessage.from(SYSTEM_PROMPT), UserMessage.from(userPrompt));
         } catch (RuntimeException exception) {
             log.warn("AI optimization request failed", exception);
             throw new AiUnavailableException("AI optimization request failed", exception);
         }
+        if (response == null || response.aiMessage() == null || response.aiMessage().text() == null) {
+            log.warn("AI optimization answer was empty");
+            throw new AiUnavailableException("The AI model returned no text");
+        }
+        return response.aiMessage().text();
     }
 
     private AdvisorAnswer parseAnswer(String answer) {
