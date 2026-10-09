@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePropertiesStore } from '@/stores/properties'
 import { useAuthStore } from '@/stores/auth'
+import { useTenantsStore } from '@/stores/tenants'
 import * as propertyService from '@/services/propertyService'
 import * as appointmentService from '@/services/appointmentService'
 import type { Property } from '@/types/property'
@@ -193,6 +194,17 @@ describe('usePropertiesStore', () => {
 
     await store.deleteProperty('2')
     expect(store.activeDetailPropertyId).toBeNull()
+  })
+
+  it('forgets the cached apartments of a deleted property', async () => {
+    vi.mocked(propertyService.deleteProperty).mockResolvedValue(undefined)
+    const store = usePropertiesStore()
+    store.properties = [createProperty({ id: '1' })]
+    useTenantsStore().apartmentsByProperty = { '1': [], '2': [] }
+
+    await store.deleteProperty('1')
+
+    expect(Object.keys(useTenantsStore().apartmentsByProperty)).toEqual(['2'])
   })
 
   it('closes both the create and edit dialog when the shared form dialog is closed', () => {

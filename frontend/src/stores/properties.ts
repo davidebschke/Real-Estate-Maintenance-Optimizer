@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import * as propertyService from '@/services/propertyService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useAuthStore } from '@/stores/auth'
+import { useTenantsStore } from '@/stores/tenants'
 import type { CreatePropertyPayload, Property } from '@/types/property'
 
 /** Holds every property (real-estate object) shared across the app. */
@@ -82,6 +83,7 @@ export const usePropertiesStore = defineStore('properties', () => {
     latestChangeToken++
     properties.value = properties.value.filter((property) => property.id !== id)
     if (activeDetailPropertyId.value === id) closeDetail()
+    useTenantsStore().forgetProperty(id)
     hasDeleteError.value = false
     await refreshAppointmentsAfterDelete()
     return true

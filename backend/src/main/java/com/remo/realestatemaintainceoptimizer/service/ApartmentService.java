@@ -73,7 +73,8 @@ public class ApartmentService {
     public ApartmentResponse create(String ownerId, String propertyId, ApartmentWithTenantRequest request) {
         Property property = loadPropertyOrThrow(ownerId, propertyId);
         if (apartmentRepository.countByPropertyId(propertyId) >= MAX_APARTMENTS_PER_PROPERTY) {
-            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT);
+            throw new TenantLimitExceededException(
+                    TenantLimitExceededException.REASON_APARTMENT_LIMIT, MAX_APARTMENTS_PER_PROPERTY);
         }
         ApartmentDetailsRequest details = request.apartment();
         Apartment apartment = new Apartment(
@@ -89,13 +90,14 @@ public class ApartmentService {
     }
 
     /**
-     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants.
+     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
      */
     public ApartmentResponse addTenant(String ownerId, String apartmentId, TenantDetailsRequest request) {
-        Apartment apartment = apartmentRepository.findByIdAndPropertyOwnerId(apartmentId, ownerId)
+        Apartment apartment = apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
                 .orElseThrow(() -> new ApartmentNotFoundException(apartmentId));
         if (apartment.tenants().size() >= MAX_TENANTS_PER_APARTMENT) {
-            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_TENANT_LIMIT);
+            throw new TenantLimitExceededException(
+                    TenantLimitExceededException.REASON_TENANT_LIMIT, MAX_TENANTS_PER_APARTMENT);
         }
         addTenantTo(apartment, request);
         return toResponse(apartment);
@@ -119,11 +121,18 @@ public class ApartmentService {
     }
 
     /**
-     * Deletes the given tenant, together with their apartment if they were its last tenant, unwrapping the lazy apartment proxy first because Spring Data would mistake it for a new entity and skip the delete.
+     * Deletes the given tenant, together with their apartment if they were its last tenant; the apartment is locked meanwhile so concurrent deletions cannot leave it without tenants, and unwrapped from its lazy proxy because Spring Data would mistake that for a new entity and skip the delete.
      */
     public void deleteTenant(String ownerId, String tenantId) {
-        Tenant tenant = loadTenantOrThrow(ownerId, tenantId);
-        Apartment apartment = Hibernate.unproxy(tenant.apartment(), Apartment.class);
+        String apartmentId = loadTenantOrThrow(ownerId, tenantId).apartment().id();
+        Apartment apartment = Hibernate.unproxy(
+                apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
+                        .orElseThrow(() -> new ApartmentNotFoundException(apartmentId)),
+                Apartment.class);
+        Tenant tenant = apartment.tenants().stream()
+                .filter(candidate -> candidate.id().equals(tenantId))
+                .findFirst()
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
         if (apartment.hasSingleTenant()) {
             apartmentRepository.delete(apartment);
         } else {

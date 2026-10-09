@@ -130,13 +130,13 @@ describe('PropertyList', () => {
     expect(propertiesStore.isCreateDialogOpen).toBe(true)
   })
 
-  it('opens the property detail view when a card header is clicked', async () => {
+  it('opens the property detail view when a card name is clicked', async () => {
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
     const wrapper = mount(PropertyList, { global: globalMountOptions })
     await flushPromises()
     const propertiesStore = usePropertiesStore()
 
-    await wrapper.find('.property-card__header').trigger('click')
+    await wrapper.find('.property-card__details').trigger('click')
 
     expect(propertiesStore.activeDetailPropertyId).toBe('1')
   })

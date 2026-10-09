@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
@@ -53,6 +53,9 @@ const { touched, markTouched, resetTouched } = useTouchedFields([
   'coldRent',
   'additionalCosts',
 ])
+
+/** Whether a save request is in flight, which blocks submitting the same form a second time. */
+const isSubmitting = ref(false)
 
 const mode = computed(() => store.formTarget?.mode ?? 'create')
 
@@ -115,16 +118,21 @@ function resetForm() {
 async function submit() {
   const target = store.formTarget
   const apartment = apartmentDetails.value
-  if (!isValid.value || !target || !apartment) return
+  if (!isValid.value || !target || !apartment || isSubmitting.value) return
 
   const tenant = { firstName: form.firstName.trim(), lastName: form.lastName.trim() }
+  isSubmitting.value = true
   let succeeded: boolean
-  if (target.mode === 'create') {
-    succeeded = await store.createApartment(target.propertyId, { apartment, tenant })
-  } else if (target.mode === 'add') {
-    succeeded = await store.addTenant(target.apartment.propertyId, target.apartment.id, tenant)
-  } else {
-    succeeded = await store.updateTenant(target.apartment.propertyId, target.tenant.id, { apartment, tenant })
+  try {
+    if (target.mode === 'create') {
+      succeeded = await store.createApartment(target.propertyId, { apartment, tenant })
+    } else if (target.mode === 'add') {
+      succeeded = await store.addTenant(target.apartment.propertyId, target.apartment.id, tenant)
+    } else {
+      succeeded = await store.updateTenant(target.apartment.propertyId, target.tenant.id, { apartment, tenant })
+    }
+  } finally {
+    isSubmitting.value = false
   }
 
   if (succeeded) visible.value = false
@@ -189,6 +197,7 @@ function cancel() {
             input-id="tenant-floor"
             :min="FLOOR_MIN"
             :max="FLOOR_MAX"
+            :max-fraction-digits="0"
             :use-grouping="false"
             :disabled="isApartmentReadOnly"
             :invalid="isFloorMissing"
@@ -253,12 +262,14 @@ function cancel() {
       </div>
     </section>
 
-    <p v-if="store.hasSaveError" class="tenant-form-dialog__error">{{ t('tenants.form.error') }}</p>
+    <p v-if="store.hasSaveError" class="tenant-form-dialog__error">
+      {{ store.lastChangeErrorMessage ?? t('tenants.form.error') }}
+    </p>
 
     <p class="tenant-form-dialog__required-legend">{{ t('tenants.form.requiredFieldsLegend') }}</p>
 
     <div class="tenant-form-dialog__actions">
-      <Button :label="submitLabel" :disabled="!isValid" @click="submit" />
+      <Button :label="submitLabel" :disabled="!isValid || isSubmitting" @click="submit" />
       <button type="button" class="tenant-form-dialog__cancel" @click="cancel">
         {{ t('tenants.form.cancel') }}
       </button>

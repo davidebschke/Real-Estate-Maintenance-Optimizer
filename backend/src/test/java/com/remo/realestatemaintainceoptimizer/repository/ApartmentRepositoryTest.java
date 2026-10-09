@@ -121,6 +121,17 @@ class ApartmentRepositoryTest {
     }
 
     @Test
+    void findsAnApartmentForUpdateOnlyForTheOwningAccount() {
+        User otherOwner = TestAccounts.saveRegularAccount(userRepository);
+        apartmentRepository.save(newApartment("apartment-1"));
+        flushAndClear();
+
+        assertThat(apartmentRepository.findByIdAndOwnerIdForUpdate("apartment-1", owner.id())).isPresent();
+        assertThat(apartmentRepository.findByIdAndOwnerIdForUpdate("apartment-1", otherOwner.id())).isEmpty();
+        assertThat(apartmentRepository.findByIdAndOwnerIdForUpdate("unknown", owner.id())).isEmpty();
+    }
+
+    @Test
     void removingATenantFromItsApartmentDeletesIt() {
         Apartment apartment = newApartment("apartment-1");
         apartment.addTenant("tenant-1", "Erika", "Mustermann");

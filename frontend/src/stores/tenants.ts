@@ -1,6 +1,7 @@
 import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as apartmentService from '@/services/apartmentService'
+import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { Apartment, ApartmentWithTenantPayload, Tenant, TenantDetails } from '@/types/apartment'
 
 /** What the shared tenant form is currently doing: creating a tenant with a new apartment, adding a tenant to an existing apartment or editing a tenant together with their apartment. */
@@ -15,15 +16,18 @@ export const useTenantsStore = defineStore('tenants', () => {
   const hasLoadError = ref(false)
   const hasSaveError = ref(false)
   const hasDeleteError = ref(false)
+  /** The localized message the backend gave for the last failed save or delete, e.g. a reached size limit, or null if it gave none. */
+  const lastChangeErrorMessage = ref<string | null>(null)
   const formTarget = ref<TenantFormTarget | null>(null)
   /** Bumped by every fetch and by reset(), so a response that arrives after a newer fetch or an account change is discarded. */
   let latestChangeToken = 0
   /** Bumped by reset(), so a save or delete answered only after the account changed never touches the new account's data. */
   let sessionEpoch = 0
 
-  /** Loads the apartments of the given property from the backend, recording whether the request failed and clearing a stale delete error; ignores the result if a newer fetch or an account change already happened. */
+  /** Loads the apartments of the given property from the backend, recording whether the request failed and clearing stale load and delete errors of a previously viewed property; ignores the result if a newer fetch or an account change already happened. */
   async function fetchApartments(propertyId: string) {
     const requestToken = ++latestChangeToken
+    hasLoadError.value = false
     hasDeleteError.value = false
     try {
       const fetched = await apartmentService.fetchApartments(propertyId)
@@ -41,14 +45,23 @@ export const useTenantsStore = defineStore('tenants', () => {
     const requestEpoch = sessionEpoch
     try {
       await request()
-    } catch {
+    } catch (error) {
       errorFlag.value = true
+      lastChangeErrorMessage.value = getServerErrorMessage(error)
       return false
     }
     if (requestEpoch !== sessionEpoch) return false
     errorFlag.value = false
+    lastChangeErrorMessage.value = null
     await fetchApartments(propertyId)
     return true
+  }
+
+  /** Forgets the cached apartments of a property that no longer exists. */
+  function forgetProperty(propertyId: string) {
+    apartmentsByProperty.value = Object.fromEntries(
+      Object.entries(apartmentsByProperty.value).filter(([cachedPropertyId]) => cachedPropertyId !== propertyId),
+    )
   }
 
   /** Creates a new apartment in the given property together with its first tenant. */
@@ -74,18 +87,21 @@ export const useTenantsStore = defineStore('tenants', () => {
   /** Opens the tenant form for creating a tenant together with a new apartment in the given property. */
   function openCreateDialog(propertyId: string) {
     hasSaveError.value = false
+    lastChangeErrorMessage.value = null
     formTarget.value = { mode: 'create', propertyId }
   }
 
   /** Opens the tenant form for adding a further tenant to the given apartment. */
   function openAddTenantDialog(apartment: Apartment) {
     hasSaveError.value = false
+    lastChangeErrorMessage.value = null
     formTarget.value = { mode: 'add', apartment }
   }
 
   /** Opens the tenant form pre-filled for editing the given tenant together with their apartment. */
   function openEditDialog(apartment: Apartment, tenant: Tenant) {
     hasSaveError.value = false
+    lastChangeErrorMessage.value = null
     formTarget.value = { mode: 'edit', apartment, tenant }
   }
 
@@ -109,6 +125,7 @@ export const useTenantsStore = defineStore('tenants', () => {
     apartmentsByProperty.value = {}
     hasLoadError.value = false
     hasSaveError.value = false
+    lastChangeErrorMessage.value = null
     hasDeleteError.value = false
     formTarget.value = null
   }
@@ -118,6 +135,7 @@ export const useTenantsStore = defineStore('tenants', () => {
     hasLoadError,
     hasSaveError,
     hasDeleteError,
+    lastChangeErrorMessage,
     formTarget,
     isFormDialogOpen,
     fetchApartments,
@@ -125,6 +143,7 @@ export const useTenantsStore = defineStore('tenants', () => {
     addTenant,
     updateTenant,
     deleteTenant,
+    forgetProperty,
     openCreateDialog,
     openAddTenantDialog,
     openEditDialog,

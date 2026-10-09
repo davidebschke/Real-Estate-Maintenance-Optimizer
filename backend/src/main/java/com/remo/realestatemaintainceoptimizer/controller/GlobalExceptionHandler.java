@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TenantLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleTenantLimitExceeded(TenantLimitExceededException exception, Locale locale) {
-        String message = messageSource.getMessage("tenant.error." + exception.reasonCode(), null, locale);
+        String message = messageSource.getMessage("tenant.error." + exception.reasonCode(), new Object[] {exception.limit()}, locale);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
     }
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { AxiosError, type AxiosResponse } from 'axios'
 import PrimeVue from 'primevue/config'
 import Button from 'primevue/button'
 import { i18n } from '@/i18n'
@@ -212,6 +213,46 @@ describe('TenantFormDialog', () => {
       'Der Mieter konnte nicht gespeichert werden.',
     )
     expect(wrapper.emitted('update:visible')?.some(([isVisible]) => isVisible === false)).toBeFalsy()
+  })
+
+  it('shows the localized message the backend gave for a failed save', async () => {
+    const limitError = new AxiosError('Request failed with status code 409')
+    limitError.response = { status: 409, data: { message: 'Eine Wohnung kann höchstens 10 Mieter haben.' } } as AxiosResponse
+    vi.mocked(apartmentService.createApartment).mockRejectedValue(limitError)
+    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
+    await fillAllFields()
+
+    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    await flushPromises()
+
+    expect(document.body.querySelector('.tenant-form-dialog__error')?.textContent?.trim()).toBe(
+      'Eine Wohnung kann höchstens 10 Mieter haben.',
+    )
+  })
+
+  it('sends the form only once when the submit button is clicked twice in a row', async () => {
+    let resolveCreate!: (apartment: Apartment) => void
+    vi.mocked(apartmentService.createApartment).mockImplementation(
+      () => new Promise((resolve) => (resolveCreate = resolve)),
+    )
+    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
+    await fillAllFields()
+
+    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
+    resolveCreate(createApartment())
+    await flushPromises()
+
+    expect(apartmentService.createApartment).toHaveBeenCalledOnce()
+  })
+
+  it('shows no decimals for the floor', async () => {
+    await mountDialog((store) => store.openCreateDialog('property-1'))
+
+    await enter('#tenant-floor', '2,5')
+
+    expect(Number.isInteger(Number((bodyField('#tenant-floor').element as HTMLInputElement).value.replace(',', '.')))).toBe(true)
   })
 
   it('closes without saving when cancelled', async () => {

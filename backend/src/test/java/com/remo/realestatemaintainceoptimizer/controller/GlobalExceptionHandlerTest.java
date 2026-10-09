@@ -159,12 +159,12 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/apartment-limit-reached")
         String failWithApartmentLimitReached() {
-            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT);
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT, 200);
         }
 
         @GetMapping("/tenant-limit-reached")
         String failWithTenantLimitReached() {
-            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_TENANT_LIMIT);
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_TENANT_LIMIT, 10);
         }
 
         @GetMapping("/route-quota-exhausted")

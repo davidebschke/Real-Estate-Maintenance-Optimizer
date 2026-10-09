@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { AxiosError, type AxiosResponse } from 'axios'
 import { useTenantsStore } from '@/stores/tenants'
 import * as apartmentService from '@/services/apartmentService'
 import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
@@ -209,6 +210,49 @@ describe('useTenantsStore', () => {
     store.isFormDialogOpen = false
 
     expect(store.formTarget).toBeNull()
+  })
+
+  it('keeps the localized message of a failed save and clears it with the next successful one', async () => {
+    const limitError = new AxiosError('Request failed with status code 409')
+    limitError.response = { status: 409, data: { message: 'An apartment can have at most 10 tenants.' } } as AxiosResponse
+    vi.mocked(apartmentService.addTenant).mockRejectedValueOnce(limitError)
+    const store = useTenantsStore()
+
+    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    expect(store.lastChangeErrorMessage).toBe('An apartment can have at most 10 tenants.')
+
+    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    expect(store.lastChangeErrorMessage).toBeNull()
+  })
+
+  it('has no message for a failure without a backend response', async () => {
+    vi.mocked(apartmentService.createApartment).mockRejectedValue(new Error('Network Error'))
+    const store = useTenantsStore()
+
+    await store.createApartment('property-1', payload)
+
+    expect(store.hasSaveError).toBe(true)
+    expect(store.lastChangeErrorMessage).toBeNull()
+  })
+
+  it('clears a stale load error as soon as another property is loaded', async () => {
+    vi.mocked(apartmentService.fetchApartments).mockRejectedValueOnce(new Error('Network Error'))
+    const store = useTenantsStore()
+    await store.fetchApartments('property-1')
+    expect(store.hasLoadError).toBe(true)
+
+    await store.fetchApartments('property-2')
+
+    expect(store.hasLoadError).toBe(false)
+  })
+
+  it('forgets the cached apartments of a deleted property only', () => {
+    const store = useTenantsStore()
+    store.apartmentsByProperty = { 'property-1': [createApartment()], 'property-2': [createApartment({ id: 'other' })] }
+
+    store.forgetProperty('property-1')
+
+    expect(Object.keys(store.apartmentsByProperty)).toEqual(['property-2'])
   })
 
   it('forgets everything on reset', async () => {
