@@ -16,6 +16,7 @@ const { t } = useI18n()
     <Button
       class="property-card-controls__tenants"
       :label="t('properties.controls.manageTenants')"
+      :aria-label="t('properties.controls.manageTenants')"
       icon="pi pi-users"
       severity="secondary"
       outlined
@@ -25,6 +26,7 @@ const { t } = useI18n()
     <Button
       class="property-card-controls__edit"
       :label="t('properties.controls.edit')"
+      :aria-label="t('properties.controls.edit')"
       icon="pi pi-pencil"
       severity="secondary"
       outlined
@@ -34,6 +36,7 @@ const { t } = useI18n()
     <Button
       class="property-card-controls__delete"
       :label="t('properties.controls.delete')"
+      :aria-label="t('properties.controls.delete')"
       icon="pi pi-trash"
       severity="danger"
       outlined

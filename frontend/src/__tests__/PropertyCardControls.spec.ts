@@ -16,6 +16,7 @@ describe('PropertyCardControls', () => {
 
     expect(wrapper.find('[role="group"]').attributes('aria-label')).toBe('Objektverwaltung')
     expect(wrapper.find('.property-card-controls__tenants').text()).toBe('Mieter verwalten')
+    expect(wrapper.find('.property-card-controls__tenants').attributes('aria-label')).toBe('Mieter verwalten')
     expect(wrapper.find('.property-card-controls__edit').text()).toBe('Bearbeiten')
     expect(wrapper.find('.property-card-controls__delete').text()).toBe('Löschen')
   })

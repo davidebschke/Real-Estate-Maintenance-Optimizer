@@ -1,11 +1,27 @@
 .property-card-controls {
   border-top: 1px solid var(--remo-calendar-border-color, #24282e);
+  container-type: inline-size;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
   padding-top: 1.125rem;
 }
 
-.property-card-controls__delete {
-  margin-left: auto;
+.property-card-controls :deep(.p-button) {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 0.5rem;
+}
+
+.property-card-controls :deep(.p-button-label) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* below this width the three labelled buttons no longer fit in one row, so only their icons remain */
+@container (max-width: 20rem) {
+  .property-card-controls :deep(.p-button-label) {
+    display: none;
+  }
 }
