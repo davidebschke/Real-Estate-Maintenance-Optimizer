@@ -19,6 +19,7 @@ describe('NavigationMenu', () => {
 
     expect(wrapper.text()).toContain('Übersicht')
     expect(wrapper.text()).toContain('Kalender')
+    expect(wrapper.text()).toContain('KI-Optimierung')
     expect(wrapper.text()).toContain('Statistik')
     expect(wrapper.text()).toContain('Immobilien')
   })
@@ -45,7 +46,7 @@ describe('NavigationMenu', () => {
     })
     await router.isReady()
 
-    const statisticsLink = wrapper.findAll('.navigation-menu__link')[2]
+    const statisticsLink = wrapper.findAll('.navigation-menu__link').find((link) => link.text() === 'Statistik')
 
     expect(statisticsLink!.classes()).toContain('router-link-exact-active')
   })
@@ -58,7 +59,7 @@ describe('NavigationMenu', () => {
     })
     await router.isReady()
 
-    const statisticsLink = wrapper.findAll('.navigation-menu__link')[2]
+    const statisticsLink = wrapper.findAll('.navigation-menu__link').find((link) => link.text() === 'Statistik')
 
     expect(statisticsLink!.classes()).toContain('router-link-active')
   })

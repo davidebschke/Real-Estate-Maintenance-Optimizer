@@ -16,6 +16,7 @@ const loggedInUser = {
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
   remainingTenantCreations: null,
+  remainingAiOptimizations: null,
   appointmentBufferMinutes: 15,
 }
 

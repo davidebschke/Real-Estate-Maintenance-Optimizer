@@ -6,8 +6,10 @@ import com.remo.realestatemaintainceoptimizer.entity.HistoryEventType;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -23,9 +25,14 @@ public class DemoDataSeeder {
 
     static final int APPOINTMENT_COUNT = 30;
     static final int SCHEDULE_DAYS = 21;
+    static final int OPTIMIZABLE_FIRST_DAY_OFFSET = 35;
+    static final int OPTIMIZABLE_DAY_COUNT = 6;
+    static final int OPTIMIZABLE_DAY_SPACING = 3;
+    static final int OPTIMIZABLE_PROPERTY_STRIDE = 2;
 
     private static final List<LocalTime> DAILY_START_TIMES =
             List.of(LocalTime.of(8, 0), LocalTime.of(11, 0), LocalTime.of(14, 0));
+    private static final List<LocalTime> OPTIMIZABLE_START_TIMES = List.of(LocalTime.of(8, 0), LocalTime.of(14, 0));
 
     private static final List<PropertyTemplate> PROPERTY_TEMPLATES = List.of(
             new PropertyTemplate("Wohnanlage Sonnenhof", "Aachener Str. 512, 50933 Köln", 50.937634, 6.8922212),
@@ -66,7 +73,8 @@ public class DemoDataSeeder {
 
     /**
      * Creates every example property and appointment for the given account, scheduling the appointments over the
-     * {@value #SCHEDULE_DAYS} days starting at {@code firstDay}.
+     * {@value #SCHEDULE_DAYS} days starting at {@code firstDay} plus a block of deliberately unfavourably spread
+     * appointments inside the AI optimization's planning window.
      */
     public void seed(String ownerId, LocalDate firstDay) {
         List<Property> properties = PROPERTY_TEMPLATES.stream()
@@ -86,23 +94,51 @@ public class DemoDataSeeder {
             AppointmentTemplate template = APPOINTMENT_TEMPLATES.get(index % APPOINTMENT_TEMPLATES.size());
             LocalDate day = firstDay.plusDays((long) index * SCHEDULE_DAYS / APPOINTMENT_COUNT);
             var start = day.atTime(DAILY_START_TIMES.get(index % DAILY_START_TIMES.size()));
-
-            appointments.add(new Appointment(
-                    UUID.randomUUID().toString(),
-                    null,
-                    template.title(),
-                    properties.get(index % properties.size()),
-                    template.description(),
-                    start,
-                    start.plusMinutes(template.durationMinutes()),
-                    template.locked(),
-                    false,
-                    null,
-                    template.materials(),
-                    List.of(new HistoryEntry(createdAt, HistoryEventType.CREATED, List.of())),
-                    null));
+            appointments.add(newAppointment(template, properties.get(index % properties.size()), start, createdAt));
         }
+        appointments.addAll(optimizableAppointments(properties, firstDay, createdAt));
         appointmentRepository.saveAll(appointments);
+    }
+
+    /**
+     * Returns {@value #OPTIMIZABLE_DAY_COUNT} days with two appointments each, starting {@value #OPTIMIZABLE_FIRST_DAY_OFFSET}
+     * days after {@code firstDay} and skipping Sundays, that pair far-apart properties on the same day while the same
+     * property recurs on other days, so the AI optimization has route savings to find.
+     */
+    private List<Appointment> optimizableAppointments(List<Property> properties, LocalDate firstDay, Instant createdAt) {
+        List<Appointment> appointments = new ArrayList<>();
+        LocalDate day = firstDay.plusDays(OPTIMIZABLE_FIRST_DAY_OFFSET);
+        for (int dayIndex = 0; dayIndex < OPTIMIZABLE_DAY_COUNT; dayIndex++) {
+            if (day.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                day = day.plusDays(1);
+            }
+            for (int slot = 0; slot < OPTIMIZABLE_START_TIMES.size(); slot++) {
+                int templateIndex = (dayIndex * OPTIMIZABLE_START_TIMES.size() + slot) % APPOINTMENT_TEMPLATES.size();
+                Property property = properties.get((dayIndex + slot * OPTIMIZABLE_PROPERTY_STRIDE) % properties.size());
+                appointments.add(newAppointment(
+                        APPOINTMENT_TEMPLATES.get(templateIndex), property, day.atTime(OPTIMIZABLE_START_TIMES.get(slot)), createdAt));
+            }
+            day = day.plusDays(OPTIMIZABLE_DAY_SPACING);
+        }
+        return appointments;
+    }
+
+    private static Appointment newAppointment(
+            AppointmentTemplate template, Property property, LocalDateTime start, Instant createdAt) {
+        return new Appointment(
+                UUID.randomUUID().toString(),
+                null,
+                template.title(),
+                property,
+                template.description(),
+                start,
+                start.plusMinutes(template.durationMinutes()),
+                template.locked(),
+                false,
+                null,
+                template.materials(),
+                List.of(new HistoryEntry(createdAt, HistoryEventType.CREATED, List.of())),
+                null);
     }
 
     private record PropertyTemplate(String name, String address, double latitude, double longitude) {

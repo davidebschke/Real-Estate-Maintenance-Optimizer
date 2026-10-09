@@ -6,9 +6,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.AiDisabledException;
+import com.remo.realestatemaintainceoptimizer.exception.AiUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotPendingException;
+import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutdatedException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
@@ -25,7 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Verifies that persistence conflicts surfacing at commit time are answered with a localized 409 instead of a generic 500, and authentication and limit failures with their localized 401, 403 and 429.
+ * Verifies that persistence conflicts surfacing at commit time are answered with a localized 409 instead of a generic 500, authentication and limit failures with their localized 401, 403 and 429, and AI optimization failures with their localized 404, 409, 501 and 503.
  */
 class GlobalExceptionHandlerTest {
 
@@ -151,8 +156,121 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message", equalTo("An apartment can have at most 10 tenants.")));
     }
 
+    @Test
+    void disabledAiReturnsALocalizedNotImplemented() throws Exception {
+        mockMvc.perform(get("/ai-disabled").header("Accept-Language", "de"))
+                .andExpect(status().isNotImplemented())
+                .andExpect(jsonPath("$.message", equalTo("Die KI-Optimierung ist auf diesem Server nicht aktiviert.")));
+    }
+
+    @Test
+    void anUnavailableAiReturnsALocalizedServiceUnavailable() throws Exception {
+        mockMvc.perform(get("/ai-unavailable").header("Accept-Language", "en"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "The AI optimization is unavailable right now. Please try again later.")));
+    }
+
+    @Test
+    void anUnknownOptimizationProposalReturnsALocalizedNotFound() throws Exception {
+        mockMvc.perform(get("/proposal-not-found").header("Accept-Language", "en"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message", equalTo("No optimization proposal exists with id proposal-1.")));
+    }
+
+    @Test
+    void anAlreadyDecidedOptimizationProposalReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/proposal-not-pending").header("Accept-Language", "de"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Über diesen Optimierungsvorschlag wurde bereits entschieden.")));
+    }
+
+    @Test
+    void anOutdatedOptimizationProposalReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/proposal-outdated").header("Accept-Language", "en"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("This proposal is outdated because the schedule changed in the "
+                        + "meantime. Please start a new optimization.")));
+    }
+
+    @Test
+    void anExhaustedAiOptimizationLimitReturnsALocalizedForbidden() throws Exception {
+        mockMvc.perform(get("/ai-optimization-quota-exceeded").header("Accept-Language", "de"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", equalTo("Ein Demo-Account kann die KI-Optimierung nur einmal nutzen.")));
+    }
+
+    @Test
+    void tooManyOptimizationRunsReturnALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/too-many-optimizations").header("Accept-Language", "en"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo("Too many optimization runs. Please try again in an hour.")));
+    }
+
+    @Test
+    void anExhaustedDailyOptimizationQuotaReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/optimization-quota-exhausted").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Das Tageslimit für Optimierungsläufe ist erreicht. Bitte versuchen Sie es morgen erneut.")));
+    }
+
+    @Test
+    void aRunningOptimizationReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/optimization-in-progress").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Für diesen Account läuft bereits eine Optimierung. Bitte warten Sie auf ihr Ergebnis.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/optimization-in-progress")
+        void optimizationInProgress() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_IN_PROGRESS);
+        }
+
+        @GetMapping("/ai-disabled")
+        void aiDisabled() {
+            throw new AiDisabledException();
+        }
+
+        @GetMapping("/ai-unavailable")
+        void aiUnavailable() {
+            throw new AiUnavailableException("AI optimization request failed");
+        }
+
+        @GetMapping("/proposal-not-found")
+        void proposalNotFound() {
+            throw new OptimizationProposalNotFoundException("proposal-1");
+        }
+
+        @GetMapping("/proposal-not-pending")
+        void proposalNotPending() {
+            throw new OptimizationProposalNotPendingException("proposal-1");
+        }
+
+        @GetMapping("/proposal-outdated")
+        void proposalOutdated() {
+            throw new OptimizationProposalOutdatedException("proposal-1");
+        }
+
+        @GetMapping("/ai-optimization-quota-exceeded")
+        void aiOptimizationQuotaExceeded() {
+            throw new CreationQuotaExceededException(CreationQuotaExceededException.RESOURCE_AI_OPTIMIZATION);
+        }
+
+        @GetMapping("/too-many-optimizations")
+        void tooManyOptimizations() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_OPTIMIZATIONS);
+        }
+
+        @GetMapping("/optimization-quota-exhausted")
+        void optimizationQuotaExhausted() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_QUOTA_EXHAUSTED);
+        }
 
         @GetMapping("/apartment-not-found")
         String failWithApartmentNotFound() {

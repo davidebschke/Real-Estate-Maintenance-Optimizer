@@ -473,6 +473,40 @@ class AppointmentServiceTest {
     }
 
     @Test
+    void applyingAnOptimizedScheduleMovesTheAppointmentAndRecordsItAsAnOptimization() {
+        AppointmentResponse created = service.create(owner.id(), createRequest(false, null));
+        LocalDateTime newStart = created.start().plusDays(1);
+
+        AppointmentResponse moved = service.applyOptimizedSchedule(owner.id(), created.id(), new MoveAppointmentRequest(newStart, 120));
+
+        assertThat(moved.start()).isEqualTo(newStart);
+        assertThat(moved.history().getLast().message())
+                .isEqualTo("Moved by the AI optimization from 11.08.2026 13:00–15:00 to 12.08.2026 13:00–15:00.");
+        assertThat(repository.findById(created.id()).orElseThrow().recurrenceAnchor()).isEqualTo(newStart);
+    }
+
+    @Test
+    void applyingOptimizedSchedulesToARecurringOccurrenceKeepsItsOriginallyPlannedStartAsAnchor() {
+        AppointmentResponse firstOccurrence = service.create(owner.id(), createRequest(true, 3));
+        LocalDateTime originalStart = firstOccurrence.start();
+
+        service.applyOptimizedSchedule(owner.id(), firstOccurrence.id(), new MoveAppointmentRequest(originalStart.plusDays(2), 120));
+        service.applyOptimizedSchedule(owner.id(), firstOccurrence.id(), new MoveAppointmentRequest(originalStart.plusDays(4), 120));
+
+        assertThat(repository.findById(firstOccurrence.id()).orElseThrow().recurrenceAnchor()).isEqualTo(originalStart);
+    }
+
+    @Test
+    void applyingAnOptimizedScheduleToALockedAppointmentIsRejected() {
+        AppointmentResponse created = service.create(owner.id(), new CreateAppointmentRequest(
+                "TÜV-Termin", "property-1", "", LocalDateTime.of(2026, 8, 11, 9, 0), 60, true, false, null, List.of()));
+
+        assertThatThrownBy(() -> service.applyOptimizedSchedule(
+                owner.id(), created.id(), new MoveAppointmentRequest(created.start().plusDays(1), 60)))
+                .isInstanceOf(AppointmentLockedException.class);
+    }
+
+    @Test
     void movingALockedAppointmentIsRejected() {
         CreateAppointmentRequest lockedRequest = new CreateAppointmentRequest(
                 "TÜV-Termin", "property-1", "Pflichttermin",

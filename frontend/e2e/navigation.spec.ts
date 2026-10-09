@@ -16,6 +16,10 @@ test.describe('main navigation', () => {
     await expect(page.locator('.calendar-toolbar')).toBeVisible()
     await expect(page).toHaveURL('/calendar')
 
+    await page.getByRole('link', { name: 'KI-Optimierung', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'KI-Terminoptimierung' })).toBeVisible()
+    await expect(page).toHaveURL('/optimization')
+
     await page.getByRole('link', { name: 'Immobilien' }).click()
     await expect(page.getByRole('heading', { name: 'Objekte' })).toBeVisible()
     await expect(page).toHaveURL('/properties')

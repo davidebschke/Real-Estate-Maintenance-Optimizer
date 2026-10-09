@@ -8,9 +8,11 @@ import com.remo.realestatemaintainceoptimizer.dto.AppointmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 /**
- * Verifies that the demo example data consists of five located properties and thirty appointments spread over three weeks, all owned by the seeded account.
+ * Verifies that the demo example data consists of five located properties, thirty appointments spread over three weeks and twelve appointments inside the AI optimization window, all owned by the seeded account.
  */
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
@@ -65,7 +67,9 @@ class DemoDataSeederTest {
     void spreadsThirtyAppointmentsOverTheThreeWeeksStartingAtTheFirstDay() {
         seeder.seed(owner.id(), FIRST_DAY);
 
-        List<AppointmentResponse> appointments = appointmentService.listAll(owner.id());
+        List<AppointmentResponse> appointments = appointmentService.listAll(owner.id()).stream()
+                .filter(appointment -> appointment.start().toLocalDate().isBefore(FIRST_DAY.plusDays(21)))
+                .toList();
         assertThat(appointments).hasSize(30);
         assertThat(appointments.getFirst().start().toLocalDate()).isEqualTo(FIRST_DAY);
         assertThat(appointments.getLast().start().toLocalDate()).isBefore(FIRST_DAY.plusDays(21));
@@ -83,7 +87,24 @@ class DemoDataSeederTest {
         Set<?> distinctStarts = appointmentService.listAll(owner.id()).stream()
                 .map(AppointmentResponse::start)
                 .collect(Collectors.toSet());
-        assertThat(distinctStarts).hasSize(30);
+        assertThat(distinctStarts).hasSize(42);
+    }
+
+    @Test
+    void addsTwelveAppointmentsOnSixWorkingDaysInsideTheOptimizationWindowPairingDifferentProperties() {
+        seeder.seed(owner.id(), FIRST_DAY);
+
+        List<AppointmentResponse> optimizable = appointmentService.listAll(owner.id()).stream()
+                .filter(appointment -> !appointment.start().toLocalDate().isBefore(FIRST_DAY.plusDays(28)))
+                .toList();
+        assertThat(optimizable).hasSize(12);
+        assertThat(optimizable).allSatisfy(appointment ->
+                assertThat(appointment.start().getDayOfWeek()).isNotEqualTo(DayOfWeek.SUNDAY));
+        Map<LocalDate, List<AppointmentResponse>> byDay = optimizable.stream()
+                .collect(Collectors.groupingBy(appointment -> appointment.start().toLocalDate()));
+        assertThat(byDay).hasSize(6);
+        assertThat(byDay.values()).allSatisfy(dayAppointments -> assertThat(
+                dayAppointments.stream().map(AppointmentResponse::propertyId).distinct()).hasSize(2));
     }
 
     @Test

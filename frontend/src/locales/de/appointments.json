@@ -42,10 +42,6 @@
         "label": "Material für den Tag",
         "placeholder": "+ Material, Enter"
       },
-      "aiSuggestion": {
-        "text": "Die KI schlägt Mi, 12.08. um 14:00 vor — direkt nach der Wartung Rheinblick, gleicher Stadtteil. Das spart 34 km.",
-        "applyButton": "Vorschlag übernehmen"
-      },
       "submit": "Termin anlegen",
       "cancel": "Abbrechen",
       "requiredFieldsLegend": "* Pflichtfeld"

@@ -10,6 +10,7 @@ export interface CurrentUserResponseDto {
   remainingPropertyCreations: number | null
   remainingAppointmentCreations: number | null
   remainingTenantCreations: number | null
+  remainingAiOptimizations: number | null
   appointmentBufferMinutes: number
 }
 
@@ -64,6 +65,7 @@ export function toCurrentUser(dto: CurrentUserResponseDto): CurrentUser {
     remainingPropertyCreations: dto.remainingPropertyCreations,
     remainingAppointmentCreations: dto.remainingAppointmentCreations,
     remainingTenantCreations: dto.remainingTenantCreations,
+    remainingAiOptimizations: dto.remainingAiOptimizations,
     appointmentBufferMinutes: dto.appointmentBufferMinutes,
   }
 }

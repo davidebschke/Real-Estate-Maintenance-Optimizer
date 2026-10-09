@@ -5,7 +5,7 @@ import com.remo.realestatemaintainceoptimizer.entity.User;
 import java.time.Instant;
 
 /**
- * The logged-in account as returned to the frontend, including a demo account's expiry, remaining creation limits (null when unlimited) and the minimum gap in minutes kept between appointments.
+ * The logged-in account as returned to the frontend, including a demo account's expiry, remaining creation and AI optimization limits (null when unlimited) and the minimum gap in minutes kept between appointments.
  */
 public record CurrentUserResponse(
         String username,
@@ -15,6 +15,7 @@ public record CurrentUserResponse(
         Integer remainingPropertyCreations,
         Integer remainingAppointmentCreations,
         Integer remainingTenantCreations,
+        Integer remainingAiOptimizations,
         int appointmentBufferMinutes) {
 
     /**
@@ -29,6 +30,7 @@ public record CurrentUserResponse(
                 user.remainingPropertyCreations(),
                 user.remainingAppointmentCreations(),
                 user.remainingTenantCreations(),
+                user.remainingAiOptimizations(),
                 schedulingProperties.bufferMinutesFor(user.appointmentBufferMinutes()));
     }
 }

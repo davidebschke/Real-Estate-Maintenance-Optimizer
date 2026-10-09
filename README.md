@@ -79,6 +79,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 #### 3. 🗺️ Location-Based Planning (`Automatic planning Place`)
 - Smart location grouping to **minimize driving time** between service calls.
 - Dynamically slots smaller tasks near the previous job site into the daily schedule.
+- **AI appointment optimization:** from four weeks ahead, Claude (via LangChain4j) proposes moves that save kilometres and driving time and still leave enough driving time to the next appointment; every move is only applied after the user confirms it, and a demo account can use it once.
 
 #### 4. ⏱️ Time-Based Planning (`Automatic planning Time`)
 - Automated scheduling and rescheduling maintaining safe buffer times.
@@ -89,12 +90,14 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 
 #### 6. 🚗 Route Optimization (`Fast route planning`)
 - Route optimization and map display run via **Leaflet** (road routes calculated via **openrouteservice**), embedded directly in the appointment summary.
+- The kilometres and driving time saved by accepted AI proposals are charted per week or month in the statistics.
 
 #### 7. 🔒 Fixed Appointments (`Unrescheduled terms`)
 - Lock specific appointments so automated AI scheduling leaves them untouched.
 
 #### 8. 🔄 Recurring Appointments (`Recurring appointments`)
 - Set up automatic recurring schedules (e.g., maintenance every 3 months) without manual oversight.
+- The AI optimization moves a recurring appointment by at most two weeks.
 
 ---
 
@@ -110,7 +113,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 | Frontend | **Oracle Cloud**  | Built with Vite (`npm run build`); the resulting `dist` folder is deployed directly |
 | Backend  | **Oracle Cloud**  | Built with Maven into an executable jar with a fixed name (`remo-backend.jar`, via `finalName` in `pom.xml`, independent of the version), run directly on Oracle Cloud Infrastructure (OCI) (`java -jar remo-backend.jar`) |
 
-Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. The PostgreSQL database stays hosted on Supabase (project "RemoDB"), reached from the Oracle Cloud instance via Supabase's session pooler; the connection is passed in through the GitHub secrets `REMO_DB_URL`, `REMO_DB_USERNAME` and `REMO_DB_PASSWORD`. The login additionally needs the GitHub secrets `REMO_AUTH_JWT_SECRET` (signing key of the session token, at least 32 bytes, the deploy fails without it) and `REMO_AUTH_INITIAL_USER_PASSWORD` (initial password of the account `account_default`); the site must be served over HTTPS, otherwise the repository variable `REMO_AUTH_COOKIE_SECURE` has to be set to `false`. The optional GitHub secret `REMO_ROUTING_API_KEY` (openrouteservice key) enables road routing on the map; without it the deploy only warns and the map keeps drawing straight lines.
+Both services deploy their build output directly (the frontend's `dist` folder, the backend's executable jar) — no Docker image or container registry is used for this deployment. The PostgreSQL database stays hosted on Supabase (project "RemoDB"), reached from the Oracle Cloud instance via Supabase's session pooler; the connection is passed in through the GitHub secrets `REMO_DB_URL`, `REMO_DB_USERNAME` and `REMO_DB_PASSWORD`. The login additionally needs the GitHub secrets `REMO_AUTH_JWT_SECRET` (signing key of the session token, at least 32 bytes, the deploy fails without it) and `REMO_AUTH_INITIAL_USER_PASSWORD` (initial password of the account `account_default`); the site must be served over HTTPS, otherwise the repository variable `REMO_AUTH_COOKIE_SECURE` has to be set to `false`. The optional GitHub secret `REMO_ROUTING_API_KEY` (openrouteservice key) enables road routing on the map; without it the deploy only warns and the map keeps drawing straight lines. The optional GitHub secret `REMO_AI_API_KEY` (Anthropic key) enables the AI appointment optimization, but only together with `REMO_ROUTING_API_KEY`, since the optimization needs road routing for its travel matrix; without it the deploy only warns and the optimization stays off.
 
 ### 🛠️ Running the Project Locally
 
@@ -163,6 +166,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: password of the account `account_default`, applied on the first start (afterwards stored as a BCrypt hash; changing the value later has no effect).
 - `REMO_AUTH_COOKIE_SECURE=false`: locally you work over `http://localhost` instead of HTTPS, so the "Secure" flag of the login cookie has to be switched off (in production it stays on).
 - Write the values without quotation marks, and save the file without a BOM (UTF-8 without signature). Visual Studio Code does this by default; in Windows PowerShell 5.1 therefore do not use `Out-File`/`Set-Content` without `-Encoding ascii`.
+- Optional: `REMO_ROUTING_ENABLED=true` with `REMO_ROUTING_API_KEY=<openrouteservice-key>` enables road routes, and additionally `REMO_AI_ENABLED=true` with `REMO_AI_API_KEY=<anthropic-key>` the AI appointment optimization (it needs road routing for the travel matrix; see `backend/.env.example`).
 
 #### 5. Start the backend
 
@@ -263,6 +267,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 #### 3. 🗺️ Ortsabhängige Planung
 - Intelligent abgestimmte Routen zur **Reduzierung von Fahrzeiten** zwischen Einsatzorten.
 - Effizientes Einschieben kleinerer Aufträge in der Nähe des vorherigen Einsatzorts.
+- **KI-Terminoptimierung:** Ab vier Wochen im Voraus schlägt Claude (über LangChain4j) Verschiebungen vor, die Kilometer und Fahrzeit sparen und trotzdem genug Fahrzeit zum nächsten Termin lassen; jede Verschiebung wird erst nach Bestätigung übernommen, ein Demo-Account kann sie einmal nutzen.
 
 #### 4. ⏱️ Zeitbasierte Planung
 - Automatische Terminvergabe und Umplanung mit konfigurierbarem zeitlichem Abstand.
@@ -273,12 +278,14 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 
 #### 6. 🚗 Routenoptimierung 
 - Routenoptimierung und Kartenanzeige laufen über **Leaflet** (Straßenrouten berechnet über **openrouteservice**), direkt in der Terminübersicht eingebettet.
+- Die durch übernommene KI-Vorschläge gesparten Kilometer und Fahrzeiten zeigt die Statistik als Liniendiagramm je Woche oder Monat.
 
 #### 7. 🔒 Unverschiebbare Termine 
 - Fixierte Termine werden durch den KI-Optimierungsalgorithmus nicht verändert.
 
 #### 8. 🔄 Wiederkehrende Termine
 - Automatische Daueraufträge (z. B. Inspektion alle 3 Monate), ohne manuell daran denken zu müssen.
+- Die KI-Optimierung verschiebt einen wiederkehrenden Termin höchstens um zwei Wochen.
 ---
 
 ### 📋 Backlog & Zukünftige Features (`Backlog/Issues`)
@@ -293,7 +300,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 | Frontend  | **Oracle Cloud**   | Gebaut mit Vite (`npm run build`); der resultierende `dist`-Ordner wird direkt deployed |
 | Backend   | **Oracle Cloud**   | Gebaut mit Maven zu einem ausführbaren Jar mit festem Namen (`remo-backend.jar`, über `finalName` in `pom.xml`, unabhängig von der Version), direkt auf Oracle Cloud Infrastructure (OCI) ausgeführt (`java -jar remo-backend.jar`) |
 
-Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. Die PostgreSQL-Datenbank bleibt bei Supabase gehostet (Projekt "RemoDB") und wird von der Oracle-Cloud-Instanz über Supabases Session-Pooler erreicht; die Verbindung wird über die GitHub-Secrets `REMO_DB_URL`, `REMO_DB_USERNAME` und `REMO_DB_PASSWORD` übergeben. Die Anmeldung braucht zusätzlich die GitHub-Secrets `REMO_AUTH_JWT_SECRET` (Signaturschlüssel des Sitzungs-Tokens, mindestens 32 Byte, ohne ihn schlägt das Deployment fehl) und `REMO_AUTH_INITIAL_USER_PASSWORD` (initiales Passwort des Accounts `account_default`); die Seite muss über HTTPS ausgeliefert werden, andernfalls ist die Repository-Variable `REMO_AUTH_COOKIE_SECURE` auf `false` zu setzen. Das optionale GitHub-Secret `REMO_ROUTING_API_KEY` (openrouteservice-Schlüssel) aktiviert das Straßenrouting auf der Karte; ohne es warnt das Deployment nur und die Karte zeichnet weiter Luftlinien.
+Beide Services deployen ihr Build-Ergebnis direkt (der `dist`-Ordner des Frontends, das ausführbare Jar des Backends) — für dieses Deployment wird kein Docker-Image und keine Container-Registry genutzt. Die PostgreSQL-Datenbank bleibt bei Supabase gehostet (Projekt "RemoDB") und wird von der Oracle-Cloud-Instanz über Supabases Session-Pooler erreicht; die Verbindung wird über die GitHub-Secrets `REMO_DB_URL`, `REMO_DB_USERNAME` und `REMO_DB_PASSWORD` übergeben. Die Anmeldung braucht zusätzlich die GitHub-Secrets `REMO_AUTH_JWT_SECRET` (Signaturschlüssel des Sitzungs-Tokens, mindestens 32 Byte, ohne ihn schlägt das Deployment fehl) und `REMO_AUTH_INITIAL_USER_PASSWORD` (initiales Passwort des Accounts `account_default`); die Seite muss über HTTPS ausgeliefert werden, andernfalls ist die Repository-Variable `REMO_AUTH_COOKIE_SECURE` auf `false` zu setzen. Das optionale GitHub-Secret `REMO_ROUTING_API_KEY` (openrouteservice-Schlüssel) aktiviert das Straßenrouting auf der Karte; ohne es warnt das Deployment nur und die Karte zeichnet weiter Luftlinien. Das optionale GitHub-Secret `REMO_AI_API_KEY` (Anthropic-Schlüssel) aktiviert die KI-Terminoptimierung, aber nur zusammen mit `REMO_ROUTING_API_KEY`, da die Optimierung das Straßenrouting für ihre Reisematrix braucht; ohne es warnt das Deployment nur und die Optimierung bleibt aus.
 
 ### 🛠️ Projekt lokal starten
 
@@ -346,6 +353,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: Passwort des Accounts `account_default`, das beim ersten Start gesetzt wird (danach als BCrypt-Hash gespeichert; eine spätere Änderung des Werts hat keine Wirkung mehr).
 - `REMO_AUTH_COOKIE_SECURE=false`: lokal wird über `http://localhost` statt HTTPS gearbeitet, daher muss das Sicherheitsmerkmal „Secure" des Anmelde-Cookies ausgeschaltet sein (in Produktion bleibt es an).
 - Die Werte stehen ohne Anführungszeichen in der Datei, und sie muss ohne BOM (UTF-8 ohne Signatur) gespeichert sein. In Visual Studio Code ist das der Standard; in Windows PowerShell 5.1 daher nicht `Out-File`/`Set-Content` ohne `-Encoding ascii` verwenden.
+- Optional: `REMO_ROUTING_ENABLED=true` mit `REMO_ROUTING_API_KEY=<openrouteservice-key>` schaltet Straßenrouten ein, zusätzlich `REMO_AI_ENABLED=true` mit `REMO_AI_API_KEY=<anthropic-key>` die KI-Terminoptimierung (sie braucht das Straßenrouting für die Reisematrix; siehe `backend/.env.example`).
 
 #### 5. Backend starten
 
@@ -426,6 +434,7 @@ Damit läuft das Projekt vollständig lokal.
 * **UI Components:** PrimeVue 4
 * **Calendar:** Vue.cal
 * **Map:** Leaflet
+* **Charts:** Chart.js (via PrimeVue `Chart`)
 * **State, Routing & i18n:** Pinia, Vue Router, vue-i18n, Axios
 * **Tests:** Vitest, Playwright
 
@@ -433,12 +442,12 @@ Damit läuft das Projekt vollständig lokal.
 * **Language & Framework:** Java 25 (LTS), Spring Boot 4
 * **Authentication & Security:** Spring Security, JJWT (JSON Web Token)
 * **Data Access:** Spring Data JPA
-* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim, Straßenrouting via openrouteservice)
+* **External HTTP Client:** Spring `RestClient` (Adress-Geocoding via OpenStreetMap Nominatim, Straßenrouting und Reisematrix via openrouteservice)
 * **Tests & Linting:** JUnit 5, Testcontainers, PMD
 
 ### 🗄️ Datenbank
 * **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
-* **Framework:** LangChain4j (geplant / planned)
+* **Framework:** LangChain4j (`langchain4j-anthropic`) mit Claude Haiku 4.5 (KI-Terminoptimierung / AI appointment optimization)
 

@@ -82,6 +82,31 @@ class UserTest {
     }
 
     @Test
+    void consumesAiOptimizationsUntilTheLimitIsExhausted() {
+        User user = new User("id", "demo-1", null, "Demo", true, NOW, NOW.plusSeconds(60), 3, 3, 10, 1);
+
+        user.requireAiOptimizationAvailable();
+        user.consumeAiOptimization();
+
+        assertThat(user.remainingAiOptimizations()).isZero();
+        assertThatThrownBy(user::requireAiOptimizationAvailable)
+                .isInstanceOf(CreationQuotaExceededException.class)
+                .extracting("resource").isEqualTo(CreationQuotaExceededException.RESOURCE_AI_OPTIMIZATION);
+        assertThatThrownBy(user::consumeAiOptimization).isInstanceOf(CreationQuotaExceededException.class);
+        assertThat(user.remainingAiOptimizations()).isZero();
+    }
+
+    @Test
+    void aRegularAccountMayRunTheAiOptimizationWithoutLimit() {
+        User user = User.regular("id", "user", null, "User", NOW);
+
+        user.consumeAiOptimization();
+        user.consumeAiOptimization();
+
+        assertThat(user.remainingAiOptimizations()).isNull();
+    }
+
+    @Test
     void acceptsEverySessionUntilSessionsAreRevokedAndThenOnlyLaterOnes() {
         User user = User.regular("id", "debschke", null, "David Ebschke", NOW);
         assertThat(user.acceptsSessionStartedAt(NOW.minusSeconds(3600))).isTrue();

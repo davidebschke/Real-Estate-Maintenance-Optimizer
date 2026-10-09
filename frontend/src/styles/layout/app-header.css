@@ -4,7 +4,7 @@
   border-bottom: 1px solid var(--remo-calendar-accent-color, #3b82f6);
   box-sizing: border-box;
   display: flex;
-  gap: 2.25rem;
+  gap: 1.5rem;
   height: 6rem;
   justify-content: space-between;
   left: 0;

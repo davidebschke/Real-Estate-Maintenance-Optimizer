@@ -8,5 +8,6 @@ public enum HistoryEventType {
     MOVED,
     COMPLETED,
     REOPENED,
-    EDITED
+    EDITED,
+    OPTIMIZED
 }

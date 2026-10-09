@@ -31,6 +31,8 @@ describe('DemoAccountPanel', () => {
 
     expect(text).toContain('5 Beispiel-Objekte')
     expect(text).toContain('30 Termine in den nächsten 3 Wochen')
+    expect(text).toContain('12 weitere in 5 bis 8 Wochen')
+    expect(text).toContain('die KI-Optimierung einmal nutzen')
     expect(text).toContain('bis zu 3 Objekte, 3 Termine und 10 Mieter')
     expect(text).toContain('Beim Abmelden')
     expect(text).toContain('8 Stunden')
@@ -45,6 +47,7 @@ describe('DemoAccountPanel', () => {
       remainingPropertyCreations: 3,
       remainingAppointmentCreations: 3,
       remainingTenantCreations: 10,
+      remainingAiOptimizations: 1,
       appointmentBufferMinutes: 15,
     })
     const wrapper = mountPanel()

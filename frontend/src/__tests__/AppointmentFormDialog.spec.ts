@@ -366,6 +366,7 @@ function logInDemoAccount(remainingAppointmentCreations: number) {
     remainingPropertyCreations: 3,
     remainingAppointmentCreations,
     remainingTenantCreations: 10,
+    remainingAiOptimizations: 1,
     appointmentBufferMinutes: 15,
   }
 }

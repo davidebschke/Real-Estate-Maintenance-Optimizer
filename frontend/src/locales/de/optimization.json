@@ -1,0 +1,47 @@
+{
+  "optimization": {
+    "heading": "KI-Terminoptimierung",
+    "intro": "Die KI ordnet Ihre Termine so um, dass weniger Kilometer und Fahrzeit anfallen. Jede Verschiebung wird erst übernommen, wenn Sie sie bestätigen.",
+    "rules": {
+      "title": "So plant die KI",
+      "window": "Verschoben werden nur Termine ab {minLeadDays} Tagen in der Zukunft, im Blick behält die KI die nächsten {horizonDays} Tage.",
+      "locked": "Unverschiebbare Termine und erledigte Termine bleiben unangetastet.",
+      "recurring": "Wiederkehrende Termine werden höchstens {maxRecurringShiftDays} Tage verschoben.",
+      "travel": "Jeder Vorschlag lässt genug Fahrzeit und Puffer zum vorherigen und zum nächsten Termin."
+    },
+    "launch": {
+      "title": "Optimierung starten",
+      "button": "Termine optimieren",
+      "running": "Die KI plant Ihre Termine …",
+      "lastRun": "Letzter Lauf: {analyzed} Termine geprüft, {candidates} mögliche Verschiebungen bewertet, {proposals} Vorschläge.",
+      "noProposals": "Die KI hat keine Verschiebung gefunden, die Fahrzeit oder Kilometer spart.",
+      "error": "Die Optimierung konnte nicht gestartet werden.",
+      "confirm": {
+        "header": "KI-Optimierung starten",
+        "message": "Ein Lauf ruft die Claude-API auf und kostet in der Regel etwa 0,5 bis 2 Cent. Jetzt starten?",
+        "accept": "Optimierung starten",
+        "cancel": "Abbrechen"
+      }
+    },
+    "proposals": {
+      "heading": "Vorschläge zur Bestätigung",
+      "empty": "Keine offenen Vorschläge. Starten Sie eine Optimierung, um neue zu erhalten.",
+      "loadError": "Die Vorschläge konnten nicht geladen werden.",
+      "decisionError": "Die Entscheidung konnte nicht gespeichert werden.",
+      "from": "Bisher",
+      "to": "Neu",
+      "saved": "Ersparnis",
+      "savedValue": "{distance} km · {duration}",
+      "recurring": "Wiederkehrend",
+      "reason": "Begründung der KI",
+      "accept": "Übernehmen",
+      "reject": "Ablehnen"
+    },
+    "banner": {
+      "pending": "Die KI hat keinen offenen Vorschlag. | Die KI hat einen Vorschlag, der Fahrzeit spart. | Die KI hat {count} Vorschläge, die Fahrzeit sparen.",
+      "idle": "Die KI kann Ihre Termine ab {minLeadDays} Tagen im Voraus nach Fahrzeit und Kilometern optimieren.",
+      "reviewButton": "Vorschläge ansehen",
+      "openButton": "Zur Optimierung"
+    }
+  }
+}

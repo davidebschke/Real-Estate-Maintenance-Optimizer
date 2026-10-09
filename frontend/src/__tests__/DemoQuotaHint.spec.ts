@@ -16,6 +16,7 @@ function logInDemoAccount(remainingProperties: number, remainingAppointments: nu
     remainingPropertyCreations: remainingProperties,
     remainingAppointmentCreations: remainingAppointments,
     remainingTenantCreations: remainingTenants,
+    remainingAiOptimizations: 1,
     appointmentBufferMinutes: 15,
   }
 }
@@ -49,6 +50,17 @@ describe('DemoQuotaHint', () => {
     expect(mountHint('tenants').text()).toBe('Demo-Account: Sie können noch 7 weitere Mieter anlegen.')
   })
 
+  it('tells a demo account that it may start the AI optimization once and highlights it once used', () => {
+    logInDemoAccount(3, 3)
+    expect(mountHint('aiOptimizations').text()).toBe('Demo-Account: Sie können die KI-Optimierung einmal starten.')
+
+    useAuthStore().currentUser!.remainingAiOptimizations = 0
+    const wrapper = mountHint('aiOptimizations')
+
+    expect(wrapper.text()).toBe('Demo-Account: Sie haben die KI-Optimierung bereits genutzt.')
+    expect(wrapper.find('.demo-quota-hint').classes()).toContain('demo-quota-hint--exhausted')
+  })
+
   it('highlights an exhausted tenant limit', () => {
     logInDemoAccount(3, 3, 0)
 
@@ -76,6 +88,7 @@ describe('DemoQuotaHint', () => {
       remainingPropertyCreations: null,
       remainingAppointmentCreations: null,
       remainingTenantCreations: null,
+      remainingAiOptimizations: null,
       appointmentBufferMinutes: 15,
     }
 

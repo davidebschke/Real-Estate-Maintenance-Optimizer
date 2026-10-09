@@ -30,6 +30,7 @@ const regularUserDto = {
   remainingPropertyCreations: null,
   remainingAppointmentCreations: null,
   remainingTenantCreations: null,
+  remainingAiOptimizations: null,
   appointmentBufferMinutes: 15,
 }
 
@@ -83,6 +84,7 @@ describe('authService', () => {
         remainingPropertyCreations: 3,
         remainingAppointmentCreations: 3,
         remainingTenantCreations: 10,
+        remainingAiOptimizations: 1,
         appointmentBufferMinutes: 15,
       },
     })

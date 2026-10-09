@@ -72,20 +72,21 @@ class DemoAccountServiceTest {
     }
 
     @Test
-    void givesTheDemoAccountThreeMorePropertyAndAppointmentCreationsAndTenTenants() {
+    void givesTheDemoAccountThreeMorePropertyAndAppointmentCreationsTenTenantsAndOneAiOptimization() {
         User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
 
         assertThat(demo.remainingPropertyCreations()).isEqualTo(3);
         assertThat(demo.remainingAppointmentCreations()).isEqualTo(3);
         assertThat(demo.remainingTenantCreations()).isEqualTo(10);
+        assertThat(demo.remainingAiOptimizations()).isEqualTo(1);
     }
 
     @Test
-    void fillsTheDemoAccountWithFivePropertiesAndThirtyAppointments() {
+    void fillsTheDemoAccountWithFivePropertiesAndFortyTwoAppointments() {
         User demo = service.createDemoAccount(TestAccounts.uniqueClientAddress());
 
         assertThat(propertyRepository.findAllByOwnerIdOrderByNameAsc(demo.id())).hasSize(5);
-        assertThat(appointmentRepository.findAllByPropertyOwnerIdOrderByStartAsc(demo.id())).hasSize(30);
+        assertThat(appointmentRepository.findAllByPropertyOwnerIdOrderByStartAsc(demo.id())).hasSize(42);
     }
 
     @Test

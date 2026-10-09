@@ -23,8 +23,8 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        default_schema: remo
-        default_batch_fetch_size: 50
+        "[default_schema]": remo
+        "[default_batch_fetch_size]": 50
   flyway:
     # Dedicated schema instead of "public", which Supabase exposes through its auto-generated Data API
     schemas: remo
@@ -65,3 +65,29 @@ remo:
     max-requests-per-account-per-minute: 20
     max-requests-per-minute: 30
     max-requests-per-day: 1500
+  ai:
+    # AI appointment optimization via Claude (Anthropic API); while false the endpoint answers 501 and the frontend explains that the feature is off
+    enabled: ${REMO_AI_ENABLED:false}
+    # Required (startup fails without it) while the AI optimization is enabled; never commit it
+    api-key: ${REMO_AI_API_KEY:}
+    model: ${REMO_AI_MODEL:claude-haiku-4-5}
+    timeout: 60s
+    max-tokens: 4096
+    max-runs-per-account-per-hour: 5
+    max-runs-per-day: 200
+  optimization:
+    # Appointments closer than this many days stay untouched, the planner looks ahead up to the horizon
+    min-lead-days: 28
+    horizon-days: 365
+    # A recurring occurrence moves at most this many days away from the date it was originally planned for
+    max-recurring-shift-days: 14
+    work-day-start: "07:00"
+    work-day-end: "19:00"
+    slot-minutes: 15
+    min-saved-distance-meters: 500
+    max-candidates-per-appointment: 3
+    max-candidates-for-ai: 60
+    # openrouteservice matrix requests allow at most 3,500 location pairs (59 locations) and 500 requests per day on the free plan
+    max-matrix-locations: 50
+    max-matrix-requests-per-day: 400
+    zone: Europe/Berlin

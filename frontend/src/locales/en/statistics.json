@@ -6,6 +6,10 @@
       "properties": {
         "title": "Property statistics",
         "description": "Open and completed appointments and the next appointment per property"
+      },
+      "savings": {
+        "title": "AI savings",
+        "description": "Kilometres and driving time saved by the accepted AI proposals over time"
       }
     },
     "properties": {
@@ -21,6 +25,30 @@
         "next": "Next appointment"
       },
       "noNextAppointment": "No upcoming appointment"
+    },
+    "savings": {
+      "heading": "Savings from the AI optimization",
+      "back": "Back to statistics",
+      "granularity": {
+        "label": "Period",
+        "WEEK": "Weeks",
+        "MONTH": "Months"
+      },
+      "totals": {
+        "distance": "Kilometres saved",
+        "duration": "Driving time saved",
+        "accepted": "Accepted proposals"
+      },
+      "chart": {
+        "label": "Savings over time",
+        "distance": "Kilometres (cumulative)",
+        "duration": "Driving time in hours (cumulative)",
+        "distanceAxis": "km",
+        "durationAxis": "h"
+      },
+      "empty": "No savings yet. Accept proposals of the AI optimization to see their history here.",
+      "loadError": "The savings could not be loaded.",
+      "toOptimization": "Open AI optimization"
     }
   }
 }

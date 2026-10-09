@@ -14,6 +14,7 @@ function logInAs(overrides: Partial<CurrentUser>) {
     remainingPropertyCreations: 3,
     remainingAppointmentCreations: 3,
     remainingTenantCreations: 10,
+    remainingAiOptimizations: 1,
     appointmentBufferMinutes: 15,
     ...overrides,
   }
@@ -32,6 +33,15 @@ describe('useDemoQuota', () => {
     expect(useDemoQuota('tenants').remaining.value).toBe(7)
     expect(useDemoQuota('properties').isLimited.value).toBe(true)
     expect(useDemoQuota('properties').isExhausted.value).toBe(false)
+  })
+
+  it('reports the remaining AI optimization run of a demo account and when it is used up', () => {
+    logInAs({ remainingAiOptimizations: 1 })
+    expect(useDemoQuota('aiOptimizations').remaining.value).toBe(1)
+    expect(useDemoQuota('aiOptimizations').isExhausted.value).toBe(false)
+
+    logInAs({ remainingAiOptimizations: 0 })
+    expect(useDemoQuota('aiOptimizations').isExhausted.value).toBe(true)
   })
 
   it('reports an exhausted tenant limit', () => {

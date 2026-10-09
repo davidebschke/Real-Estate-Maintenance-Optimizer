@@ -12,6 +12,9 @@ public class RateLimitExceededException extends RuntimeException {
     public static final String REASON_TOO_MANY_USERNAME_CHANGES = "tooManyUsernameChanges";
     public static final String REASON_TOO_MANY_ROUTE_REQUESTS = "tooManyRouteRequests";
     public static final String REASON_ROUTE_QUOTA_EXHAUSTED = "routeQuotaExhausted";
+    public static final String REASON_TOO_MANY_OPTIMIZATIONS = "tooManyOptimizations";
+    public static final String REASON_OPTIMIZATION_QUOTA_EXHAUSTED = "optimizationQuotaExhausted";
+    public static final String REASON_OPTIMIZATION_IN_PROGRESS = "optimizationInProgress";
 
     private final String reasonCode;
 

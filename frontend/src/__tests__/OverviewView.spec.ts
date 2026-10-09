@@ -27,7 +27,7 @@ afterEach(() => {
 describe('OverviewView', () => {
   it('renders the daily appointment list', async () => {
     const wrapper = mount(OverviewView, {
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n], stubs: { OptimizationBanner: true } },
     })
     await flushPromises()
 
@@ -36,7 +36,7 @@ describe('OverviewView', () => {
 
   it('renders the appointment map card next to the daily appointment list', async () => {
     const wrapper = mount(OverviewView, {
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n], stubs: { OptimizationBanner: true } },
     })
     await flushPromises()
 
@@ -46,7 +46,7 @@ describe('OverviewView', () => {
   it('renders the English empty-state text when the locale is switched', async () => {
     i18n.global.locale.value = 'en'
     const wrapper = mount(OverviewView, {
-      global: { plugins: [i18n] },
+      global: { plugins: [i18n], stubs: { OptimizationBanner: true } },
     })
     await flushPromises()
 
