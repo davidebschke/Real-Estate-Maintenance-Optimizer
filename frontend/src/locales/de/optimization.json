@@ -15,7 +15,13 @@
       "running": "Die KI plant Ihre Termine …",
       "lastRun": "Letzter Lauf: {analyzed} Termine geprüft, {candidates} mögliche Verschiebungen bewertet, {proposals} Vorschläge.",
       "noProposals": "Die KI hat keine Verschiebung gefunden, die Fahrzeit oder Kilometer spart.",
-      "error": "Die Optimierung konnte nicht gestartet werden."
+      "error": "Die Optimierung konnte nicht gestartet werden.",
+      "confirm": {
+        "header": "KI-Optimierung starten",
+        "message": "Ein Lauf ruft die Claude-API auf und kostet in der Regel etwa 0,5 bis 2 Cent. Jetzt starten?",
+        "accept": "Optimierung starten",
+        "cancel": "Abbrechen"
+      }
     },
     "proposals": {
       "heading": "Vorschläge zur Bestätigung",

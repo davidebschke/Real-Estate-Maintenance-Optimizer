@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Button from 'primevue/button'
+import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from 'vue-i18n'
 import { useOptimizationStore } from '@/stores/optimization'
 import { useDemoQuota } from '@/composables/useDemoQuota'
@@ -8,10 +9,23 @@ import { OPTIMIZATION_RULES } from '@/utils/optimizationRules'
 import DemoQuotaHint from '@/components/auth/DemoQuotaHint.vue'
 
 const { t } = useI18n()
+const confirm = useConfirm()
 const store = useOptimizationStore()
 const { isExhausted } = useDemoQuota('aiOptimizations')
 
 const ruleKeys = ['window', 'locked', 'recurring', 'travel'] as const
+
+/** Asks the user to confirm the run, naming its possible cost, before the AI is called. */
+function confirmStart() {
+  confirm.require({
+    header: t('optimization.launch.confirm.header'),
+    message: t('optimization.launch.confirm.message'),
+    acceptLabel: t('optimization.launch.confirm.accept'),
+    rejectLabel: t('optimization.launch.confirm.cancel'),
+    rejectProps: { severity: 'secondary', text: true },
+    accept: () => store.startRun(),
+  })
+}
 
 const lastRunSummary = computed(() => {
   const run = store.lastRun
@@ -45,7 +59,7 @@ const lastRunSummary = computed(() => {
       :label="store.isRunning ? t('optimization.launch.running') : t('optimization.launch.button')"
       :loading="store.isRunning"
       :disabled="store.isRunning || isExhausted"
-      @click="store.startRun"
+      @click="confirmStart"
     />
 
     <p v-if="store.hasRunError" class="optimization-launch-card__error" role="alert">

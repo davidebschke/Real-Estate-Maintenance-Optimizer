@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import { useConfirm } from 'primevue/useconfirm'
 import { i18n } from '@/i18n'
 import OptimizationView from '@/views/OptimizationView.vue'
 import OptimizationLaunchCard from '@/components/optimization/OptimizationLaunchCard.vue'
@@ -9,8 +10,10 @@ import OptimizationProposalList from '@/components/optimization/OptimizationProp
 import * as optimizationService from '@/services/optimizationService'
 
 vi.mock('@/services/optimizationService')
+vi.mock('primevue/useconfirm')
 
 beforeEach(() => {
+  vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
   setActivePinia(createPinia())
   vi.mocked(optimizationService.fetchPendingProposals).mockReset().mockResolvedValue([])
 })

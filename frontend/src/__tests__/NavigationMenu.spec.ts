@@ -19,7 +19,7 @@ describe('NavigationMenu', () => {
 
     expect(wrapper.text()).toContain('Übersicht')
     expect(wrapper.text()).toContain('Kalender')
-    expect(wrapper.text()).toContain('Optimierung')
+    expect(wrapper.text()).toContain('KI-Optimierung')
     expect(wrapper.text()).toContain('Statistik')
     expect(wrapper.text()).toContain('Immobilien')
   })

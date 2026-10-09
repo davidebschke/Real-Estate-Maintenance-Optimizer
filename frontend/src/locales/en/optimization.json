@@ -15,7 +15,13 @@
       "running": "The AI is planning your appointments …",
       "lastRun": "Last run: {analyzed} appointments checked, {candidates} possible moves assessed, {proposals} proposals.",
       "noProposals": "The AI found no move that saves driving time or kilometres.",
-      "error": "The optimization could not be started."
+      "error": "The optimization could not be started.",
+      "confirm": {
+        "header": "Start AI optimization",
+        "message": "A run calls the Claude API and usually costs about 0.5 to 2 cents. Start now?",
+        "accept": "Start optimization",
+        "cancel": "Cancel"
+      }
     },
     "proposals": {
       "heading": "Proposals awaiting confirmation",

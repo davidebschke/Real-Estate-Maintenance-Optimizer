@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import { useConfirm } from 'primevue/useconfirm'
 import { i18n } from '@/i18n'
 import OptimizationLaunchCard from '@/components/optimization/OptimizationLaunchCard.vue'
 import { useOptimizationStore } from '@/stores/optimization'
@@ -13,6 +14,9 @@ import type { CurrentUser } from '@/types/auth'
 
 vi.mock('@/services/optimizationService')
 vi.mock('@/services/authService')
+vi.mock('primevue/useconfirm')
+
+const requireConfirmation = vi.fn()
 
 /** Logs in a demo account with the given number of remaining AI runs directly in the store. */
 function logInDemoAccount(remainingAiOptimizations: number): CurrentUser {
@@ -33,6 +37,8 @@ function logInDemoAccount(remainingAiOptimizations: number): CurrentUser {
 
 beforeEach(() => {
   setActivePinia(createPinia())
+  requireConfirmation.mockReset()
+  vi.mocked(useConfirm).mockReturnValue({ require: requireConfirmation } as never)
   vi.mocked(optimizationService.startOptimizationRun).mockReset().mockResolvedValue({
     runId: 'run-1',
     createdAt: new Date(),
@@ -63,10 +69,24 @@ describe('OptimizationLaunchCard', () => {
     ])
   })
 
-  it('starts a run and summarizes it', async () => {
+  it('names the possible cost and starts no run until the user confirms', async () => {
     const wrapper = mountCard()
 
     await wrapper.find('.optimization-launch-card__start').trigger('click')
+
+    expect(optimizationService.startOptimizationRun).not.toHaveBeenCalled()
+    const options = requireConfirmation.mock.calls[0]![0]
+    expect(options.message).toBe(
+      'Ein Lauf ruft die Claude-API auf und kostet in der Regel etwa 0,5 bis 2 Cent. Jetzt starten?',
+    )
+    expect(options.acceptLabel).toBe('Optimierung starten')
+  })
+
+  it('starts a run and summarizes it once confirmed', async () => {
+    const wrapper = mountCard()
+
+    await wrapper.find('.optimization-launch-card__start').trigger('click')
+    requireConfirmation.mock.calls[0]![0].accept()
     await flushPromises()
 
     expect(optimizationService.startOptimizationRun).toHaveBeenCalledTimes(1)
@@ -86,6 +106,7 @@ describe('OptimizationLaunchCard', () => {
     const wrapper = mountCard()
 
     await wrapper.find('.optimization-launch-card__start').trigger('click')
+    requireConfirmation.mock.calls[0]![0].accept()
     await flushPromises()
 
     expect(wrapper.find('.optimization-launch-card__summary').text()).toContain(

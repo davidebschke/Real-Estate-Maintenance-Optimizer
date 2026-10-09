@@ -8,7 +8,7 @@ test.describe('AI appointment optimization', () => {
     await mockPendingProposals(page, [])
     await page.goto('/')
 
-    await page.getByRole('link', { name: 'Optimierung', exact: true }).click()
+    await page.getByRole('link', { name: 'KI-Optimierung', exact: true }).click()
 
     await expect(page).toHaveURL('/optimization')
     await expect(page.getByRole('heading', { name: 'KI-Terminoptimierung' })).toBeVisible()
@@ -32,6 +32,8 @@ test.describe('AI appointment optimization', () => {
     await page.goto('/optimization')
 
     await page.getByRole('button', { name: 'Termine optimieren' }).click()
+    await expect(page.getByRole('alertdialog')).toContainText('0,5 bis 2 Cent')
+    await page.getByRole('button', { name: 'Optimierung starten' }).click()
 
     await expect(page.locator('.optimization-proposal-card')).toHaveCount(2)
     await expect(page.getByText('Letzter Lauf: 12 Termine geprüft, 4 mögliche Verschiebungen bewertet, 2 Vorschläge.')).toBeVisible()
@@ -76,6 +78,8 @@ test.describe('AI appointment optimization', () => {
     await page.goto('/optimization')
 
     await page.getByRole('button', { name: 'Termine optimieren' }).click()
+    await expect(page.getByRole('alertdialog')).toContainText('0,5 bis 2 Cent')
+    await page.getByRole('button', { name: 'Optimierung starten' }).click()
 
     await expect(page.getByRole('alert')).toHaveText('Die KI-Optimierung ist auf diesem Server nicht aktiviert.')
   })
