@@ -71,7 +71,7 @@ public class PropertyService {
                 DEFAULT_ICON,
                 request.latitude(),
                 request.longitude());
-        return toResponse(repository.save(property));
+        return toResponse(repository.save(property), 0L);
     }
 
     /**

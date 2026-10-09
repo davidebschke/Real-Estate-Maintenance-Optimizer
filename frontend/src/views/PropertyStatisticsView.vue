@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePropertiesStore } from '@/stores/properties'
@@ -10,9 +10,15 @@ const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
 const appointmentsStore = useAppointmentsStore()
 
-onMounted(() => {
+const hasAppointmentsLoadError = ref(false)
+
+onMounted(async () => {
   propertiesStore.fetchProperties()
-  appointmentsStore.fetchAppointments()
+  try {
+    await appointmentsStore.fetchAppointments()
+  } catch {
+    hasAppointmentsLoadError.value = true
+  }
 })
 </script>
 
@@ -23,6 +29,9 @@ onMounted(() => {
       {{ t('statistics.properties.back') }}
     </RouterLink>
     <h1 class="property-statistics-view__heading">{{ t('statistics.properties.heading') }}</h1>
+    <p v-if="hasAppointmentsLoadError" class="property-statistics-view__error">
+      {{ t('statistics.properties.appointmentsLoadError') }}
+    </p>
     <PropertyStatisticsList />
   </div>
 </template>

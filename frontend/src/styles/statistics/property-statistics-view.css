@@ -16,3 +16,8 @@
   font-size: 1.4rem;
   margin: 0.75rem 0 1rem;
 }
+
+.property-statistics-view__error {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  margin: 0 0 1rem;
+}

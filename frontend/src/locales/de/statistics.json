@@ -13,6 +13,7 @@
       "back": "Zurück zur Statistik",
       "empty": "Es sind noch keine Objekte hinterlegt.",
       "loadError": "Die Objekte konnten nicht geladen werden.",
+      "appointmentsLoadError": "Die Aufträge konnten nicht geladen werden, die Zahlen sind unvollständig.",
       "columns": {
         "property": "Objekt",
         "open": "Offene Aufträge",
