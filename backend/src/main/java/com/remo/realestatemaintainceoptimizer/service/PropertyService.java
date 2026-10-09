@@ -6,9 +6,13 @@ import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyTenantCount;
+import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,10 +27,13 @@ public class PropertyService {
 
     private final PropertyRepository repository;
     private final UserRepository userRepository;
+    private final TenantRepository tenantRepository;
 
-    public PropertyService(PropertyRepository repository, UserRepository userRepository) {
+    public PropertyService(
+            PropertyRepository repository, UserRepository userRepository, TenantRepository tenantRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     /**
@@ -34,8 +41,10 @@ public class PropertyService {
      */
     @Transactional(readOnly = true)
     public List<PropertyResponse> listAll(String ownerId) {
+        Map<String, Long> tenantCounts = tenantRepository.countTenantsPerPropertyByOwnerId(ownerId).stream()
+                .collect(Collectors.toMap(PropertyTenantCount::getPropertyId, PropertyTenantCount::getTenantCount));
         return repository.findAllByOwnerIdOrderByNameAsc(ownerId).stream()
-                .map(this::toResponse)
+                .map(property -> toResponse(property, tenantCounts.getOrDefault(property.id(), 0L)))
                 .toList();
     }
 
@@ -86,8 +95,12 @@ public class PropertyService {
     }
 
     private PropertyResponse toResponse(Property property) {
+        return toResponse(property, tenantRepository.countByApartmentPropertyId(property.id()));
+    }
+
+    private PropertyResponse toResponse(Property property, long tenantCount) {
         return new PropertyResponse(
                 property.id(), property.name(), property.address(), property.icon(),
-                property.latitude(), property.longitude());
+                property.latitude(), property.longitude(), tenantCount);
     }
 }
