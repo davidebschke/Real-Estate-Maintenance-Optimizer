@@ -19,7 +19,7 @@ const navigationIcons: Record<NavigationKey, string> = {
 const { t } = useI18n()
 const isMobileMenuOpen = ref(false)
 
-defineExpose({ navigationEntries, navigationIcons })
+defineExpose({ navigationEntries })
 
 /** Closes the collapsed mobile navigation list after a link was followed. */
 function closeMobileMenu(): void {
@@ -48,7 +48,7 @@ function toggleMobileMenu(): void {
       <li v-for="entry in navigationEntries" :key="entry" class="navigation-menu__item">
         <RouterLink :to="{ name: entry }" class="navigation-menu__link" @click="closeMobileMenu">
           <i class="pi navigation-menu__icon" :class="navigationIcons[entry]" aria-hidden="true"></i>
-          <span class="navigation-menu__label">{{ t(`header.nav.${entry}`) }}</span>
+          {{ t(`header.nav.${entry}`) }}
         </RouterLink>
       </li>
     </ul>
