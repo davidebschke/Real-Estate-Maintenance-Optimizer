@@ -71,4 +71,24 @@ describe('CalendarToolbar', () => {
     expect(wrapper.find('.calendar-toolbar__nav-button').exists()).toBe(false)
     expect(wrapper.find('.calendar-toolbar__today-button').exists()).toBe(false)
   })
+
+  it('shows a distinct icon in front of each view label', () => {
+    const wrapper = mount(CalendarToolbar, {
+      props: { rangeLabel: '10. – 14. August 2026', activeView: 'week' },
+      global: { plugins: [i18n] },
+    })
+
+    const icons = wrapper
+      .findAll('.calendar-toolbar__view-button')
+      .map((button) => button.find('.calendar-toolbar__view-icon'))
+
+    expect(icons.map((icon) => icon.classes())).toEqual([
+      expect.arrayContaining(['pi-sun']),
+      expect.arrayContaining(['pi-table']),
+      expect.arrayContaining(['pi-calendar']),
+      expect.arrayContaining(['pi-th-large']),
+      expect.arrayContaining(['pi-list']),
+    ])
+    expect(icons.every((icon) => icon.attributes('aria-hidden') === 'true')).toBe(true)
+  })
 })

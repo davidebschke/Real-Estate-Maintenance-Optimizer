@@ -12,6 +12,15 @@ const { t } = useI18n()
 
 /** Views the toolbar lets the user switch between, in display order. */
 const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
+
+/** PrimeIcons class shown in front of the label of each view button. */
+const viewIcons: Record<AppCalendarView, string> = {
+  day: 'pi-sun',
+  week: 'pi-table',
+  month: 'pi-calendar',
+  year: 'pi-th-large',
+  list: 'pi-list',
+}
 </script>
 
 <template>
@@ -58,7 +67,8 @@ const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
         :class="{ 'calendar-toolbar__view-button--active': activeView === view }"
         @click="activeView = view"
       >
-        {{ t(`calendar.toolbar.views.${view}`) }}
+        <i class="pi calendar-toolbar__view-icon" :class="viewIcons[view]" aria-hidden="true"></i>
+        <span class="calendar-toolbar__view-label">{{ t(`calendar.toolbar.views.${view}`) }}</span>
       </button>
     </div>
   </div>
