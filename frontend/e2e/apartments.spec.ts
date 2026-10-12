@@ -81,7 +81,7 @@ test.describe('apartments and tenants', () => {
     await page.getByRole('button', { name: 'Mieter hinzufügen' }).first().click()
     await page.locator('#tenant-first-name').fill('Max')
     await page.locator('#tenant-last-name').fill('Meier')
-    await page.getByRole('dialog').getByRole('button', { name: 'Mieter hinzufügen' }).click()
+    await page.getByRole('dialog', { name: 'Mieter hinzufügen' }).getByRole('button', { name: 'Mieter hinzufügen' }).click()
 
     const card = page.locator('.apartment-card')
     await expect(card.locator('.apartment-card__tenant-name')).toHaveText('Max Meier')
@@ -127,7 +127,7 @@ test.describe('apartments and tenants', () => {
     await page.getByRole('button', { name: 'Wohnung 2. Stockwerk bearbeiten' }).click()
     await page.locator('#apartment-totalRent').fill('900')
 
-    await expect(page.getByText('Gilt ab')).toBeVisible()
+    await expect(page.locator('label[for="apartment-rent-effective-month"]')).toBeVisible()
     await expect(page.getByText('frühere Monate behalten den bisherigen Mietpreis')).toBeVisible()
     await page.getByRole('dialog').getByRole('button', { name: 'Speichern' }).click()
 
