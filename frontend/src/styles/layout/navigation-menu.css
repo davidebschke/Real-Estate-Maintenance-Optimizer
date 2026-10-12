@@ -40,6 +40,7 @@
   transition:
     background-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
+  white-space: nowrap;
 }
 
 .navigation-menu__icon {
@@ -75,6 +76,23 @@
   .navigation-menu__link:hover .navigation-menu__icon,
   .navigation-menu__link:focus-visible .navigation-menu__icon {
     transform: none;
+  }
+}
+
+/* Range must stay in sync with app-header.css: between the hamburger breakpoint and the width where the full-size header fits on one row, the links shrink so the header does not overflow horizontally */
+@media (min-width: 87.5625rem) and (max-width: 110rem) {
+  .navigation-menu__list {
+    gap: 0.25rem;
+  }
+
+  .navigation-menu__link {
+    font-size: 1rem;
+    gap: 0.4rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .navigation-menu__icon {
+    font-size: 1rem;
   }
 }
 
