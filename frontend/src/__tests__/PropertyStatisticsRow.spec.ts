@@ -13,6 +13,7 @@ const property: Property = {
   icon: 'pi-building',
   latitude: 50.94,
   longitude: 6.88,
+  apartmentCount: 0,
   tenantCount: 3,
   rentTrackingStart: null,
 }

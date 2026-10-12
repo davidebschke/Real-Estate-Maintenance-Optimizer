@@ -55,9 +55,19 @@ const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
     </div>
 
     <div class="property-card__stats">
-      <div class="property-card__stat">
-        <span class="property-card__stat-value">{{ property.tenantCount }}</span>
-        <span class="property-card__stat-label">{{ t('properties.card.tenantCount') }}</span>
+      <div class="property-card__stat property-card__stat--apartments">
+        <i class="pi pi-home property-card__stat-icon" aria-hidden="true"></i>
+        <div class="property-card__stat-text">
+          <span class="property-card__stat-value">{{ property.apartmentCount }}</span>
+          <span class="property-card__stat-label">{{ t('properties.card.apartmentCount') }}</span>
+        </div>
+      </div>
+      <div class="property-card__stat property-card__stat--tenants">
+        <i class="pi pi-users property-card__stat-icon" aria-hidden="true"></i>
+        <div class="property-card__stat-text">
+          <span class="property-card__stat-value">{{ property.tenantCount }}</span>
+          <span class="property-card__stat-label">{{ t('properties.card.tenantCount') }}</span>
+        </div>
       </div>
     </div>
 

@@ -118,7 +118,9 @@ class PropertyControllerTest {
         mockMvc.perform(get("/api/properties"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name", equalTo("Wohnanlage Sonnenhof")));
+                .andExpect(jsonPath("$[0].name", equalTo("Wohnanlage Sonnenhof")))
+                .andExpect(jsonPath("$[0].apartmentCount", equalTo(0)))
+                .andExpect(jsonPath("$[0].tenantCount", equalTo(0)));
     }
 
     @Test

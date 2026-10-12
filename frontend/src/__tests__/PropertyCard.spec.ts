@@ -15,6 +15,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: 50.94,
     longitude: 6.88,
+    apartmentCount: 0,
     tenantCount: 0,
     rentTrackingStart: null,
     ...overrides,
@@ -28,9 +29,9 @@ afterEach(() => {
 const globalMountOptions = { plugins: [PrimeVue, i18n], directives: { tooltip: {} } }
 
 describe('PropertyCard', () => {
-  it('renders the icon, name, address and tenant count', () => {
+  it('renders the icon, name, address and the apartment and tenant counts', () => {
     const wrapper = mount(PropertyCard, {
-      props: { property: createProperty({ tenantCount: 7 }) },
+      props: { property: createProperty({ apartmentCount: 3, tenantCount: 7 }) },
       global: globalMountOptions,
     })
 
@@ -39,17 +40,36 @@ describe('PropertyCard', () => {
     expect(wrapper.find('.property-card__address').text()).toBe(
       'Aachener Str. 512, 50933 Köln-Braunsenfeld',
     )
-    expect(wrapper.find('.property-card__stat-value').text()).toBe('7')
-    expect(wrapper.find('.property-card__stat-label').text()).toBe('Mieter')
+    const apartments = wrapper.find('.property-card__stat--apartments')
+    expect(apartments.find('.property-card__stat-value').text()).toBe('3')
+    expect(apartments.find('.property-card__stat-label').text()).toBe('Wohnungen')
+    const tenants = wrapper.find('.property-card__stat--tenants')
+    expect(tenants.find('.property-card__stat-value').text()).toBe('7')
+    expect(tenants.find('.property-card__stat-label').text()).toBe('Mieter')
   })
 
-  it('shows a tenant count of zero for a property without tenants', () => {
+  it('shows the apartment count on the left and the tenant count on the right, each with an icon', () => {
     const wrapper = mount(PropertyCard, {
-      props: { property: createProperty({ tenantCount: 0 }) },
+      props: { property: createProperty({ apartmentCount: 3, tenantCount: 7 }) },
       global: globalMountOptions,
     })
 
-    expect(wrapper.find('.property-card__stat-value').text()).toBe('0')
+    const stats = wrapper.findAll('.property-card__stat')
+    expect(stats.map((stat) => stat.classes())).toEqual([
+      expect.arrayContaining(['property-card__stat--apartments']),
+      expect.arrayContaining(['property-card__stat--tenants']),
+    ])
+    expect(stats[0]!.find('.property-card__stat-icon').classes()).toContain('pi-home')
+    expect(stats[1]!.find('.property-card__stat-icon').classes()).toContain('pi-users')
+  })
+
+  it('shows counts of zero for a property without apartments and tenants', () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ apartmentCount: 0, tenantCount: 0 }) },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.findAll('.property-card__stat-value').map((value) => value.text())).toEqual(['0', '0'])
   })
 
   it('no longer shows appointment statistics or the next appointment', () => {

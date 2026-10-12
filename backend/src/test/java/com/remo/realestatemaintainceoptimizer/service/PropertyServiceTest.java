@@ -114,6 +114,22 @@ class PropertyServiceTest {
     }
 
     @Test
+    void reportsTheNumberOfApartmentsOfEachPropertyWhenListingAndWhenLookingItUp() {
+        repository.save(new Property("1", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
+        Property withApartments = repository.save(
+                new Property("2", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        apartmentRepository.save(new Apartment(
+                "apartment-1", withApartments, 1, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+        apartmentRepository.save(new Apartment(
+                "apartment-2", withApartments, 2, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.TEN));
+
+        assertThat(service.listAll(owner.id()))
+                .extracting(PropertyResponse::name, PropertyResponse::apartmentCount, PropertyResponse::tenantCount)
+                .containsExactly(tuple("Wohnanlage Rheinblick", 0L, 0L), tuple("Wohnanlage Sonnenhof", 2L, 0L));
+        assertThat(service.getById(owner.id(), "2").apartmentCount()).isEqualTo(2);
+    }
+
+    @Test
     void reportsTheRentTrackingStartOfAPropertyOrNullWhileTheCheckIsNotActivated() {
         repository.save(new Property("1", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
         Property tracked = new Property("2", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building");
@@ -125,9 +141,10 @@ class PropertyServiceTest {
     }
 
     @Test
-    void aNewlyCreatedPropertyHasNoTenants() {
+    void aNewlyCreatedPropertyHasNoApartmentsAndNoTenants() {
         var response = service.create(owner.id(), new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3", null, null));
 
+        assertThat(response.apartmentCount()).isZero();
         assertThat(response.tenantCount()).isZero();
     }
 

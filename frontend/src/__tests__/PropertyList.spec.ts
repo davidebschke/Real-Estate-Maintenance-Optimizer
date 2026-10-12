@@ -30,6 +30,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: 50.94,
     longitude: 6.88,
+    apartmentCount: 0,
     tenantCount: 0,
     rentTrackingStart: null,
     ...overrides,
@@ -73,10 +74,10 @@ describe('PropertyList', () => {
     expect(wrapper.find('.property-list__empty').exists()).toBe(false)
   })
 
-  it('renders one card per property with its tenant count', async () => {
+  it('renders one card per property with its apartment and tenant count', async () => {
     vi.mocked(propertyService.fetchProperties).mockResolvedValue([
-      createProperty({ id: '1', name: 'Wohnanlage Sonnenhof', tenantCount: 4 }),
-      createProperty({ id: '2', name: 'Wohnpark Lindenthal', tenantCount: 0 }),
+      createProperty({ id: '1', name: 'Wohnanlage Sonnenhof', apartmentCount: 2, tenantCount: 4 }),
+      createProperty({ id: '2', name: 'Wohnpark Lindenthal', apartmentCount: 0, tenantCount: 0 }),
     ])
 
     const wrapper = mount(PropertyList, { global: globalMountOptions })
@@ -85,8 +86,10 @@ describe('PropertyList', () => {
     const cards = wrapper.findAll('.property-card')
     expect(cards).toHaveLength(2)
     expect(cards[0]!.find('.property-card__name').text()).toBe('Wohnanlage Sonnenhof')
-    expect(cards[0]!.find('.property-card__stat-value').text()).toBe('4')
-    expect(cards[1]!.find('.property-card__stat-value').text()).toBe('0')
+    expect(cards[0]!.find('.property-card__stat--apartments .property-card__stat-value').text()).toBe('2')
+    expect(cards[0]!.find('.property-card__stat--tenants .property-card__stat-value').text()).toBe('4')
+    expect(cards[1]!.find('.property-card__stat--apartments .property-card__stat-value').text()).toBe('0')
+    expect(cards[1]!.find('.property-card__stat--tenants .property-card__stat-value').text()).toBe('0')
   })
 
   it('loads the payment alerts of the account along with the properties', async () => {

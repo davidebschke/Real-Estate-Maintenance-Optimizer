@@ -5,6 +5,8 @@ import com.remo.realestatemaintainceoptimizer.dto.PropertyResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
+import com.remo.realestatemaintainceoptimizer.repository.PropertyApartmentCount;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyTenantCount;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
@@ -28,12 +30,17 @@ public class PropertyService {
     private final PropertyRepository repository;
     private final UserRepository userRepository;
     private final TenantRepository tenantRepository;
+    private final ApartmentRepository apartmentRepository;
 
     public PropertyService(
-            PropertyRepository repository, UserRepository userRepository, TenantRepository tenantRepository) {
+            PropertyRepository repository,
+            UserRepository userRepository,
+            TenantRepository tenantRepository,
+            ApartmentRepository apartmentRepository) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.tenantRepository = tenantRepository;
+        this.apartmentRepository = apartmentRepository;
     }
 
     /**
@@ -43,8 +50,11 @@ public class PropertyService {
     public List<PropertyResponse> listAll(String ownerId) {
         Map<String, Long> tenantCounts = tenantRepository.countTenantsPerPropertyByOwnerId(ownerId).stream()
                 .collect(Collectors.toMap(PropertyTenantCount::getPropertyId, PropertyTenantCount::getTenantCount));
+        Map<String, Long> apartmentCounts = apartmentRepository.countApartmentsPerPropertyByOwnerId(ownerId).stream()
+                .collect(Collectors.toMap(PropertyApartmentCount::getPropertyId, PropertyApartmentCount::getApartmentCount));
         return repository.findAllByOwnerIdOrderByNameAsc(ownerId).stream()
-                .map(property -> toResponse(property, tenantCounts.getOrDefault(property.id(), 0L)))
+                .map(property -> toResponse(
+                        property, apartmentCounts.getOrDefault(property.id(), 0L), tenantCounts.getOrDefault(property.id(), 0L)))
                 .toList();
     }
 
@@ -71,7 +81,7 @@ public class PropertyService {
                 DEFAULT_ICON,
                 request.latitude(),
                 request.longitude());
-        return toResponse(repository.save(property), 0L);
+        return toResponse(repository.save(property), 0L, 0L);
     }
 
     /**
@@ -95,13 +105,16 @@ public class PropertyService {
     }
 
     private PropertyResponse toResponse(Property property) {
-        return toResponse(property, tenantRepository.countByApartmentPropertyId(property.id()));
+        return toResponse(
+                property,
+                apartmentRepository.countByPropertyId(property.id()),
+                tenantRepository.countByApartmentPropertyId(property.id()));
     }
 
-    private PropertyResponse toResponse(Property property, long tenantCount) {
+    private PropertyResponse toResponse(Property property, long apartmentCount, long tenantCount) {
         return new PropertyResponse(
                 property.id(), property.name(), property.address(), property.icon(),
-                property.latitude(), property.longitude(), tenantCount,
+                property.latitude(), property.longitude(), apartmentCount, tenantCount,
                 property.rentTrackingStart() == null ? null : property.rentTrackingStart().toString());
     }
 }

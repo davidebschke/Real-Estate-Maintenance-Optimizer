@@ -6,6 +6,8 @@ export interface Property {
   icon: string
   latitude: number | null
   longitude: number | null
+  /** Number of apartments of this property. */
+  apartmentCount: number
   /** Number of tenants living in the apartments of this property. */
   tenantCount: number
   /** The month (`YYYY-MM`) from which the rent payment check applies, or null while it is not activated. */
