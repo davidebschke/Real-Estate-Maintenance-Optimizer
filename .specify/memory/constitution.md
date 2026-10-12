@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report
-Version change: 1.2.0 → 1.2.1 (PATCH: Technology Constraints snapshot aligned with CLAUDE.md Section 2)
+Version change: 1.3.0 → 1.3.1 (PATCH: Technology Constraints snapshot aligned with CLAUDE.md Section 2)
 Modified principles: none
 Added sections: none
 Removed sections: none
-Technology Constraints: Spring Mail removed, Spring Boot 3 → 4, LangChain4j marked as planned
+Technology Constraints: AI/Intelligence now names Claude Haiku 5.5 (claude-haiku-5-5) for the rent payment check next to Claude Haiku 4.5 for the AI appointment optimization; AI can be enabled independently of road routing, the appointment optimization additionally needs routing
 Templates requiring updates: none (constitution is a derived summary; dependent templates read it at runtime, not modified here)
 Follow-up TODOs: none
 -->
@@ -46,10 +46,10 @@ Every content-relevant change (not a pure typo/formatting fix) triggers a review
 
 ## Technology Constraints
 
-Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios, Leaflet, Chart.js (via PrimeVue Chart). Backend: Java 25 (LTS), Spring Boot 4, Spring Security/JJWT, Spring Data JPA. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j (`langchain4j-anthropic`) with Claude Haiku 4.5 for the AI appointment optimization. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
+Frontend: Vue.js 3, PrimeVue 4, vue-cal, Vue Router, Axios, Leaflet, Chart.js (via PrimeVue Chart). Backend: Java 25 (LTS), Spring Boot 4, Spring Security/JJWT, Spring Data JPA. Database: PostgreSQL (appointments/objects and user/auth) on Supabase, via Spring Data JPA with Flyway-managed schema migrations. AI/Intelligence: LangChain4j (`langchain4j-anthropic`) with Claude Haiku 4.5 for the AI appointment optimization and Claude Haiku 5.5 for the rent payment check (bank statement PDFs are only held in memory, never stored); the AI can be enabled independently of road routing, while the appointment optimization additionally needs road routing and is unavailable without it. See `CLAUDE.md` Section 2 for the authoritative, up-to-date table.
 
 ## Governance
 
 This constitution distills the binding rules already defined under `.claude/rules/` (`coding-conventions.md`, `documentation.md`, `error-handling.md`, `folder-structure.md`, `git-workflow.md`, `linting.md`, `refactoring.md`, `testing.md`) and in `CLAUDE.md`; those files remain the authoritative source. An amendment here is only valid once the corresponding underlying rule file is updated first — this file is a derived summary, not an independent source of truth. Every spec, plan, and PR produced through the spec-kit workflow must comply with these principles; deviations must be justified in the plan's Complexity Tracking section.
 
-**Version**: 1.3.0 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-10-02
+**Version**: 1.3.1 | **Ratified**: 2026-09-17 | **Last Amended**: 2026-10-12
