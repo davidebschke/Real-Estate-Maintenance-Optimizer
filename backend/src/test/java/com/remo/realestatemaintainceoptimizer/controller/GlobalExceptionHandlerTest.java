@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AiDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.AiUnavailableException;
@@ -21,6 +22,7 @@ import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -28,6 +30,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -46,7 +49,8 @@ class GlobalExceptionHandlerTest {
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setFallbackToSystemLocale(false);
         mockMvc = MockMvcBuilders.standaloneSetup(new FailingController())
-                .setControllerAdvice(new GlobalExceptionHandler(messageSource))
+                .setControllerAdvice(new GlobalExceptionHandler(messageSource, new PaymentProperties(
+                        5, "claude-haiku-5-5", 8192, DataSize.ofMegabytes(5), 10, 200, ZoneId.of("Europe/Berlin"))))
                 .build();
     }
 
@@ -242,7 +246,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void anUploadExceedingTheServletLimitReturnsALocalizedContentTooLarge() throws Exception {
+    void anUploadExceedingTheServletLimitWithoutAKnownSizeReportsTheConfiguredLimit() throws Exception {
         mockMvc.perform(get("/upload-too-large").header("Accept-Language", "de"))
                 .andExpect(status().isContentTooLarge())
                 .andExpect(jsonPath("$.message", equalTo(
@@ -279,7 +283,7 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/upload-too-large")
         void uploadTooLarge() {
-            throw new MaxUploadSizeExceededException(5L * 1024 * 1024);
+            throw new MaxUploadSizeExceededException(-1);
         }
 
         @GetMapping("/too-many-payment-scans")

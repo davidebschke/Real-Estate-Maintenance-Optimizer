@@ -83,6 +83,16 @@ class TenantNameMatcherTest {
     }
 
     @Test
+    void coTenantsAreChosenIndependentlyOfTheirOrderInTheList() {
+        Apartment shared = apartment("a1");
+        Tenant later = tenant(shared, "t2", "Max", "Mustermann");
+        Tenant earlier = tenant(shared, "t1", "Erika", "Mustermann");
+
+        assertThat(matcher.assign("Familie Mustermann", List.of(later, earlier)).tenant()).isSameAs(earlier);
+        assertThat(matcher.assign("Familie Mustermann", List.of(earlier, later)).tenant()).isSameAs(earlier);
+    }
+
+    @Test
     void aMultiWordLastNameNeedsAllItsParts() {
         Tenant tenant = tenant(apartment("a1"), "t1", "Anna", "von Berg");
 

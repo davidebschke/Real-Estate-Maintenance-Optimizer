@@ -155,12 +155,12 @@ describe('PaymentScanPreviewDialog', () => {
     expect(options.some((option) => option.value === `${new Date().getFullYear()}-10`)).toBe(true)
   })
 
-  it('selects confidently matched rows and counts them on the save button', async () => {
+  it('selects only confidently matched rows and counts them on the save button', async () => {
     const wrapper = await mountDialog([confident, possible])
 
     expect(includeCheckbox(wrapper, 0).props('modelValue')).toBe(true)
-    expect(includeCheckbox(wrapper, 1).props('modelValue')).toBe(true)
-    expect(saveButton().textContent).toContain('2 Zahlung(en) speichern')
+    expect(includeCheckbox(wrapper, 1).props('modelValue')).toBe(false)
+    expect(saveButton().textContent).toContain('1 Zahlung(en) speichern')
   })
 
   it('deselects a payment that was already recorded and marks it', async () => {
@@ -240,6 +240,7 @@ describe('PaymentScanPreviewDialog', () => {
 
   it('does not save a payment the user deselected', async () => {
     const wrapper = await mountDialog([confident, possible])
+    await includeCheckbox(wrapper, 1).vm.$emit('update:modelValue', true)
     await includeCheckbox(wrapper, 0).vm.$emit('update:modelValue', false)
     await flushPromises()
 

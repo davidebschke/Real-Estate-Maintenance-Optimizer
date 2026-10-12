@@ -14,5 +14,8 @@ CREATE TABLE rent_payments (
 
 CREATE INDEX rent_payments_tenant_id_idx ON rent_payments (tenant_id);
 
+-- An identical payment is only stored once, also when two confirmations arrive at the same time
+CREATE UNIQUE INDEX rent_payments_identical_payment_idx ON rent_payments (tenant_id, payment_date, amount, reference);
+
 -- Defense in depth for Supabase, same reasoning as for the tables of V1
 ALTER TABLE rent_payments ENABLE ROW LEVEL SECURITY;

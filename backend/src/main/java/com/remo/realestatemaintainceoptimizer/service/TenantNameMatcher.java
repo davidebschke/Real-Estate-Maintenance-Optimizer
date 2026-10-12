@@ -4,6 +4,7 @@ import com.remo.realestatemaintainceoptimizer.dto.TenantMatch;
 import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import java.text.Normalizer;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -47,9 +48,10 @@ public class TenantNameMatcher {
         if (candidates.isEmpty()) {
             return Assignment.none();
         }
-        String apartmentId = candidates.getFirst().apartment().id();
-        boolean sameApartment = candidates.stream().allMatch(candidate -> candidate.apartment().id().equals(apartmentId));
-        return sameApartment ? new Assignment(candidates.getFirst(), match) : Assignment.none();
+        List<Tenant> ordered = candidates.stream().sorted(Comparator.comparing(Tenant::id)).toList();
+        String apartmentId = ordered.getFirst().apartment().id();
+        boolean sameApartment = ordered.stream().allMatch(candidate -> candidate.apartment().id().equals(apartmentId));
+        return sameApartment ? new Assignment(ordered.getFirst(), match) : Assignment.none();
     }
 
     private static boolean matchesFullName(Set<String> payerTokens, Tenant tenant) {

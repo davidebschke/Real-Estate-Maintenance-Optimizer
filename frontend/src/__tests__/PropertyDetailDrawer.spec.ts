@@ -283,6 +283,18 @@ describe('PropertyDetailDrawer', () => {
       expect(paymentService.fetchPaymentYear).toHaveBeenLastCalledWith('property-1', year)
     })
 
+    it('does not show the rows of another year under the selected year when its table cannot be loaded', async () => {
+      await mountDrawer()
+      const year = usePaymentsStore().selectedYear
+      vi.mocked(paymentService.fetchPaymentYear).mockRejectedValue(new Error('Network Error'))
+
+      ;(document.body.querySelector('.tenant-payment-table__previous') as HTMLElement).click()
+      await flushPromises()
+
+      expect(document.body.querySelector('.tenant-payment-table__year')?.textContent).toBe(String(year - 1))
+      expect(document.body.querySelector('.tenant-payment-table__tenant-name')).toBeNull()
+    })
+
     it('shows an error hint when the payment table cannot be loaded', async () => {
       vi.mocked(paymentService.fetchPaymentYear).mockRejectedValue(new Error('Network Error'))
 

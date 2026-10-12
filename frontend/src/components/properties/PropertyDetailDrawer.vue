@@ -28,6 +28,9 @@ const property = computed(
 const apartments = computed(() => (props.propertyId ? (tenantsStore.apartmentsByProperty[props.propertyId] ?? []) : []))
 
 const paymentOverview = computed(() => (props.propertyId ? paymentsStore.overviewsByProperty[props.propertyId] : undefined))
+const paymentTenants = computed(() =>
+  paymentOverview.value?.year === paymentsStore.selectedYear ? paymentOverview.value.tenants : [],
+)
 
 watch(
   () => props.propertyId,
@@ -120,7 +123,7 @@ function requestDelete(apartment: Apartment, tenant: Tenant) {
 
         <TenantPaymentTable
           :year="paymentsStore.selectedYear"
-          :tenants="paymentOverview?.tenants ?? []"
+          :tenants="paymentTenants"
           :is-loading="paymentsStore.isYearLoading"
           @change-year="changePaymentYear"
         />

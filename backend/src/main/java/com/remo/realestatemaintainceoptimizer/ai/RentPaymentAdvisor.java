@@ -42,6 +42,7 @@ public class RentPaymentAdvisor {
     static final int MAX_PAYMENTS = 500;
     static final int MAX_PAYER_NAME_LENGTH = 100;
     static final BigDecimal MAX_AMOUNT = new BigDecimal("9999999.99");
+    static final int MAX_AMOUNT_SCALE = 6;
     static final String PDF_MIME_TYPE = "application/pdf";
 
     static final String SYSTEM_PROMPT = """
@@ -97,17 +98,21 @@ public class RentPaymentAdvisor {
     }
 
     /**
-     * Asks the model for the incoming payments of the given PDF, at most {@value #MAX_PAYMENTS}, silently dropping rows that are not plausible; throws {@link AiUnavailableException} when the model fails or answers unusably.
+     * Asks the model for the incoming payments of the given PDF, at most {@value #MAX_PAYMENTS}, dropping rows that are not plausible and logging how many; throws {@link AiUnavailableException} when the model fails or answers unusably.
      */
     public List<ExtractedPayment> extractPayments(byte[] statementPdf) {
         requireEnabled();
         String answer = askModel(statementPdf);
-        return parseAnswer(answer).payments().stream()
-                .filter(Objects::nonNull)
+        List<RawPayment> rows = parseAnswer(answer).payments().stream().filter(Objects::nonNull).toList();
+        List<ExtractedPayment> payments = rows.stream()
                 .map(RentPaymentAdvisor::toExtractedPayment)
                 .flatMap(Optional::stream)
                 .limit(MAX_PAYMENTS)
                 .toList();
+        if (payments.size() < rows.size()) {
+            log.warn("AI payment scan kept {} of {} rows, dropping implausible ones and any beyond {}", payments.size(), rows.size(), MAX_PAYMENTS);
+        }
+        return payments;
     }
 
     private String askModel(byte[] statementPdf) {
@@ -164,8 +169,11 @@ public class RentPaymentAdvisor {
         if (paymentDate.isEmpty() || raw.amount() == null) {
             return Optional.empty();
         }
+        if (raw.amount().signum() <= 0 || raw.amount().scale() > MAX_AMOUNT_SCALE || raw.amount().compareTo(MAX_AMOUNT) > 0) {
+            return Optional.empty();
+        }
         BigDecimal amount = raw.amount().setScale(2, RoundingMode.HALF_UP);
-        if (amount.signum() <= 0 || amount.compareTo(MAX_AMOUNT) > 0) {
+        if (amount.signum() <= 0) {
             return Optional.empty();
         }
         boolean hasValidPeriod = raw.periodYear() != null && raw.periodMonth() != null

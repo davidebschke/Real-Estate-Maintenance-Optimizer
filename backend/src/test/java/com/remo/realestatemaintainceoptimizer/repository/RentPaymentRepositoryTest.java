@@ -1,6 +1,7 @@
 package com.remo.realestatemaintainceoptimizer.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 import com.remo.realestatemaintainceoptimizer.RentFixtures;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * Verifies that rent payments round-trip through the Flyway-managed PostgreSQL schema, are summed per apartment and month for a property or an account, are found as duplicates and are removed together with their tenant.
@@ -144,6 +146,22 @@ class RentPaymentRepositoryTest {
                 "tenant-1", date, new BigDecimal("850.01"), "Miete")).isFalse();
         assertThat(rentPaymentRepository.existsByTenantIdAndPaymentDateAndAmountAndReference(
                 "tenant-1", date, new BigDecimal("850.00"), "Andere")).isFalse();
+    }
+
+    @Test
+    void refusesAnIdenticalSecondPaymentOfTheSameTenant() {
+        rentPaymentRepository.saveAndFlush(payment("payment-1", "tenant-1", "850.00", 2026, 10));
+
+        assertThatThrownBy(() -> rentPaymentRepository.saveAndFlush(payment("payment-2", "tenant-1", "850.00", 2026, 10)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void allowsTheSamePaymentForADifferentTenant() {
+        rentPaymentRepository.saveAndFlush(payment("payment-1", "tenant-1", "850.00", 2026, 10));
+        rentPaymentRepository.saveAndFlush(payment("payment-2", "tenant-2", "850.00", 2026, 10));
+
+        assertThat(rentPaymentRepository.count()).isEqualTo(2);
     }
 
     @Test

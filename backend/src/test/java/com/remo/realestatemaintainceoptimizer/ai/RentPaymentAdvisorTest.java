@@ -140,6 +140,20 @@ class RentPaymentAdvisorTest {
     }
 
     @Test
+    void dropsAmountsWithAnExtremeExponentWithoutCalculatingWithThem() {
+        List<ExtractedPayment> payments = advisorAnswering("""
+                {"payments":[
+                {"paymentDate":"2026-10-02","amount":1e999999999,"payerName":"A","reference":"x"},
+                {"paymentDate":"2026-10-02","amount":1e-999999999,"payerName":"B","reference":"x"},
+                {"paymentDate":"2026-10-02","amount":-1e999999999,"payerName":"C","reference":"x"},
+                {"paymentDate":"2026-10-02","amount":0.004,"payerName":"D","reference":"x"},
+                {"paymentDate":"2026-10-02","amount":8E+2,"payerName":"Keeper","reference":"x"}]}""").extractPayments(PDF);
+
+        assertThat(payments).extracting(ExtractedPayment::payerName).containsExactly("Keeper");
+        assertThat(payments.getFirst().amount()).isEqualByComparingTo("800.00");
+    }
+
+    @Test
     void boundsTheLengthOfTextsAndTreatsMissingTextsAsEmpty() {
         String longText = "x".repeat(400);
         List<ExtractedPayment> payments = advisorAnswering("{\"payments\":[{\"paymentDate\":\"2026-10-02\",\"amount\":800,"

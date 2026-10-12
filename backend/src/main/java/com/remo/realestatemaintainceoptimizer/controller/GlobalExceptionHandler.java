@@ -1,5 +1,6 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentConflictResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
@@ -48,9 +49,11 @@ public class GlobalExceptionHandler {
     private static final long BYTES_PER_MEGABYTE = 1024L * 1024L;
 
     private final MessageSource messageSource;
+    private final PaymentProperties paymentProperties;
 
-    public GlobalExceptionHandler(MessageSource messageSource) {
+    public GlobalExceptionHandler(MessageSource messageSource, PaymentProperties paymentProperties) {
         this.messageSource = messageSource;
+        this.paymentProperties = paymentProperties;
     }
 
     @ExceptionHandler(AppointmentNotFoundException.class)
@@ -213,8 +216,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException exception, Locale locale) {
-        return statementTooLargeResponse(exception.getMaxUploadSize(), locale);
+    public ResponseEntity<ErrorResponse> handleUploadTooLarge(Locale locale) {
+        return statementTooLargeResponse(paymentProperties.maxStatementSize().toBytes(), locale);
     }
 
     private ResponseEntity<ErrorResponse> statementTooLargeResponse(long maxBytes, Locale locale) {

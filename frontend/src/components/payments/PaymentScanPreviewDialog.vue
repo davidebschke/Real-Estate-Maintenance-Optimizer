@@ -79,7 +79,7 @@ function toRow(payment: ScannedPayment, index: number): PreviewRow {
   return {
     key: index,
     payment,
-    include: !payment.alreadyRecorded && payment.tenantId !== null,
+    include: !payment.alreadyRecorded && payment.match === 'MATCH',
     tenantId: payment.tenantId,
     period: periodKey(payment.periodYear, payment.periodMonth),
     reviewed: false,

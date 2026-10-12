@@ -33,6 +33,8 @@ spring:
     multipart:
       # Bank statement uploads of the rent payment check; remo.payments.max-statement-size is the authoritative limit
       max-file-size: 5MB
+      # Above the maximum file size, so an upload is never spooled to a temporary file on disk
+      file-size-threshold: 6MB
       max-request-size: 6MB
 
 server:

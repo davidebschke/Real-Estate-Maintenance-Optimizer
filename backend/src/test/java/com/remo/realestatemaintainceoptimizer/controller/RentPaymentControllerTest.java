@@ -204,6 +204,7 @@ class RentPaymentControllerTest {
                 confirmBody("tenant-1", "850", 13),
                 confirmBody("tenant-1", "850", 0),
                 "{\"payments\":[{\"paymentDate\":\"2026-10-02\",\"amount\":850,\"reference\":\"x\",\"periodYear\":2026,\"periodMonth\":10}]}",
+                "{\"payments\":[null]}",
                 "{}")) {
             mockMvc.perform(post("/api/properties/{id}/rent-payments", "property-1")
                             .contentType(MediaType.APPLICATION_JSON).content(body).header("Accept-Language", "en"))
