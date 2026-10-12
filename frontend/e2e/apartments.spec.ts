@@ -87,9 +87,11 @@ test.describe('apartments and tenants', () => {
     await expect(card.locator('.apartment-card__tenant-name')).toHaveText('Max Meier')
     await expect(card.locator('.apartment-card__vacancy')).toHaveCount(0)
 
+    await expect(page.getByRole('dialog', { name: 'Mieter hinzufügen' })).toHaveCount(0)
     await card.getByRole('button', { name: 'Mieter Max Meier bearbeiten' }).click()
-    await page.locator('#tenant-last-name').fill('Müller')
-    await page.getByRole('dialog').getByRole('button', { name: 'Speichern' }).click()
+    const editDialog = page.getByRole('dialog', { name: 'Mieter bearbeiten' })
+    await editDialog.locator('#tenant-last-name').fill('Müller')
+    await editDialog.getByRole('button', { name: 'Speichern' }).click()
 
     await expect(card.locator('.apartment-card__tenant-name')).toHaveText('Max Müller')
   })
