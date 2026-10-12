@@ -43,4 +43,15 @@ public interface ApartmentRepository extends JpaRepository<Apartment, String> {
      * Returns how many apartments the given property has.
      */
     long countByPropertyId(String propertyId);
+
+    /**
+     * Returns the apartment count of every property of the given account that has at least one apartment.
+     */
+    @Query("""
+            select a.property.id as propertyId, count(a) as apartmentCount
+            from Apartment a
+            where a.property.ownerId = :ownerId
+            group by a.property.id
+            """)
+    List<PropertyApartmentCount> countApartmentsPerPropertyByOwnerId(@Param("ownerId") String ownerId);
 }

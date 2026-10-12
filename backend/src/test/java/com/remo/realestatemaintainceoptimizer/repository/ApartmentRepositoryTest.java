@@ -200,6 +200,20 @@ class ApartmentRepositoryTest {
                 .containsExactly(tuple("property-1", 1L));
     }
 
+    @Test
+    void countsApartmentsPerPropertyOnlyForThePropertiesOfTheGivenAccount() {
+        User otherOwner = TestAccounts.saveRegularAccount(userRepository);
+        Property foreignProperty = propertyRepository.save(
+                new Property("property-2", otherOwner.id(), "Fremdes Objekt", "Fremdstr. 1", "pi-building"));
+        apartmentRepository.saveAll(List.of(
+                newApartment("apartment-1"), newApartment("apartment-2"), newApartment("apartment-3", foreignProperty)));
+        flushAndClear();
+
+        assertThat(apartmentRepository.countApartmentsPerPropertyByOwnerId(owner.id()))
+                .extracting(PropertyApartmentCount::getPropertyId, PropertyApartmentCount::getApartmentCount)
+                .containsExactly(tuple("property-1", 2L));
+    }
+
     private Apartment newApartment(String id) {
         return newApartment(id, property);
     }

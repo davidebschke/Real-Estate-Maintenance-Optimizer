@@ -35,6 +35,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: 50.94,
     longitude: 6.88,
+    apartmentCount: 0,
     tenantCount: 0,
     rentTrackingStart: null,
     ...overrides,

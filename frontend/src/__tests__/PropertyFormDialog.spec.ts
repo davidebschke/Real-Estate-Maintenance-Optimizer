@@ -21,6 +21,7 @@ function createExistingProperty(overrides: Partial<Property> = {}): Property {
     icon: 'pi-building',
     latitude: null,
     longitude: null,
+    apartmentCount: 0,
     tenantCount: 0,
     rentTrackingStart: null,
     ...overrides,
@@ -328,6 +329,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: null,
       longitude: null,
+      apartmentCount: 0,
       tenantCount: 0,
       rentTrackingStart: null,
     })
@@ -370,6 +372,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: 50.9420135,
       longitude: 6.8771884,
+      apartmentCount: 0,
       tenantCount: 0,
       rentTrackingStart: null,
     })
@@ -395,6 +398,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: 50.97,
       longitude: 6.95,
+      apartmentCount: 0,
       tenantCount: 0,
       rentTrackingStart: null,
     })
@@ -424,6 +428,7 @@ describe('PropertyFormDialog', () => {
       icon: 'pi-building',
       latitude: null,
       longitude: null,
+      apartmentCount: 0,
       tenantCount: 0,
       rentTrackingStart: null,
     })
