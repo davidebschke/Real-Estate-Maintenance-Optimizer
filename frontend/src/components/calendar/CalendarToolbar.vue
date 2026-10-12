@@ -10,11 +10,14 @@ const emit = defineEmits<{ previous: []; next: []; today: [] }>()
 
 const { t } = useI18n()
 
+/** Views the toolbar offers, i.e. every calendar view except vue-cal's disabled multi-year view. */
+type ToolbarView = Exclude<AppCalendarView, 'years'>
+
 /** Views the toolbar lets the user switch between, in display order. */
-const viewOptions: AppCalendarView[] = ['day', 'week', 'month', 'year', 'list']
+const viewOptions: ToolbarView[] = ['day', 'week', 'month', 'year', 'list']
 
 /** PrimeIcons class shown in front of the label of each view button. */
-const viewIcons: Record<AppCalendarView, string> = {
+const viewIcons: Record<ToolbarView, string> = {
   day: 'pi-sun',
   week: 'pi-table',
   month: 'pi-calendar',
