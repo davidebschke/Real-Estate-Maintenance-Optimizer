@@ -46,6 +46,22 @@
   gap: 1.13rem;
 }
 
+/* Range must stay in sync with navigation-menu.css, whose links shrink in the same range so the full-size header does not overflow horizontally */
+@media (min-width: 87.5625rem) and (max-width: 110rem) {
+  .app-header {
+    gap: 1rem;
+    padding: 0 1.5rem;
+  }
+
+  .app-header__actions {
+    gap: 0.75rem;
+  }
+
+  .app-header__brand-name {
+    font-size: 1.4rem;
+  }
+}
+
 /* Breakpoint must stay in sync with navigation-menu.css, which collapses the nav links into the hamburger toggle at the same width */
 @media (max-width: 87.5rem) {
   .app-header {

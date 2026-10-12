@@ -7,6 +7,15 @@ import type { NavigationKey } from '@/router'
 /** List of top-level navigation entries rendered in a fixed, reusable order. */
 const navigationEntries: NavigationKey[] = ['overview', 'calendar', 'optimization', 'statistics', 'properties']
 
+/** PrimeIcons class shown in front of the label of each navigation entry. */
+const navigationIcons: Record<NavigationKey, string> = {
+  overview: 'pi-objects-column',
+  calendar: 'pi-calendar',
+  optimization: 'pi-sparkles',
+  statistics: 'pi-chart-line',
+  properties: 'pi-building',
+}
+
 const { t } = useI18n()
 const isMobileMenuOpen = ref(false)
 
@@ -38,6 +47,7 @@ function toggleMobileMenu(): void {
     <ul class="navigation-menu__list" :class="{ 'navigation-menu__list--open': isMobileMenuOpen }">
       <li v-for="entry in navigationEntries" :key="entry" class="navigation-menu__item">
         <RouterLink :to="{ name: entry }" class="navigation-menu__link" @click="closeMobileMenu">
+          <i class="pi navigation-menu__icon" :class="navigationIcons[entry]" aria-hidden="true"></i>
           {{ t(`header.nav.${entry}`) }}
         </RouterLink>
       </li>

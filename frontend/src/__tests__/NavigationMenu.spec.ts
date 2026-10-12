@@ -24,6 +24,27 @@ describe('NavigationMenu', () => {
     expect(wrapper.text()).toContain('Immobilien')
   })
 
+  it('shows a decorative icon in front of every navigation entry', async () => {
+    const router = createTestRouter()
+    const wrapper = mount(NavigationMenu, {
+      global: { plugins: [i18n, router] },
+    })
+    await router.isReady()
+
+    const iconClasses = wrapper.findAll('.navigation-menu__icon').map((icon) => icon.classes())
+
+    expect(iconClasses).toEqual([
+      expect.arrayContaining(['pi-objects-column']),
+      expect.arrayContaining(['pi-calendar']),
+      expect.arrayContaining(['pi-sparkles']),
+      expect.arrayContaining(['pi-chart-line']),
+      expect.arrayContaining(['pi-building']),
+    ])
+    wrapper.findAll('.navigation-menu__icon').forEach((icon) => {
+      expect(icon.attributes('aria-hidden')).toBe('true')
+    })
+  })
+
   it('navigates to the matching route when an entry is clicked', async () => {
     const router = createTestRouter()
     const wrapper = mount(NavigationMenu, {

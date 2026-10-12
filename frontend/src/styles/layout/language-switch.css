@@ -1,6 +1,13 @@
 .language-switch {
+  align-items: center;
   display: flex;
   gap: 0.38rem;
+}
+
+.language-switch__icon {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-size: 1.2rem;
+  margin-right: 0.25rem;
 }
 
 .language-switch__option {
