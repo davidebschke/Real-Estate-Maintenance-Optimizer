@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockPendingProposals, proposalJson } from './support/optimizationMocks'
+import { mockAvailability, mockPendingProposals, proposalJson } from './support/optimizationMocks'
 
 test.describe('AI appointment optimization', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test('opens the optimization page from the main navigation and explains the planning rules', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [])
     await page.goto('/')
 
@@ -17,6 +18,7 @@ test.describe('AI appointment optimization', () => {
   })
 
   test('starts a run and shows its proposals awaiting confirmation', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [])
     await page.route('**/api/optimizations', async (route) => {
       await route.fulfill({
@@ -41,6 +43,7 @@ test.describe('AI appointment optimization', () => {
   })
 
   test('applying a proposal sends the confirmation and removes it from the list', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [proposalJson('proposal-1', 'Heizungswartung'), proposalJson('proposal-2', 'Gartenpflege')])
     let acceptedUrl = ''
     await page.route('**/api/optimizations/proposals/*/accept', async (route) => {
@@ -57,9 +60,11 @@ test.describe('AI appointment optimization', () => {
   })
 
   test('shows the backend message when an outdated proposal cannot be applied', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [proposalJson('proposal-1', 'Heizungswartung')])
     await page.route('**/api/optimizations/proposals/*/accept', async (route) => {
-      await mockPendingProposals(page, [])
+      await mockAvailability(page)
+    await mockPendingProposals(page, [])
       await route.fulfill({ status: 409, json: { message: 'Dieser Vorschlag ist veraltet.' } })
     })
     await page.goto('/optimization')
@@ -70,7 +75,19 @@ test.describe('AI appointment optimization', () => {
     await expect(page.locator('.optimization-proposal-card')).toHaveCount(0)
   })
 
+  test('warns and disables the start button while the server has road routing switched off', async ({ page }) => {
+    await mockAvailability(page, 'ROUTING_DISABLED')
+    await mockPendingProposals(page, [])
+    await page.goto('/optimization')
+
+    await expect(
+      page.getByText('Die KI-Terminoptimierung ist nicht verfügbar, weil das Straßenrouting auf diesem Server nicht aktiviert ist.'),
+    ).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Termine optimieren' })).toBeDisabled()
+  })
+
   test('shows the backend message when the run fails', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [])
     await page.route('**/api/optimizations', async (route) => {
       await route.fulfill({ status: 501, json: { message: 'Die KI-Funktion ist auf diesem Server nicht aktiviert.' } })
@@ -85,6 +102,7 @@ test.describe('AI appointment optimization', () => {
   })
 
   test('the overview banner counts the pending proposals and leads to them', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [proposalJson('proposal-1', 'Heizungswartung'), proposalJson('proposal-2', 'Gartenpflege')])
     await page.goto('/')
 
@@ -96,6 +114,7 @@ test.describe('AI appointment optimization', () => {
   })
 
   test('the optimization page fits a phone screen without horizontal scrolling', async ({ page }) => {
+    await mockAvailability(page)
     await mockPendingProposals(page, [proposalJson('proposal-1', 'Heizungswartung mit sehr langem Titel')])
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto('/optimization')

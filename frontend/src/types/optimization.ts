@@ -19,6 +19,15 @@ export interface OptimizationProposal {
   decidedAt: Date | null
 }
 
+/** Why the AI optimization cannot run on this server. */
+export type OptimizationUnavailableReason = 'AI_DISABLED' | 'ROUTING_DISABLED'
+
+/** Whether the server can run an AI optimization at all, and if not, why. */
+export interface OptimizationAvailability {
+  available: boolean
+  reason: OptimizationUnavailableReason | null
+}
+
 /** The outcome of one AI optimization run. */
 export interface OptimizationRun {
   runId: string

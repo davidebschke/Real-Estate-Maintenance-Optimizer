@@ -19,6 +19,7 @@ beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(optimizationService.fetchPendingProposals).mockReset().mockResolvedValue([firstProposal, secondProposal])
   vi.mocked(optimizationService.startOptimizationRun).mockReset()
+  vi.mocked(optimizationService.fetchAvailability).mockReset()
   vi.mocked(optimizationService.acceptProposal).mockReset()
   vi.mocked(optimizationService.rejectProposal).mockReset()
   vi.mocked(authService.fetchCurrentUser).mockReset()
@@ -44,6 +45,79 @@ describe('optimization store', () => {
 
     expect(store.hasLoadError).toBe(true)
     expect(store.pendingProposals).toHaveLength(2)
+  })
+
+  it('loads whether the optimization is available', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: false, reason: 'AI_DISABLED' })
+    const store = useOptimizationStore()
+    expect(store.availability).toBeNull()
+
+    await store.loadAvailability()
+
+    expect(store.availability).toEqual({ available: false, reason: 'AI_DISABLED' })
+    expect(store.hasAvailabilityError).toBe(false)
+    expect(store.isLoadingAvailability).toBe(false)
+  })
+
+  it('marks the availability as loading while it is requested', async () => {
+    let finishLoad: (value: { available: boolean; reason: null }) => void = () => {}
+    vi.mocked(optimizationService.fetchAvailability).mockReturnValue(new Promise((resolve) => (finishLoad = resolve)))
+    const store = useOptimizationStore()
+
+    const loading = store.loadAvailability()
+    expect(store.isLoadingAvailability).toBe(true)
+    finishLoad({ available: true, reason: null })
+    await loading
+
+    expect(store.isLoadingAvailability).toBe(false)
+  })
+
+  it('records a failed availability request without dropping what it already knows', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: true, reason: null })
+    const store = useOptimizationStore()
+    await store.loadAvailability()
+    vi.mocked(optimizationService.fetchAvailability).mockRejectedValue(new Error('offline'))
+
+    await store.loadAvailability()
+
+    expect(store.hasAvailabilityError).toBe(true)
+    expect(store.availability).toEqual({ available: true, reason: null })
+    expect(store.isLoadingAvailability).toBe(false)
+  })
+
+  it('discards an availability answered after a newer request or a reset', async () => {
+    let finishFirst: (value: { available: boolean; reason: 'AI_DISABLED' }) => void = () => {}
+    vi.mocked(optimizationService.fetchAvailability).mockReturnValueOnce(new Promise((resolve) => (finishFirst = resolve)))
+    const store = useOptimizationStore()
+
+    const first = store.loadAvailability()
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: true, reason: null })
+    await store.loadAvailability()
+    finishFirst({ available: false, reason: 'AI_DISABLED' })
+    await first
+
+    expect(store.availability).toEqual({ available: true, reason: null })
+
+    let finishSecond: (value: { available: boolean; reason: null }) => void = () => {}
+    vi.mocked(optimizationService.fetchAvailability).mockReturnValue(new Promise((resolve) => (finishSecond = resolve)))
+    const second = store.loadAvailability()
+    store.reset()
+    finishSecond({ available: true, reason: null })
+    await second
+
+    expect(store.availability).toBeNull()
+    expect(store.isLoadingAvailability).toBe(false)
+  })
+
+  it('forgets the availability on reset', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockRejectedValue(new Error('offline'))
+    const store = useOptimizationStore()
+    await store.loadAvailability()
+
+    store.reset()
+
+    expect(store.availability).toBeNull()
+    expect(store.hasAvailabilityError).toBe(false)
   })
 
   it('replaces the pending proposals with those of a new run and remembers the run', async () => {

@@ -61,10 +61,17 @@ public class OptimizationAdvisor {
     }
 
     /**
+     * Returns whether the AI connection is switched on and a chat model exists.
+     */
+    public boolean isEnabled() {
+        return properties.enabled() && chatModelProvider.getIfAvailable() != null;
+    }
+
+    /**
      * Throws {@link AiDisabledException} while the AI connection is switched off, so callers can reject a run before doing any work.
      */
     public void requireEnabled() {
-        if (!properties.enabled() || chatModelProvider.getIfAvailable() == null) {
+        if (!isEnabled()) {
             throw new AiDisabledException();
         }
     }

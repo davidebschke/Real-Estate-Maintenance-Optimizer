@@ -151,6 +151,66 @@ describe('OptimizationLaunchCard', () => {
     expect(wrapper.find('.optimization-launch-card__start').attributes('disabled')).toBeDefined()
   })
 
+  it('keeps the button usable and shows no warning while the availability is available, unknown or failed to load', async () => {
+    const wrapper = mountCard()
+    const store = useOptimizationStore()
+    const start = () => wrapper.find('.optimization-launch-card__start')
+
+    expect(wrapper.find('.optimization-launch-card__unavailable').exists()).toBe(false)
+    expect(start().attributes('disabled')).toBeUndefined()
+
+    store.availability = { available: true, reason: null }
+    await flushPromises()
+    expect(wrapper.find('.optimization-launch-card__unavailable').exists()).toBe(false)
+    expect(start().attributes('disabled')).toBeUndefined()
+
+    store.availability = null
+    store.hasAvailabilityError = true
+    await flushPromises()
+    expect(wrapper.find('.optimization-launch-card__unavailable').exists()).toBe(false)
+    expect(start().attributes('disabled')).toBeUndefined()
+  })
+
+  it('warns and blocks the button while the road routing is not enabled on the server', async () => {
+    const wrapper = mountCard()
+    useOptimizationStore().availability = { available: false, reason: 'ROUTING_DISABLED' }
+    await flushPromises()
+
+    const warning = wrapper.find('.optimization-launch-card__unavailable')
+    expect(warning.text()).toBe(
+      'Die KI-Terminoptimierung ist nicht verfügbar, weil das Straßenrouting auf diesem Server nicht aktiviert ist.',
+    )
+    expect(wrapper.find('.optimization-launch-card__unavailable .p-message-warn').attributes('role')).toBe('alert')
+    const start = wrapper.find('.optimization-launch-card__start')
+    expect(start.attributes('disabled')).toBeDefined()
+    expect(start.attributes('aria-describedby')).toBe(warning.attributes('id'))
+
+    await start.trigger('click')
+    expect(requireConfirmation).not.toHaveBeenCalled()
+  })
+
+  it('warns and blocks the button while the AI is not enabled on the server', async () => {
+    const wrapper = mountCard()
+    useOptimizationStore().availability = { available: false, reason: 'AI_DISABLED' }
+    await flushPromises()
+
+    expect(wrapper.find('.optimization-launch-card__unavailable').text()).toBe(
+      'Die KI-Terminoptimierung ist nicht verfügbar, weil die KI-Funktion auf diesem Server nicht aktiviert ist.',
+    )
+    expect(wrapper.find('.optimization-launch-card__start').attributes('disabled')).toBeDefined()
+  })
+
+  it('renders the unavailable warning in English when the locale is switched', async () => {
+    i18n.global.locale.value = 'en'
+    const wrapper = mountCard()
+    useOptimizationStore().availability = { available: false, reason: 'ROUTING_DISABLED' }
+    await flushPromises()
+
+    expect(wrapper.find('.optimization-launch-card__unavailable').text()).toBe(
+      'The AI appointment optimization is unavailable because road routing is not enabled on this server.',
+    )
+  })
+
   it('renders the English texts when the locale is switched', () => {
     i18n.global.locale.value = 'en'
     const wrapper = mountCard()

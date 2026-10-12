@@ -6,8 +6,11 @@ import com.remo.realestatemaintainceoptimizer.ai.OptimizationAdvisor;
 import com.remo.realestatemaintainceoptimizer.config.AiProperties;
 import com.remo.realestatemaintainceoptimizer.config.AppointmentSchedulingProperties;
 import com.remo.realestatemaintainceoptimizer.config.OptimizationProperties;
+import com.remo.realestatemaintainceoptimizer.config.RoutingProperties;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationAvailabilityResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationProposalResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationRunResponse;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationUnavailableReason;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.OptimizationProposal;
 import com.remo.realestatemaintainceoptimizer.entity.OptimizationProposalStatus;
@@ -15,6 +18,7 @@ import com.remo.realestatemaintainceoptimizer.entity.OptimizationRun;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.repository.AppointmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.OptimizationProposalRepository;
 import com.remo.realestatemaintainceoptimizer.repository.OptimizationRunRepository;
@@ -49,7 +53,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Runs the AI appointment optimization of an account: the planner calculates every feasible, saving move inside the planning window, Claude selects which ones to propose, the planner re-validates the selection move by move and the result is stored as proposals awaiting the user's confirmation; the slow external calls (travel matrix, AI) run outside any database transaction.
  */
 @Service
-@EnableConfigurationProperties({OptimizationProperties.class, AiProperties.class, AppointmentSchedulingProperties.class})
+@EnableConfigurationProperties({OptimizationProperties.class, RoutingProperties.class, AiProperties.class, AppointmentSchedulingProperties.class})
 public class OptimizationService {
 
     static final Duration ACCOUNT_LIMIT_WINDOW = Duration.ofHours(1);
@@ -67,6 +71,7 @@ public class OptimizationService {
     private final OptimizationRunRepository runRepository;
     private final OptimizationProposalRepository proposalRepository;
     private final OptimizationProperties optimizationProperties;
+    private final RoutingProperties routingProperties;
     private final AppointmentSchedulingProperties schedulingProperties;
     private final TransactionTemplate writeTransaction;
     private final TransactionTemplate readOnlyTransaction;
@@ -84,6 +89,7 @@ public class OptimizationService {
             OptimizationRunRepository runRepository,
             OptimizationProposalRepository proposalRepository,
             OptimizationProperties optimizationProperties,
+            RoutingProperties routingProperties,
             AiProperties aiProperties,
             AppointmentSchedulingProperties schedulingProperties,
             PlatformTransactionManager transactionManager) {
@@ -96,6 +102,7 @@ public class OptimizationService {
         this.runRepository = runRepository;
         this.proposalRepository = proposalRepository;
         this.optimizationProperties = optimizationProperties;
+        this.routingProperties = routingProperties;
         this.schedulingProperties = schedulingProperties;
         this.writeTransaction = new TransactionTemplate(transactionManager);
         this.readOnlyTransaction = new TransactionTemplate(transactionManager);
@@ -106,10 +113,26 @@ public class OptimizationService {
     }
 
     /**
+     * Returns whether a run can be started on this server, or why not: the AI is switched off, or road routing is, which the travel matrix needs.
+     */
+    public OptimizationAvailabilityResponse availability() {
+        if (!advisor.isEnabled()) {
+            return new OptimizationAvailabilityResponse(false, OptimizationUnavailableReason.AI_DISABLED);
+        }
+        if (!routingProperties.enabled()) {
+            return new OptimizationAvailabilityResponse(false, OptimizationUnavailableReason.ROUTING_DISABLED);
+        }
+        return new OptimizationAvailabilityResponse(true, null);
+    }
+
+    /**
      * Optimizes the given account's appointments inside the planning window and stores the confirmed moves as pending proposals, replacing every proposal still pending from an earlier run; one run per account at a time, a run that never consulted the AI gives its run budget back, and a demo account uses up its single run only once the AI was actually consulted and the result stored.
      */
     public OptimizationRunResponse run(String ownerId, Locale locale) {
         advisor.requireEnabled();
+        if (!routingProperties.enabled()) {
+            throw new RoutingDisabledException();
+        }
         if (!runningAccounts.add(ownerId)) {
             throw new RateLimitExceededException(RateLimitExceededException.REASON_OPTIMIZATION_IN_PROGRESS);
         }

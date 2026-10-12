@@ -57,12 +57,15 @@ jobs:
             echo "::warning::REMO_ROUTING_API_KEY is not set; road routing stays disabled and the map keeps drawing straight lines"
           fi
 
-      - name: Check AI optimization secret
+      - name: Check AI secret
         env:
           REMO_AI_API_KEY: ${{ secrets.REMO_AI_API_KEY }}
+          REMO_ROUTING_API_KEY: ${{ secrets.REMO_ROUTING_API_KEY }}
         run: |
           if [ -z "$REMO_AI_API_KEY" ]; then
-            echo "::warning::REMO_AI_API_KEY is not set; the AI appointment optimization stays disabled"
+            echo "::warning::REMO_AI_API_KEY is not set; the AI functions (appointment optimization, rent payment check) stay disabled"
+          elif [ -z "$REMO_ROUTING_API_KEY" ]; then
+            echo "::warning::REMO_ROUTING_API_KEY is not set; the AI appointment optimization stays unavailable (its button is disabled), only the rent payment check works"
           fi
 
       - name: Set up JDK 25
@@ -134,7 +137,7 @@ jobs:
             env_line REMO_ROUTING_API_KEY "$REMO_ROUTING_API_KEY"
             env_line REMO_ROUTING_ENABLED "$([ -n "$REMO_ROUTING_API_KEY" ] && echo true || echo false)"
             env_line REMO_AI_API_KEY "$REMO_AI_API_KEY"
-            env_line REMO_AI_ENABLED "$([ -n "$REMO_AI_API_KEY" ] && [ -n "$REMO_ROUTING_API_KEY" ] && echo true || echo false)"; } \
+            env_line REMO_AI_ENABLED "$([ -n "$REMO_AI_API_KEY" ] && echo true || echo false)"; } \
             | ssh -i ~/.ssh/oracle_deploy_key -p "$ORACLE_SSH_PORT" "$ORACLE_SSH_USER@$ORACLE_HOST" \
               "umask 077 && cat > '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && chmod 600 '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' && mv '$ORACLE_BACKEND_DEPLOY_PATH/backend.env.tmp' '$ORACLE_BACKEND_DEPLOY_PATH/backend.env'"
 

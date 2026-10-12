@@ -47,3 +47,10 @@ export async function mockSavings(page: Page, empty = false) {
     })
   })
 }
+
+/** Answers the availability request, by default as available and otherwise with the reason the server cannot run an optimization. */
+export async function mockAvailability(page: Page, reason: 'AI_DISABLED' | 'ROUTING_DISABLED' | null = null) {
+  await page.route('**/api/optimizations/availability', async (route) => {
+    await route.fulfill({ json: { available: reason === null, reason } })
+  })
+}

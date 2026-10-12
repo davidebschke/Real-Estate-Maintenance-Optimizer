@@ -5,7 +5,7 @@ import * as optimizationService from '@/services/optimizationService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useAuthStore } from '@/stores/auth'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
-import type { OptimizationProposal, OptimizationRun } from '@/types/optimization'
+import type { OptimizationAvailability, OptimizationProposal, OptimizationRun } from '@/types/optimization'
 
 /** HTTP statuses after which the pending list may be stale (the proposal was decided, expired or is gone, or the decision collided with another change), so it is reloaded from the backend. */
 const RELOAD_PENDING_STATUSES = [404, 409]
@@ -14,6 +14,10 @@ const RELOAD_PENDING_STATUSES = [404, 409]
 export const useOptimizationStore = defineStore('optimization', () => {
   const pendingProposals = ref<OptimizationProposal[]>([])
   const lastRun = ref<OptimizationRun | null>(null)
+  /** Whether the server can run an optimization, or null while that is unknown (not loaded yet or the request failed). */
+  const availability = ref<OptimizationAvailability | null>(null)
+  const isLoadingAvailability = ref(false)
+  const hasAvailabilityError = ref(false)
   const isRunning = ref(false)
   const hasLoadError = ref(false)
   const hasRunError = ref(false)
@@ -27,6 +31,8 @@ export const useOptimizationStore = defineStore('optimization', () => {
   let latestFetchToken = 0
   /** Bumped by reset(), so a run or decision answered only after the account changed never touches the new account's data. */
   let sessionEpoch = 0
+  /** Bumped by every availability request and reset(), so only the newest answer is kept. */
+  let latestAvailabilityToken = 0
 
   /** Loads every proposal still awaiting a decision, recording whether the request failed. */
   async function fetchPendingProposals() {
@@ -39,6 +45,23 @@ export const useOptimizationStore = defineStore('optimization', () => {
     } catch {
       if (requestToken !== latestFetchToken) return
       hasLoadError.value = true
+    }
+  }
+
+  /** Loads whether the server can run an optimization, keeping the previous answer and recording the failure if the request fails so the backend's own refusal of a run still catches it. */
+  async function loadAvailability() {
+    const requestToken = ++latestAvailabilityToken
+    isLoadingAvailability.value = true
+    try {
+      const loaded = await optimizationService.fetchAvailability()
+      if (requestToken !== latestAvailabilityToken) return
+      availability.value = loaded
+      hasAvailabilityError.value = false
+    } catch {
+      if (requestToken !== latestAvailabilityToken) return
+      hasAvailabilityError.value = true
+    } finally {
+      if (requestToken === latestAvailabilityToken) isLoadingAvailability.value = false
     }
   }
 
@@ -123,9 +146,13 @@ export const useOptimizationStore = defineStore('optimization', () => {
   /** Forgets every proposal and run state, e.g. when the logged-in account changes. */
   function reset() {
     latestFetchToken++
+    latestAvailabilityToken++
     sessionEpoch++
     pendingProposals.value = []
     lastRun.value = null
+    availability.value = null
+    isLoadingAvailability.value = false
+    hasAvailabilityError.value = false
     isRunning.value = false
     hasLoadError.value = false
     hasRunError.value = false
@@ -138,6 +165,9 @@ export const useOptimizationStore = defineStore('optimization', () => {
   return {
     pendingProposals,
     lastRun,
+    availability,
+    isLoadingAvailability,
+    hasAvailabilityError,
     isRunning,
     hasLoadError,
     hasRunError,
@@ -145,6 +175,7 @@ export const useOptimizationStore = defineStore('optimization', () => {
     hasDecisionError,
     decisionErrorMessage,
     fetchPendingProposals,
+    loadAvailability,
     startRun,
     acceptProposal,
     rejectProposal,

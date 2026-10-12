@@ -13,6 +13,7 @@ vi.mock('@/services/optimizationService')
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(optimizationService.fetchPendingProposals).mockReset().mockResolvedValue([])
+  vi.mocked(optimizationService.fetchAvailability).mockReset().mockResolvedValue({ available: true, reason: null })
 })
 
 afterEach(() => {
@@ -58,6 +59,32 @@ describe('OptimizationBanner', () => {
 
     expect(wrapper.find('.optimization-banner__text').text()).toBe('The AI has one proposal that saves driving time.')
     expect(wrapper.find('.optimization-banner__action').text()).toBe('Review proposals')
+  })
+
+  it('says the optimization is unavailable instead of inviting to it while the server cannot run it', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: false, reason: 'ROUTING_DISABLED' })
+    const { wrapper } = await mountBanner()
+
+    expect(optimizationService.fetchAvailability).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.optimization-banner__text').text()).toBe(
+      'Die KI-Terminoptimierung ist auf diesem Server derzeit nicht verfügbar.',
+    )
+  })
+
+  it('still offers to review pending proposals when the server cannot run a new optimization', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: false, reason: 'AI_DISABLED' })
+    vi.mocked(optimizationService.fetchPendingProposals).mockResolvedValue([createProposal()])
+    const { wrapper } = await mountBanner()
+
+    expect(wrapper.find('.optimization-banner__text').text()).toBe('Die KI hat einen Vorschlag, der Fahrzeit spart.')
+    expect(wrapper.find('.optimization-banner__action').text()).toBe('Vorschläge ansehen')
+  })
+
+  it('keeps inviting to the optimization when the availability could not be loaded', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockRejectedValue(new Error('offline'))
+    const { wrapper } = await mountBanner()
+
+    expect(wrapper.find('.optimization-banner__text').text()).toContain('Die KI kann Ihre Termine')
   })
 
   it('opens the optimization page', async () => {

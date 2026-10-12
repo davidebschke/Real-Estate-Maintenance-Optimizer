@@ -15,6 +15,11 @@
       "running": "Die KI plant Ihre Termine …",
       "lastRun": "Letzter Lauf: {analyzed} Termine geprüft, {candidates} mögliche Verschiebungen bewertet, {proposals} Vorschläge.",
       "noProposals": "Die KI hat keine Verschiebung gefunden, die Fahrzeit oder Kilometer spart.",
+      "unavailable": {
+        "AI_DISABLED": "Die KI-Terminoptimierung ist nicht verfügbar, weil die KI-Funktion auf diesem Server nicht aktiviert ist.",
+        "ROUTING_DISABLED": "Die KI-Terminoptimierung ist nicht verfügbar, weil das Straßenrouting auf diesem Server nicht aktiviert ist.",
+        "unknown": "Die KI-Terminoptimierung ist auf diesem Server derzeit nicht verfügbar."
+      },
       "error": "Die Optimierung konnte nicht gestartet werden.",
       "confirm": {
         "header": "KI-Optimierung starten",
@@ -39,6 +44,7 @@
     },
     "banner": {
       "pending": "Die KI hat keinen offenen Vorschlag. | Die KI hat einen Vorschlag, der Fahrzeit spart. | Die KI hat {count} Vorschläge, die Fahrzeit sparen.",
+      "unavailable": "Die KI-Terminoptimierung ist auf diesem Server derzeit nicht verfügbar.",
       "idle": "Die KI kann Ihre Termine ab {minLeadDays} Tagen im Voraus nach Fahrzeit und Kilometern optimieren.",
       "reviewButton": "Vorschläge ansehen",
       "openButton": "Zur Optimierung"
