@@ -137,7 +137,7 @@ describe('useTenantsStore', () => {
     expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', payload)
   })
 
-  it('reloads an already loaded rent payment table after a tenant update, since a changed rent applies from the current month on', async () => {
+  it('reloads an already loaded rent payment table after a tenant change, since it can alter what the table shows', async () => {
     const store = useTenantsStore()
     const paymentsStore = usePaymentsStore()
     paymentsStore.overviewsByProperty = { 'property-1': { year: 2026, trackingStart: '2026-01', tenants: [], formerTenantPayments: [] } }

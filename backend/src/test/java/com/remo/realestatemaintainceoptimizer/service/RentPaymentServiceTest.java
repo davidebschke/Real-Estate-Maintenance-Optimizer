@@ -9,6 +9,7 @@ import com.remo.realestatemaintainceoptimizer.RentFixtures.TenantSpec;
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
+import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.RentAlertLevel;
 import com.remo.realestatemaintainceoptimizer.dto.RentAlertResponse;
@@ -329,6 +330,26 @@ class RentPaymentServiceTest {
         });
         assertThat(row(overview, "tenant-2").months().get(currentMonth.getMonthValue() - 1).status()).isEqualTo(RentMonthStatus.PAID);
         assertThat(service.yearOverview(owner.id(), "property-1", currentMonth.getYear() - 1).formerTenantPayments()).isEmpty();
+    }
+
+    @Test
+    void anApartmentCreatedAfterTheActivationIsOnlyJudgedFromItsCreationMonthOn() {
+        saveProperty("property-2", currentMonth.minusMonths(3));
+        ApartmentResponse created = apartmentService.create(owner.id(), "property-2", new ApartmentWithTenantRequest(
+                new ApartmentDetailsRequest(1, new BigDecimal("60.00"), new BigDecimal("700.00"), new BigDecimal("500.00"), new BigDecimal("200.00")),
+                new TenantDetailsRequest("Eva", "Berg")));
+
+        RentYearResponse overview = service.yearOverview(owner.id(), "property-2", currentMonth.getYear());
+        RentYearResponse previousYear = service.yearOverview(owner.id(), "property-2", currentMonth.minusMonths(3).getYear());
+
+        String tenantId = created.tenants().getFirst().id();
+        assertThat(row(overview, tenantId).months().subList(0, currentMonth.getMonthValue() - 1))
+                .allSatisfy(month -> assertThat(month.status()).isEqualTo(RentMonthStatus.UNTRACKED));
+        assertThat(row(previousYear, tenantId).months())
+                .allSatisfy(month -> assertThat(month.status()).isIn(RentMonthStatus.UNTRACKED, RentMonthStatus.PENDING, RentMonthStatus.OVERDUE, RentMonthStatus.UPCOMING));
+        assertThat(service.alerts(owner.id()).stream().filter(alert -> tenantId.equals(alert.tenantId())).findFirst().orElseThrow().alert())
+                .isEqualTo(isPastDueDay() ? RentAlertLevel.OVERDUE : RentAlertLevel.PENDING);
+        assertThat(rentPaymentRepository.count()).isZero();
     }
 
     @Test

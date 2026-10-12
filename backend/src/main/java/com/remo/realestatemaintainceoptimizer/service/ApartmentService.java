@@ -107,6 +107,7 @@ public class ApartmentService {
                 details.totalRent(),
                 details.coldRent(),
                 details.additionalCosts());
+        apartment.startRentTracking(YearMonth.now(paymentProperties.zone()));
         addTenantTo(ownerId, apartment, request.tenant());
         return toResponse(apartmentRepository.save(apartment));
     }

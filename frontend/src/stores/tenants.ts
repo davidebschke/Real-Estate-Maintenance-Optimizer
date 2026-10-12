@@ -56,8 +56,16 @@ export const useTenantsStore = defineStore('tenants', () => {
     if (requestEpoch !== sessionEpoch) return false
     errorFlag.value = false
     lastChangeErrorMessage.value = null
-    await Promise.all([fetchApartments(propertyId), usePropertiesStore().fetchProperties()])
+    await Promise.all([fetchApartments(propertyId), usePropertiesStore().fetchProperties(), reloadLoadedPayments(propertyId)])
     return true
+  }
+
+  /** Reloads the rent payment table and alerts of a property whose table was already loaded, since every tenant change can alter what they show (new apartments, a changed rent, payments of a deleted tenant). */
+  async function reloadLoadedPayments(propertyId: string) {
+    const paymentsStore = usePaymentsStore()
+    if (paymentsStore.overviewsByProperty[propertyId]) {
+      await Promise.all([paymentsStore.fetchYear(propertyId), paymentsStore.fetchAlerts()])
+    }
   }
 
   /** Forgets the cached apartments of a property that no longer exists. */
@@ -84,14 +92,9 @@ export const useTenantsStore = defineStore('tenants', () => {
     return applyTenantCreation(propertyId, () => apartmentService.addTenant(apartmentId, payload))
   }
 
-  /** Updates the given tenant together with the data of their apartment and reloads an already loaded rent payment table, since a changed rent applies from the current month on. */
-  async function updateTenant(propertyId: string, tenantId: string, payload: ApartmentWithTenantPayload): Promise<boolean> {
-    const isUpdated = await applyChange(propertyId, () => apartmentService.updateTenant(tenantId, payload), hasSaveError)
-    const paymentsStore = usePaymentsStore()
-    if (isUpdated && paymentsStore.overviewsByProperty[propertyId]) {
-      await Promise.all([paymentsStore.fetchYear(propertyId), paymentsStore.fetchAlerts()])
-    }
-    return isUpdated
+  /** Updates the given tenant together with the data of their apartment. */
+  function updateTenant(propertyId: string, tenantId: string, payload: ApartmentWithTenantPayload): Promise<boolean> {
+    return applyChange(propertyId, () => apartmentService.updateTenant(tenantId, payload), hasSaveError)
   }
 
   /** Deletes the given tenant, which also removes their apartment if they were its last tenant. */

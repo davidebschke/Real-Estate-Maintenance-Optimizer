@@ -62,15 +62,11 @@ function changePaymentYear(year: number) {
   if (props.propertyId) paymentsStore.changeYear(props.propertyId, year)
 }
 
-/** Deletes the tenant and, if that worked, reloads the rent payments, which now list the tenant's payments as those of a former tenant. */
-async function deleteTenant(apartment: Apartment, tenant: Tenant) {
-  const isDeleted = await tenantsStore.deleteTenant(apartment.propertyId, tenant.id)
-  if (isDeleted) await Promise.all([paymentsStore.fetchYear(apartment.propertyId), paymentsStore.fetchAlerts()])
-}
-
 /** Asks for delete confirmation, then deletes the tenant. */
 function requestDelete(apartment: Apartment, tenant: Tenant) {
-  confirmDelete(tenant, apartment.tenants.length === 1, () => deleteTenant(apartment, tenant))
+  confirmDelete(tenant, apartment.tenants.length === 1, () =>
+    tenantsStore.deleteTenant(apartment.propertyId, tenant.id),
+  )
 }
 </script>
 

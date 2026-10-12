@@ -1,6 +1,9 @@
 -- First day of the month from which a property's rent payments are checked; NULL means the rent payment check is not activated
 ALTER TABLE properties ADD COLUMN rent_tracking_start DATE;
 
+-- First day of the month an apartment was created in, so a later created apartment is not judged for earlier months; NULL for apartments of older data
+ALTER TABLE apartments ADD COLUMN rent_tracking_from DATE;
+
 -- The rent an apartment had before an increase or decrease took effect in the given month, so earlier months keep being judged by it
 CREATE TABLE apartment_rent_changes (
     id              VARCHAR(36)   PRIMARY KEY,

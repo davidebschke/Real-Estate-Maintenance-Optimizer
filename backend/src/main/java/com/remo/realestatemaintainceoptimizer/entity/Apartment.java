@@ -11,6 +11,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.OnDelete;
@@ -46,6 +48,9 @@ public class Apartment {
 
     @Column(name = "additional_costs", nullable = false, precision = 9, scale = 2)
     private BigDecimal additionalCosts;
+
+    @Column(name = "rent_tracking_from")
+    private LocalDate rentTrackingFrom;
 
     @OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tenant> tenants = new ArrayList<>();
@@ -87,6 +92,20 @@ public class Apartment {
         this.totalRent = newTotalRent;
         this.coldRent = newColdRent;
         this.additionalCosts = newAdditionalCosts;
+    }
+
+    /**
+     * Remembers the month this apartment was created in, so its rent is only judged from then on.
+     */
+    public void startRentTracking(YearMonth month) {
+        this.rentTrackingFrom = month.atDay(1);
+    }
+
+    /**
+     * Returns the month this apartment's rent is judged from at the earliest, or null for an apartment without a recorded creation month.
+     */
+    public YearMonth rentTrackingFrom() {
+        return rentTrackingFrom == null ? null : YearMonth.from(rentTrackingFrom);
     }
 
     /**

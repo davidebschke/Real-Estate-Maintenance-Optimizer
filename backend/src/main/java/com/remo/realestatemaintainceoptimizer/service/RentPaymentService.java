@@ -110,7 +110,7 @@ public class RentPaymentService {
                         apartment,
                         RentSchedule.of(apartment.totalRent(), changesByApartment.getOrDefault(apartment.id(), List.of())),
                         paidByApartment.getOrDefault(apartment.id(), Map.of()),
-                        new YearView(resolvedYear, trackingStart, today)))
+                        new YearView(resolvedYear, trackingStartOf(apartment, trackingStart), today)))
                 .sorted(TENANT_ORDER)
                 .toList();
         List<FormerTenantPaymentResponse> formerTenantPayments =
@@ -137,7 +137,7 @@ public class RentPaymentService {
                     RentAlertLevel alert = statusCalculator.alertLevel(
                             RentSchedule.of(apartment.totalRent(), changesByApartment.getOrDefault(apartment.id(), List.of())),
                             paidByApartment.getOrDefault(apartment.id(), Map.of()),
-                            apartment.property().rentTrackingStart(),
+                            trackingStartOf(apartment, apartment.property().rentTrackingStart()),
                             today);
                     return alert == RentAlertLevel.NONE
                             ? Stream.<RentAlertResponse>empty()
@@ -211,6 +211,16 @@ public class RentPaymentService {
                 ? RentMonthStatus.UNTRACKED
                 : statusCalculator.monthStatus(month, expected, paid, view.trackingStart(), view.today());
         return new RentMonthResponse(month.getMonthValue(), status, paid, expected);
+    }
+
+    /**
+     * Returns the month the given apartment's rent is judged from: the activation month of its property, or the month the apartment was created in if that is later, and null while the check is not activated.
+     */
+    private static YearMonth trackingStartOf(Apartment apartment, YearMonth propertyStart) {
+        if (propertyStart == null || apartment.rentTrackingFrom() == null || apartment.rentTrackingFrom().isBefore(propertyStart)) {
+            return propertyStart;
+        }
+        return apartment.rentTrackingFrom();
     }
 
     private static FormerTenantPaymentResponse toFormerTenantPayment(RentPayment payment) {
