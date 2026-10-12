@@ -4,8 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Payload combining the data of an apartment with the data of one tenant, used to create an apartment with its first tenant and to edit a tenant together with their apartment.
+ * Payload for creating an apartment, optionally together with its first tenant; without a tenant the apartment starts vacant.
  */
-public record ApartmentWithTenantRequest(
-        @NotNull @Valid ApartmentDetailsRequest apartment, @NotNull @Valid TenantDetailsRequest tenant) {
+public record ApartmentWithTenantRequest(@NotNull @Valid ApartmentDetailsRequest apartment, @Valid TenantDetailsRequest tenant) {
 }

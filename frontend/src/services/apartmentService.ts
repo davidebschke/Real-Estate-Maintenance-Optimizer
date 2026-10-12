@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Apartment, ApartmentWithTenantPayload, TenantDetails } from '@/types/apartment'
+import type { Apartment, ApartmentUpdatePayload, NewApartmentPayload, TenantDetails } from '@/types/apartment'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -9,10 +9,21 @@ export async function fetchApartments(propertyId: string): Promise<Apartment[]> 
   return data
 }
 
-/** Creates a new apartment in the given property together with its first tenant. */
-export async function createApartment(propertyId: string, payload: ApartmentWithTenantPayload): Promise<Apartment> {
+/** Creates a new apartment in the given property, optionally together with its first tenant. */
+export async function createApartment(propertyId: string, payload: NewApartmentPayload): Promise<Apartment> {
   const { data } = await axios.post<Apartment>(`${apiBaseUrl}/api/properties/${propertyId}/apartments`, payload)
   return data
+}
+
+/** Updates the data of the given apartment, applying a changed total rent from the payload's month. */
+export async function updateApartment(apartmentId: string, payload: ApartmentUpdatePayload): Promise<Apartment> {
+  const { data } = await axios.put<Apartment>(`${apiBaseUrl}/api/apartments/${apartmentId}`, payload)
+  return data
+}
+
+/** Deletes the given apartment together with its tenants, rent payments and rent history. */
+export async function deleteApartment(apartmentId: string): Promise<void> {
+  await axios.delete(`${apiBaseUrl}/api/apartments/${apartmentId}`)
 }
 
 /** Adds a further tenant to the given apartment. */
@@ -21,13 +32,13 @@ export async function addTenant(apartmentId: string, payload: TenantDetails): Pr
   return data
 }
 
-/** Updates the given tenant together with the data of their apartment. */
-export async function updateTenant(tenantId: string, payload: ApartmentWithTenantPayload): Promise<Apartment> {
+/** Renames the given tenant. */
+export async function updateTenant(tenantId: string, payload: TenantDetails): Promise<Apartment> {
   const { data } = await axios.put<Apartment>(`${apiBaseUrl}/api/tenants/${tenantId}`, payload)
   return data
 }
 
-/** Deletes the given tenant, together with their apartment if they were its last tenant. */
+/** Deletes the given tenant, whose apartment stays vacant if they were its last tenant. */
 export async function deleteTenant(tenantId: string): Promise<void> {
   await axios.delete(`${apiBaseUrl}/api/tenants/${tenantId}`)
 }

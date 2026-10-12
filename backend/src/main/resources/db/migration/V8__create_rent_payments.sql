@@ -4,12 +4,15 @@ ALTER TABLE properties ADD COLUMN rent_tracking_start DATE;
 -- First day of the month an apartment was created in, so a later created apartment is not judged for earlier months; NULL for apartments of older data
 ALTER TABLE apartments ADD COLUMN rent_tracking_from DATE;
 
--- The rent an apartment had before an increase or decrease took effect in the given month, so earlier months keep being judged by it
+-- The total rent an apartment had before its first recorded rent change; NULL while the rent never changed
+ALTER TABLE apartments ADD COLUMN initial_rent NUMERIC(9, 2);
+
+-- The total rent an apartment has from the given month on, until the next recorded change, so earlier months keep being judged by the rent they had
 CREATE TABLE apartment_rent_changes (
     id              VARCHAR(36)   PRIMARY KEY,
     apartment_id    VARCHAR(36)   NOT NULL REFERENCES apartments (id) ON DELETE CASCADE,
     effective_month DATE          NOT NULL,
-    previous_rent   NUMERIC(9, 2) NOT NULL,
+    rent            NUMERIC(9, 2) NOT NULL,
     version         BIGINT        NOT NULL,
     CONSTRAINT apartment_rent_changes_apartment_month_key UNIQUE (apartment_id, effective_month)
 );

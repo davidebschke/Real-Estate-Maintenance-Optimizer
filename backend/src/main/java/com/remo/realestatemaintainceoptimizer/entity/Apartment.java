@@ -52,6 +52,9 @@ public class Apartment {
     @Column(name = "rent_tracking_from")
     private LocalDate rentTrackingFrom;
 
+    @Column(name = "initial_rent", precision = 9, scale = 2)
+    private BigDecimal initialRent;
+
     @OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tenant> tenants = new ArrayList<>();
 
@@ -102,6 +105,22 @@ public class Apartment {
     }
 
     /**
+     * Remembers the total rent before the first recorded rent change, keeping it if one was already remembered.
+     */
+    public void rememberInitialRent(BigDecimal rent) {
+        if (initialRent == null) {
+            this.initialRent = rent;
+        }
+    }
+
+    /**
+     * Returns the total rent this apartment had before its first recorded rent change, which is its current total rent while the rent never changed.
+     */
+    public BigDecimal rentBeforeChanges() {
+        return initialRent == null ? totalRent : initialRent;
+    }
+
+    /**
      * Returns the month this apartment's rent is judged from at the earliest, or null for an apartment without a recorded creation month.
      */
     public YearMonth rentTrackingFrom() {
@@ -122,13 +141,6 @@ public class Apartment {
      */
     public void removeTenant(Tenant tenant) {
         tenants.remove(tenant);
-    }
-
-    /**
-     * Returns whether exactly one tenant lives in this apartment.
-     */
-    public boolean hasSingleTenant() {
-        return tenants.size() == 1;
     }
 
     public String id() {

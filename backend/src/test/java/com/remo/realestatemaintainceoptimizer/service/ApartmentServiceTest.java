@@ -8,6 +8,7 @@ import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
+import com.remo.realestatemaintainceoptimizer.dto.ApartmentUpdateRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Apartment;
@@ -17,6 +18,7 @@ import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
@@ -119,27 +121,106 @@ class ApartmentServiceTest {
                 .containsExactly("Albrecht", "Zander", "Meier");
     }
 
-    private ApartmentWithTenantRequest rentRequest(String totalRent) {
-        return new ApartmentWithTenantRequest(
+    private static final YearMonth CURRENT_MONTH = YearMonth.now(ZoneId.of("Europe/Berlin"));
+
+    private ApartmentUpdateRequest rentUpdate(String totalRent, YearMonth effectiveMonth) {
+        return new ApartmentUpdateRequest(
                 new ApartmentDetailsRequest(2, new BigDecimal("64.50"), new BigDecimal(totalRent), new BigDecimal("650.00"), new BigDecimal("200.00")),
-                new TenantDetailsRequest("Erika", "Mustermann"));
+                effectiveMonth);
     }
 
     @Test
-    void remembersTheRentBeforeAChangeEffectiveFromTheCurrentMonthOnly() {
+    void recordsAChangedRentFromTheCurrentMonthOnWhenNoMonthIsGiven() {
         ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
-        String tenantId = created.tenants().get(0).id();
 
-        service.updateTenant(owner.id(), tenantId, rentRequest("850.00"));
+        service.updateApartment(owner.id(), created.id(), rentUpdate("850.00", null));
         assertThat(rentChangeRepository.count()).isZero();
 
-        service.updateTenant(owner.id(), tenantId, rentRequest("900.00"));
-        service.updateTenant(owner.id(), tenantId, rentRequest("950.00"));
+        service.updateApartment(owner.id(), created.id(), rentUpdate("900.00", null));
 
         assertThat(rentChangeRepository.findAllByApartmentPropertyId("property-1")).singleElement().satisfies(change -> {
-            assertThat(change.previousRent()).isEqualByComparingTo("850.00");
-            assertThat(change.effectiveMonth()).isEqualTo(YearMonth.now(ZoneId.of("Europe/Berlin")));
+            assertThat(change.rent()).isEqualByComparingTo("900.00");
+            assertThat(change.effectiveMonth()).isEqualTo(CURRENT_MONTH);
         });
+        assertThat(apartmentRepository.findAllByPropertyId("property-1").getFirst().rentBeforeChanges()).isEqualByComparingTo("850.00");
+    }
+
+    @Test
+    void aChosenEarlierMonthReplacesTheLaterRentChangesAndKeepsTheRentBeforeTheFirstOne() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        service.updateApartment(owner.id(), created.id(), rentUpdate("900.00", CURRENT_MONTH.minusMonths(1)));
+        service.updateApartment(owner.id(), created.id(), rentUpdate("950.00", CURRENT_MONTH));
+
+        service.updateApartment(owner.id(), created.id(), rentUpdate("870.00", CURRENT_MONTH.minusMonths(2)));
+
+        assertThat(rentChangeRepository.findAllByApartmentPropertyId("property-1")).singleElement().satisfies(change -> {
+            assertThat(change.rent()).isEqualByComparingTo("870.00");
+            assertThat(change.effectiveMonth()).isEqualTo(CURRENT_MONTH.minusMonths(2));
+        });
+        assertThat(apartmentRepository.findAllByPropertyId("property-1").getFirst().rentBeforeChanges()).isEqualByComparingTo("850.00");
+        assertThat(service.listByProperty(owner.id(), "property-1").getFirst().totalRent()).isEqualByComparingTo("870.00");
+    }
+
+    @Test
+    void ignoresTheChosenMonthWhileTheRentStaysTheSame() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+
+        service.updateApartment(owner.id(), created.id(), rentUpdate("850.00", CURRENT_MONTH.minusMonths(5)));
+
+        assertThat(rentChangeRepository.count()).isZero();
+    }
+
+    @Test
+    void rejectsARentMonthInTheFutureOrBeforeTheSupportedYears() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+
+        assertThatThrownBy(() -> service.updateApartment(owner.id(), created.id(), rentUpdate("900.00", CURRENT_MONTH.plusMonths(1))))
+                .isInstanceOfSatisfying(InvalidRentRequestException.class,
+                        exception -> assertThat(exception.reasonCode()).isEqualTo(InvalidRentRequestException.REASON_INVALID_RENT_MONTH));
+        assertThatThrownBy(() -> service.updateApartment(owner.id(), created.id(), rentUpdate("900.00", YearMonth.of(1999, 12))))
+                .isInstanceOf(InvalidRentRequestException.class);
+        assertThat(service.listByProperty(owner.id(), "property-1").getFirst().totalRent()).isEqualByComparingTo("850.00");
+    }
+
+    @Test
+    void createsAVacantApartmentWithoutUsingUpADemoTenantCreation() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0, 1);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
+
+        ApartmentResponse vacant = service.create(demo.id(), "demo-property", new ApartmentWithTenantRequest(
+                new ApartmentDetailsRequest(1, new BigDecimal("50.00"), new BigDecimal("600.00"), new BigDecimal("450.00"), new BigDecimal("150.00")),
+                null));
+
+        assertThat(vacant.tenants()).isEmpty();
+        assertThat(service.listByProperty(demo.id(), "demo-property")).singleElement().satisfies(apartment -> assertThat(apartment.tenants()).isEmpty());
+        assertThat(userRepository.findById(demo.id()).orElseThrow().remainingTenantCreations()).isEqualTo(1);
+    }
+
+    @Test
+    void aTenantCanBeAddedToAVacantApartment() {
+        ApartmentResponse vacant = service.create(owner.id(), "property-1", new ApartmentWithTenantRequest(
+                new ApartmentDetailsRequest(1, new BigDecimal("50.00"), new BigDecimal("600.00"), new BigDecimal("450.00"), new BigDecimal("150.00")),
+                null));
+
+        ApartmentResponse filled = service.addTenant(owner.id(), vacant.id(), new TenantDetailsRequest("Erika", "Mustermann"));
+
+        assertThat(filled.tenants()).hasSize(1);
+    }
+
+    @Test
+    void deletesAnApartmentWithItsTenantsPaymentsAndRentHistory() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        service.updateApartment(owner.id(), created.id(), rentUpdate("900.00", CURRENT_MONTH));
+        Apartment apartment = apartmentRepository.findAllByPropertyId("property-1").getFirst();
+        rentPaymentRepository.save(new RentPayment("payment-1", apartment, apartment.tenants().getFirst(), LocalDate.of(2026, 10, 2),
+                new BigDecimal("850.00"), "Miete", 2026, 10));
+
+        service.deleteApartment(owner.id(), created.id());
+
+        assertThat(apartmentRepository.count()).isZero();
+        assertThat(tenantRepository.count()).isZero();
+        assertThat(rentPaymentRepository.count()).isZero();
+        assertThat(rentChangeRepository.count()).isZero();
     }
 
     @Test
@@ -163,7 +244,7 @@ class ApartmentServiceTest {
     }
 
     @Test
-    void deletingTheLastTenantRemovesTheApartmentWithItsPayments() {
+    void deletingTheLastTenantKeepsTheVacantApartmentAndTheirPaymentsNotedAsFormerTenantPayments() {
         ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
         Apartment apartment = apartmentRepository.findAllByPropertyId("property-1").getFirst();
         rentPaymentRepository.save(new RentPayment("payment-1", apartment, apartment.tenants().getFirst(), LocalDate.of(2026, 10, 2),
@@ -171,25 +252,41 @@ class ApartmentServiceTest {
 
         service.deleteTenant(owner.id(), created.tenants().get(0).id());
 
-        assertThat(apartmentRepository.count()).isZero();
-        assertThat(rentPaymentRepository.count()).isZero();
+        assertThat(service.listByProperty(owner.id(), "property-1")).singleElement()
+                .satisfies(remaining -> assertThat(remaining.tenants()).isEmpty());
+        assertThat(tenantRepository.count()).isZero();
+        RentPayment formerPayment = rentPaymentRepository.findById("payment-1").orElseThrow();
+        assertThat(formerPayment.tenant()).isNull();
+        assertThat(formerPayment.formerTenantName()).isEqualTo("Mustermann, Erika");
     }
 
     @Test
-    void updatesTheTenantAndTheSharedApartmentData() {
+    void updatesTheNameOfATenantOnly() {
         ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
         service.addTenant(owner.id(), created.id(), new TenantDetailsRequest("Max", "Mustermann"));
         String tenantId = created.tenants().get(0).id();
 
-        ApartmentResponse updated = service.updateTenant(owner.id(), tenantId, new ApartmentWithTenantRequest(
+        ApartmentResponse updated = service.updateTenant(owner.id(), tenantId, new TenantDetailsRequest("Erika", "Musterfrau"));
+
+        assertThat(updated.floor()).isEqualTo(2);
+        assertThat(updated.totalRent()).isEqualByComparingTo("850.00");
+        assertThat(updated.tenants()).extracting("lastName").containsExactly("Musterfrau", "Mustermann");
+    }
+
+    @Test
+    void updatesTheSharedApartmentData() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        service.addTenant(owner.id(), created.id(), new TenantDetailsRequest("Max", "Mustermann"));
+
+        ApartmentResponse updated = service.updateApartment(owner.id(), created.id(), new ApartmentUpdateRequest(
                 new ApartmentDetailsRequest(
                         3, new BigDecimal("70.00"), new BigDecimal("900.00"), new BigDecimal("700.00"), new BigDecimal("200.00")),
-                new TenantDetailsRequest("Erika", "Musterfrau")));
+                null));
 
         assertThat(updated.floor()).isEqualTo(3);
         assertThat(updated.areaSquareMeters()).isEqualByComparingTo("70.00");
         assertThat(updated.totalRent()).isEqualByComparingTo("900.00");
-        assertThat(updated.tenants()).extracting("lastName").containsExactly("Musterfrau", "Mustermann");
+        assertThat(updated.tenants()).hasSize(2);
         assertThat(service.listByProperty(owner.id(), "property-1").get(0).floor()).isEqualTo(3);
     }
 
@@ -206,13 +303,13 @@ class ApartmentServiceTest {
     }
 
     @Test
-    void deletingTheLastTenantAlsoDeletesTheApartment() {
+    void deletingTheLastTenantKeepsTheApartment() {
         ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
 
         service.deleteTenant(owner.id(), created.tenants().get(0).id());
 
-        assertThat(service.listByProperty(owner.id(), "property-1")).isEmpty();
-        assertThat(apartmentRepository.count()).isZero();
+        assertThat(service.listByProperty(owner.id(), "property-1")).hasSize(1);
+        assertThat(apartmentRepository.count()).isEqualTo(1);
         assertThat(tenantRepository.count()).isZero();
     }
 
@@ -227,8 +324,11 @@ class ApartmentServiceTest {
                 .isInstanceOf(PropertyNotFoundException.class);
         assertThatThrownBy(() -> service.addTenant(otherOwner.id(), created.id(), new TenantDetailsRequest("Hans", "Fremd")))
                 .isInstanceOf(ApartmentNotFoundException.class);
-        assertThatThrownBy(() -> service.updateTenant(otherOwner.id(), tenantId, request(1, "Hans", "Fremd")))
+        assertThatThrownBy(() -> service.updateTenant(otherOwner.id(), tenantId, new TenantDetailsRequest("Hans", "Fremd")))
                 .isInstanceOf(TenantNotFoundException.class);
+        assertThatThrownBy(() -> service.updateApartment(otherOwner.id(), created.id(), rentUpdate("900.00", null)))
+                .isInstanceOf(ApartmentNotFoundException.class);
+        assertThatThrownBy(() -> service.deleteApartment(otherOwner.id(), created.id())).isInstanceOf(ApartmentNotFoundException.class);
         assertThatThrownBy(() -> service.deleteTenant(otherOwner.id(), tenantId)).isInstanceOf(TenantNotFoundException.class);
         assertThat(service.listByProperty(owner.id(), "property-1").get(0).tenants()).hasSize(1);
     }
@@ -238,8 +338,11 @@ class ApartmentServiceTest {
         assertThatThrownBy(() -> service.listByProperty(owner.id(), "unknown")).isInstanceOf(PropertyNotFoundException.class);
         assertThatThrownBy(() -> service.addTenant(owner.id(), "unknown", new TenantDetailsRequest("A", "B")))
                 .isInstanceOf(ApartmentNotFoundException.class);
-        assertThatThrownBy(() -> service.updateTenant(owner.id(), "unknown", request(1, "A", "B")))
+        assertThatThrownBy(() -> service.updateTenant(owner.id(), "unknown", new TenantDetailsRequest("A", "B")))
                 .isInstanceOf(TenantNotFoundException.class);
+        assertThatThrownBy(() -> service.updateApartment(owner.id(), "unknown", rentUpdate("900.00", null)))
+                .isInstanceOf(ApartmentNotFoundException.class);
+        assertThatThrownBy(() -> service.deleteApartment(owner.id(), "unknown")).isInstanceOf(ApartmentNotFoundException.class);
         assertThatThrownBy(() -> service.deleteTenant(owner.id(), "unknown")).isInstanceOf(TenantNotFoundException.class);
     }
 
@@ -290,7 +393,7 @@ class ApartmentServiceTest {
         propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
         ApartmentResponse created = service.create(demo.id(), "demo-property", request(1, "Erika", "Mustermann"));
 
-        service.updateTenant(demo.id(), created.tenants().get(0).id(), request(2, "Erika", "Musterfrau"));
+        service.updateTenant(demo.id(), created.tenants().get(0).id(), new TenantDetailsRequest("Erika", "Musterfrau"));
         service.deleteTenant(demo.id(), created.tenants().get(0).id());
 
         assertThat(userRepository.findById(demo.id()).orElseThrow().remainingTenantCreations()).isZero();

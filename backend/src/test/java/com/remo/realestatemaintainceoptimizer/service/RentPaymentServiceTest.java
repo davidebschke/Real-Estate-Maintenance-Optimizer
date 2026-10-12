@@ -10,6 +10,7 @@ import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
+import com.remo.realestatemaintainceoptimizer.dto.ApartmentUpdateRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.RentAlertLevel;
 import com.remo.realestatemaintainceoptimizer.dto.RentAlertResponse;
@@ -287,7 +288,9 @@ class RentPaymentServiceTest {
     void aRentChangeOnlyAppliesFromItsMonthOnAndEarlierMonthsKeepTheirRent() {
         Apartment apartment = apartmentRepository.findAllByPropertyId("property-1").stream()
                 .filter(candidate -> "apartment-2".equals(candidate.id())).findFirst().orElseThrow();
-        rentChangeRepository.save(new ApartmentRentChange(UUID.randomUUID().toString(), apartment, currentMonth, new BigDecimal("600.00")));
+        apartment.rememberInitialRent(new BigDecimal("600.00"));
+        apartmentRepository.save(apartment);
+        rentChangeRepository.save(new ApartmentRentChange(UUID.randomUUID().toString(), apartment, currentMonth, new BigDecimal("700.00")));
         YearMonth previousMonth = currentMonth.minusMonths(1);
 
         RentYearResponse overview = service.yearOverview(owner.id(), "property-1", currentMonth.getYear());
@@ -307,10 +310,10 @@ class RentPaymentServiceTest {
         service.save(owner.id(), "property-2", new SaveRentPaymentsRequest(List.of(
                 request("tenant-5", "700.00", previousMonth.atDay(2), previousMonth), request("tenant-5", "750.00", today, currentMonth))));
 
-        apartmentService.updateTenant(owner.id(), "tenant-5", new ApartmentWithTenantRequest(
+        apartmentService.updateApartment(owner.id(), "apartment-5", new ApartmentUpdateRequest(
                 new ApartmentDetailsRequest(
                         apartment.floor(), apartment.areaSquareMeters(), new BigDecimal("750.00"), new BigDecimal("550.00"), new BigDecimal("200.00")),
-                new TenantDetailsRequest("Uwe", "Roth")));
+                null));
 
         assertThat(service.alerts(owner.id()).stream().filter(alert -> "tenant-5".equals(alert.tenantId()))).isEmpty();
     }

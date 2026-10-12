@@ -2,11 +2,12 @@
   "tenants": {
     "detail": {
       "back": "Back",
-      "tenantsHeading": "Tenants",
-      "empty": "No tenants have been added to this property yet.",
-      "loadError": "The tenants could not be loaded.",
+      "apartmentsHeading": "Apartments & tenants",
+      "empty": "No apartments have been added to this property yet.",
+      "loadError": "The apartments could not be loaded.",
       "deleteError": "The tenant could not be deleted.",
-      "createButton": "Add tenant"
+      "apartmentDeleteError": "The apartment could not be deleted.",
+      "createButton": "Add apartment"
     },
     "apartment": {
       "floorGround": "Ground floor",
@@ -16,23 +17,19 @@
       "coldRentLabel": "Base rent",
       "additionalCostsLabel": "Service charges",
       "tenantsHeading": "Tenants",
-      "addTenantButton": "Add another tenant",
+      "vacancyNote": "Vacant – no tenant yet",
+      "addTenantButton": "Add tenant",
       "editTenantButton": "Edit tenant {name}",
-      "deleteTenantButton": "Delete tenant {name}"
+      "deleteTenantButton": "Delete tenant {name}",
+      "editApartmentButton": "Edit apartment {name}",
+      "deleteApartmentButton": "Delete apartment {name}"
     },
-    "form": {
-      "createTitle": "Add new tenant",
-      "addTitle": "Add another tenant",
-      "editTitle": "Edit tenant",
-      "tenantSection": "Tenant details",
+    "apartmentForm": {
+      "createTitle": "Add apartment",
+      "editTitle": "Edit apartment",
       "apartmentSection": "Apartment details",
-      "sharedApartmentHint": "The apartment details apply to all tenants of this apartment.",
-      "firstNameLabel": "First name",
-      "firstNamePlaceholder": "e.g. Erika",
-      "firstNameRequiredError": "Please enter a first name.",
-      "lastNameLabel": "Last name",
-      "lastNamePlaceholder": "e.g. Mustermann",
-      "lastNameRequiredError": "Please enter a last name.",
+      "firstTenantSection": "Add first tenant (optional)",
+      "firstTenantHint": "Without a tenant the apartment is created as vacant.",
       "floorLabel": "Floor",
       "floorPlaceholder": "e.g. 2",
       "floorHint": "0 is the ground floor, negative numbers are basement levels.",
@@ -47,8 +44,24 @@
       "additionalCostsLabel": "Service charges",
       "additionalCostsPlaceholder": "e.g. 200",
       "amountRequiredError": "Please enter an amount.",
+      "rentEffectiveMonthLabel": "Applies from",
+      "rentEffectiveMonthHint": "The new rent applies from this month, earlier months keep the previous rent.",
+      "error": "The apartment could not be saved.",
+      "submitCreate": "Add apartment",
+      "submitEdit": "Save",
+      "cancel": "Cancel",
+      "requiredFieldsLegend": "* Required field"
+    },
+    "form": {
+      "addTitle": "Add tenant",
+      "editTitle": "Edit tenant",
+      "firstNameLabel": "First name",
+      "firstNamePlaceholder": "e.g. Erika",
+      "firstNameRequiredError": "Please enter a first name.",
+      "lastNameLabel": "Last name",
+      "lastNamePlaceholder": "e.g. Mustermann",
+      "lastNameRequiredError": "Please enter a last name.",
       "error": "The tenant could not be saved.",
-      "submitCreate": "Add tenant",
       "submitAdd": "Add tenant",
       "submitEdit": "Save",
       "cancel": "Cancel",
@@ -56,8 +69,13 @@
     },
     "deleteConfirm": {
       "header": "Delete tenant",
-      "message": "Do you really want to delete the tenant \"{name}\"?",
-      "lastTenantMessage": "Do you really want to delete the tenant \"{name}\"? As the last tenant of the apartment, the apartment details will be deleted as well.",
+      "message": "Do you really want to delete the tenant \"{name}\"? Their rent payments are kept as payments of the previous tenant.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
+    "apartmentDeleteConfirm": {
+      "header": "Delete apartment",
+      "message": "Do you really want to delete the apartment \"{name}\"? Its tenants, their rent payments and the rent history are deleted as well. This cannot be undone.",
       "confirm": "Delete",
       "cancel": "Cancel"
     }

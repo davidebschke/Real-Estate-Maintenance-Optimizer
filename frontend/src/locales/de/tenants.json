@@ -2,11 +2,12 @@
   "tenants": {
     "detail": {
       "back": "Zurück",
-      "tenantsHeading": "Mieter",
-      "empty": "Für dieses Objekt sind noch keine Mieter hinterlegt.",
-      "loadError": "Die Mieter konnten nicht geladen werden.",
+      "apartmentsHeading": "Wohnungen & Mieter",
+      "empty": "Für dieses Objekt sind noch keine Wohnungen hinterlegt.",
+      "loadError": "Die Wohnungen konnten nicht geladen werden.",
       "deleteError": "Der Mieter konnte nicht gelöscht werden.",
-      "createButton": "Mieter anlegen"
+      "apartmentDeleteError": "Die Wohnung konnte nicht gelöscht werden.",
+      "createButton": "Wohnung hinzufügen"
     },
     "apartment": {
       "floorGround": "Erdgeschoss",
@@ -16,23 +17,19 @@
       "coldRentLabel": "Kaltmiete",
       "additionalCostsLabel": "Nebenkosten",
       "tenantsHeading": "Mieter",
-      "addTenantButton": "Weiteren Mieter hinzufügen",
+      "vacancyNote": "Leerstand – noch kein Mieter",
+      "addTenantButton": "Mieter hinzufügen",
       "editTenantButton": "Mieter {name} bearbeiten",
-      "deleteTenantButton": "Mieter {name} löschen"
+      "deleteTenantButton": "Mieter {name} löschen",
+      "editApartmentButton": "Wohnung {name} bearbeiten",
+      "deleteApartmentButton": "Wohnung {name} löschen"
     },
-    "form": {
-      "createTitle": "Neuen Mieter anlegen",
-      "addTitle": "Weiteren Mieter hinzufügen",
-      "editTitle": "Mieter bearbeiten",
-      "tenantSection": "Daten des Mieters",
+    "apartmentForm": {
+      "createTitle": "Wohnung hinzufügen",
+      "editTitle": "Wohnung bearbeiten",
       "apartmentSection": "Daten der Wohnung",
-      "sharedApartmentHint": "Die Wohnungsdaten gelten für alle Mieter dieser Wohnung.",
-      "firstNameLabel": "Vorname",
-      "firstNamePlaceholder": "z. B. Erika",
-      "firstNameRequiredError": "Bitte einen Vornamen eingeben.",
-      "lastNameLabel": "Nachname",
-      "lastNamePlaceholder": "z. B. Mustermann",
-      "lastNameRequiredError": "Bitte einen Nachnamen eingeben.",
+      "firstTenantSection": "Ersten Mieter anlegen (optional)",
+      "firstTenantHint": "Ohne Mieter wird die Wohnung als Leerstand angelegt.",
       "floorLabel": "Stockwerk",
       "floorPlaceholder": "z. B. 2",
       "floorHint": "0 ist das Erdgeschoss, negative Zahlen sind Untergeschosse.",
@@ -47,8 +44,24 @@
       "additionalCostsLabel": "Nebenkosten",
       "additionalCostsPlaceholder": "z. B. 200",
       "amountRequiredError": "Bitte einen Betrag eingeben.",
+      "rentEffectiveMonthLabel": "Gilt ab",
+      "rentEffectiveMonthHint": "Der neue Mietpreis gilt ab diesem Monat, frühere Monate behalten den bisherigen Mietpreis.",
+      "error": "Die Wohnung konnte nicht gespeichert werden.",
+      "submitCreate": "Wohnung anlegen",
+      "submitEdit": "Speichern",
+      "cancel": "Abbrechen",
+      "requiredFieldsLegend": "* Pflichtfeld"
+    },
+    "form": {
+      "addTitle": "Mieter hinzufügen",
+      "editTitle": "Mieter bearbeiten",
+      "firstNameLabel": "Vorname",
+      "firstNamePlaceholder": "z. B. Erika",
+      "firstNameRequiredError": "Bitte einen Vornamen eingeben.",
+      "lastNameLabel": "Nachname",
+      "lastNamePlaceholder": "z. B. Mustermann",
+      "lastNameRequiredError": "Bitte einen Nachnamen eingeben.",
       "error": "Der Mieter konnte nicht gespeichert werden.",
-      "submitCreate": "Mieter anlegen",
       "submitAdd": "Mieter hinzufügen",
       "submitEdit": "Speichern",
       "cancel": "Abbrechen",
@@ -56,8 +69,13 @@
     },
     "deleteConfirm": {
       "header": "Mieter löschen",
-      "message": "Soll der Mieter „{name}“ wirklich gelöscht werden?",
-      "lastTenantMessage": "Soll der Mieter „{name}“ wirklich gelöscht werden? Da er der letzte Mieter der Wohnung ist, werden auch die Wohnungsdaten gelöscht.",
+      "message": "Soll der Mieter „{name}“ wirklich gelöscht werden? Seine Mietzahlungen bleiben als Zahlungen des vorherigen Mieters erhalten.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "apartmentDeleteConfirm": {
+      "header": "Wohnung löschen",
+      "message": "Soll die Wohnung „{name}“ wirklich gelöscht werden? Ihre Mieter, deren Mietzahlungen und der Mietverlauf werden mitgelöscht. Das lässt sich nicht rückgängig machen.",
       "confirm": "Löschen",
       "cancel": "Abbrechen"
     }

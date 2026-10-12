@@ -61,6 +61,7 @@ beforeEach(() => {
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
   vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.deleteTenant).mockReset().mockResolvedValue()
+  vi.mocked(apartmentService.deleteApartment).mockReset().mockResolvedValue()
   vi.mocked(paymentService.fetchPaymentYear).mockReset().mockResolvedValue(createPaymentYearOverview())
   vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
   vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-01' })
@@ -109,11 +110,20 @@ describe('PropertyDetailDrawer', () => {
     expect(names).toEqual(['Erika Mustermann', 'Max Meier'])
   })
 
-  it('shows a hint when the property has no tenants yet', async () => {
+  it('lists a vacant apartment with its vacancy note', async () => {
+    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment({ tenants: [] })])
+
+    await mountDrawer()
+
+    expect(document.body.querySelector('.apartment-card__vacancy')?.textContent).toBe('Leerstand – noch kein Mieter')
+    expect(document.body.querySelector('.property-detail-drawer__empty')).toBeNull()
+  })
+
+  it('shows a hint when the property has no apartments yet', async () => {
     await mountDrawer()
 
     expect(document.body.querySelector('.property-detail-drawer__empty')?.textContent).toBe(
-      'Für dieses Objekt sind noch keine Mieter hinterlegt.',
+      'Für dieses Objekt sind noch keine Wohnungen hinterlegt.',
     )
   })
 
@@ -123,40 +133,90 @@ describe('PropertyDetailDrawer', () => {
     await mountDrawer()
 
     expect(document.body.querySelector('.property-detail-drawer__error')?.textContent).toBe(
-      'Die Mieter konnten nicht geladen werden.',
+      'Die Wohnungen konnten nicht geladen werden.',
     )
     expect(document.body.querySelector('.property-detail-drawer__empty')).toBeNull()
   })
 
-  it('opens the tenant form for a new apartment of this property', async () => {
+  it('names its section after the apartments and their tenants', async () => {
+    await mountDrawer()
+
+    expect(document.body.querySelector('.property-detail-drawer__section h3')?.textContent).toBe('Wohnungen & Mieter')
+    expect(document.body.querySelector('.property-detail-drawer__create')?.textContent).toContain('Wohnung hinzufügen')
+  })
+
+  it('opens the apartment form for a new apartment of this property', async () => {
     await mountDrawer()
 
     ;(document.body.querySelector('.property-detail-drawer__create') as HTMLElement).click()
 
-    expect(useTenantsStore().formTarget).toEqual({ mode: 'create', propertyId: 'property-1' })
+    expect(useTenantsStore().apartmentFormTarget).toEqual({ mode: 'create', propertyId: 'property-1' })
   })
 
-  it('opens the tenant form to add a further tenant to an apartment', async () => {
+  it('opens the apartment form to edit an apartment', async () => {
+    const apartment = createApartment()
+    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([apartment])
+    await mountDrawer()
+
+    ;(document.body.querySelector('.apartment-card__edit') as HTMLElement).click()
+
+    expect(useTenantsStore().apartmentFormTarget).toEqual({ mode: 'edit', apartment })
+  })
+
+  it('deletes an apartment only after the confirmation, which warns about its tenants, payments and rent history', async () => {
+    const require = vi.fn<(options: Record<string, unknown>) => void>()
+    vi.mocked(useConfirm).mockReturnValue({ require } as never)
+    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+    await mountDrawer()
+
+    ;(document.body.querySelector('.apartment-card__delete') as HTMLElement).click()
+
+    expect(apartmentService.deleteApartment).not.toHaveBeenCalled()
+    expect(require.mock.calls[0]![0].message).toContain('Mietzahlungen und der Mietverlauf werden mitgelöscht')
+
+    ;(require.mock.calls[0]![0].accept as () => void)()
+    await flushPromises()
+
+    expect(apartmentService.deleteApartment).toHaveBeenCalledWith('apartment-1')
+  })
+
+  it('shows an error when deleting an apartment fails', async () => {
+    const require = vi.fn<(options: Record<string, unknown>) => void>()
+    vi.mocked(useConfirm).mockReturnValue({ require } as never)
+    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+    vi.mocked(apartmentService.deleteApartment).mockRejectedValue(new Error('500'))
+    await mountDrawer()
+
+    ;(document.body.querySelector('.apartment-card__delete') as HTMLElement).click()
+    ;(require.mock.calls[0]![0].accept as () => void)()
+    await flushPromises()
+
+    expect(document.body.querySelector('.property-detail-drawer__error')?.textContent).toBe(
+      'Die Wohnung konnte nicht gelöscht werden.',
+    )
+  })
+
+  it('opens the tenant form to add a tenant to an apartment', async () => {
     const apartment = createApartment()
     vi.mocked(apartmentService.fetchApartments).mockResolvedValue([apartment])
     await mountDrawer()
 
     ;(document.body.querySelector('.apartment-card__add-tenant') as HTMLElement).click()
 
-    expect(useTenantsStore().formTarget).toEqual({ mode: 'add', apartment })
+    expect(useTenantsStore().tenantFormTarget).toEqual({ mode: 'add', apartment })
   })
 
-  it('opens the tenant form to edit a tenant', async () => {
+  it('opens the tenant form to rename a tenant', async () => {
     const apartment = createApartment()
     vi.mocked(apartmentService.fetchApartments).mockResolvedValue([apartment])
     await mountDrawer()
 
     ;(document.body.querySelector('.apartment-card__tenant-edit') as HTMLElement).click()
 
-    expect(useTenantsStore().formTarget).toEqual({ mode: 'edit', apartment, tenant: apartment.tenants[0] })
+    expect(useTenantsStore().tenantFormTarget).toEqual({ mode: 'edit', apartment, tenant: apartment.tenants[0] })
   })
 
-  it('deletes a tenant only after the confirmation and warns when it is the last one', async () => {
+  it('deletes a tenant only after the confirmation, which notes that the rent payments are kept', async () => {
     const require = vi.fn<(options: Record<string, unknown>) => void>()
     vi.mocked(useConfirm).mockReturnValue({ require } as never)
     vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
@@ -165,30 +225,13 @@ describe('PropertyDetailDrawer', () => {
     ;(document.body.querySelector('.apartment-card__tenant-delete') as HTMLElement).click()
 
     expect(apartmentService.deleteTenant).not.toHaveBeenCalled()
-    expect(require.mock.calls[0]![0].message).toContain('werden auch die Wohnungsdaten gelöscht')
+    expect(require.mock.calls[0]![0].message).toContain('Zahlungen des vorherigen Mieters erhalten')
+    expect(require.mock.calls[0]![0].message).not.toContain('Wohnungsdaten')
 
     ;(require.mock.calls[0]![0].accept as () => void)()
     await flushPromises()
 
     expect(apartmentService.deleteTenant).toHaveBeenCalledWith('tenant-1')
-  })
-
-  it('does not warn about the apartment when other tenants remain', async () => {
-    const require = vi.fn<(options: Record<string, unknown>) => void>()
-    vi.mocked(useConfirm).mockReturnValue({ require } as never)
-    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([
-      createApartment({
-        tenants: [
-          { id: 'tenant-1', firstName: 'Erika', lastName: 'Mustermann' },
-          { id: 'tenant-2', firstName: 'Max', lastName: 'Mustermann' },
-        ],
-      }),
-    ])
-    await mountDrawer()
-
-    ;(document.body.querySelector('.apartment-card__tenant-delete') as HTMLElement).click()
-
-    expect(require.mock.calls[0]![0].message).not.toContain('Wohnungsdaten')
   })
 
   it('shows an error when deleting a tenant fails', async () => {
@@ -230,7 +273,7 @@ describe('PropertyDetailDrawer', () => {
 
       expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', usePaymentsStore().selectedYear)
       const headings = Array.from(document.body.querySelectorAll('.property-detail-drawer__section h3')).map((heading) => heading.textContent)
-      expect(headings).toEqual(['Mieter', 'Mietzahlungen'])
+      expect(headings).toEqual(['Wohnungen & Mieter', 'Mietzahlungen'])
       expect(document.body.querySelector('.tenant-payment-table__tenant-name')?.textContent).toBe('Erika Mustermann')
       expect(document.body.querySelectorAll('.tenant-payment-table__cell')).toHaveLength(12)
     })
@@ -383,6 +426,22 @@ describe('PropertyDetailDrawer', () => {
       vi.mocked(paymentService.fetchPaymentAlerts).mockClear()
 
       ;(document.body.querySelector('.apartment-card__tenant-delete') as HTMLElement).click()
+      ;(require.mock.calls[0]![0].accept as () => void)()
+      await flushPromises()
+
+      expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', usePaymentsStore().selectedYear)
+      expect(paymentService.fetchPaymentAlerts).toHaveBeenCalledTimes(1)
+    })
+
+    it('reloads the table and the alerts after an apartment was deleted', async () => {
+      const require = vi.fn<(options: Record<string, unknown>) => void>()
+      vi.mocked(useConfirm).mockReturnValue({ require } as never)
+      vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+      await mountDrawer()
+      vi.mocked(paymentService.fetchPaymentYear).mockClear()
+      vi.mocked(paymentService.fetchPaymentAlerts).mockClear()
+
+      ;(document.body.querySelector('.apartment-card__delete') as HTMLElement).click()
       ;(require.mock.calls[0]![0].accept as () => void)()
       await flushPromises()
 

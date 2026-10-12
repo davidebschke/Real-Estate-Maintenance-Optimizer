@@ -4,6 +4,9 @@ import com.remo.realestatemaintainceoptimizer.entity.ApartmentRentChange;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Persists the rent changes of apartments in the {@code apartment_rent_changes} table via Spring Data JPA.
@@ -21,7 +24,9 @@ public interface ApartmentRentChangeRepository extends JpaRepository<ApartmentRe
     List<ApartmentRentChange> findAllByApartmentPropertyOwnerId(String ownerId);
 
     /**
-     * Returns whether the apartment already has a rent change effective in the month starting on the given day.
+     * Deletes every rent change of the apartment that is effective in the month starting on the given day or later.
      */
-    boolean existsByApartmentIdAndEffectiveMonth(String apartmentId, LocalDate effectiveMonth);
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ApartmentRentChange c where c.apartment.id = :apartmentId and c.effectiveMonth >= :effectiveMonth")
+    void deleteFrom(@Param("apartmentId") String apartmentId, @Param("effectiveMonth") LocalDate effectiveMonth);
 }

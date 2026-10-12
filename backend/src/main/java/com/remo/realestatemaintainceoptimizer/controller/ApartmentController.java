@@ -1,6 +1,7 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
+import com.remo.realestatemaintainceoptimizer.dto.ApartmentUpdateRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.security.AuthenticatedUser;
@@ -43,7 +44,7 @@ public class ApartmentController {
     }
 
     /**
-     * Creates a new apartment in the given property together with its first tenant.
+     * Creates a new apartment in the given property, vacant or together with its first tenant.
      */
     @PostMapping("/properties/{propertyId}/apartments")
     public ResponseEntity<ApartmentResponse> createApartment(
@@ -67,18 +68,38 @@ public class ApartmentController {
     }
 
     /**
-     * Updates the given tenant together with the data of their apartment.
+     * Updates the name of the given tenant.
      */
     @PutMapping("/tenants/{tenantId}")
     public ApartmentResponse updateTenant(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable String tenantId,
-            @Valid @RequestBody ApartmentWithTenantRequest request) {
+            @Valid @RequestBody TenantDetailsRequest request) {
         return apartmentService.updateTenant(user.id(), tenantId, request);
     }
 
     /**
-     * Deletes the given tenant, together with their apartment if they were its last tenant.
+     * Updates the data of the given apartment, a changed total rent applying from the requested month on.
+     */
+    @PutMapping("/apartments/{apartmentId}")
+    public ApartmentResponse updateApartment(
+            @AuthenticationPrincipal AuthenticatedUser user,
+            @PathVariable String apartmentId,
+            @Valid @RequestBody ApartmentUpdateRequest request) {
+        return apartmentService.updateApartment(user.id(), apartmentId, request);
+    }
+
+    /**
+     * Deletes the given apartment together with its tenants and their payments.
+     */
+    @DeleteMapping("/apartments/{apartmentId}")
+    public ResponseEntity<Void> deleteApartment(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String apartmentId) {
+        apartmentService.deleteApartment(user.id(), apartmentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Deletes the given tenant, the apartment staying even without a tenant.
      */
     @DeleteMapping("/tenants/{tenantId}")
     public ResponseEntity<Void> deleteTenant(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String tenantId) {

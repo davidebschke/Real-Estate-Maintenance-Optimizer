@@ -27,21 +27,23 @@ describe('useTenantDeleteConfirmation', () => {
     const require = vi.fn<(options: Record<string, unknown>) => void>()
     vi.mocked(useConfirm).mockReturnValue({ require } as never)
 
-    mountComposable().confirmDelete(tenant, false, vi.fn())
+    mountComposable().confirmDelete(tenant, vi.fn())
 
     expect(require).toHaveBeenCalledOnce()
     const options = require.mock.calls[0]![0]
     expect(options.header).toBe('Mieter löschen')
-    expect(options.message).toBe('Soll der Mieter „Erika Mustermann“ wirklich gelöscht werden?')
+    expect(options.message).toContain('Soll der Mieter „Erika Mustermann“ wirklich gelöscht werden?')
   })
 
-  it('warns that the apartment details are deleted too when it is the last tenant', () => {
+  it('notes that the rent payments of the tenant are kept and never mentions deleting the apartment', () => {
     const require = vi.fn<(options: Record<string, unknown>) => void>()
     vi.mocked(useConfirm).mockReturnValue({ require } as never)
 
-    mountComposable().confirmDelete(tenant, true, vi.fn())
+    mountComposable().confirmDelete(tenant, vi.fn())
 
-    expect(require.mock.calls[0]![0].message).toContain('werden auch die Wohnungsdaten gelöscht')
+    const message = require.mock.calls[0]![0].message as string
+    expect(message).toContain('Zahlungen des vorherigen Mieters erhalten')
+    expect(message).not.toContain('Wohnungsdaten')
   })
 
   it('invokes the callback only once the user accepts', () => {
@@ -49,7 +51,7 @@ describe('useTenantDeleteConfirmation', () => {
     vi.mocked(useConfirm).mockReturnValue({ require } as never)
     const onConfirmed = vi.fn()
 
-    mountComposable().confirmDelete(tenant, false, onConfirmed)
+    mountComposable().confirmDelete(tenant, onConfirmed)
     expect(onConfirmed).not.toHaveBeenCalled()
 
     ;(require.mock.calls[0]![0].accept as () => void)()

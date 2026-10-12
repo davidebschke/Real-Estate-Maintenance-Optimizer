@@ -249,11 +249,23 @@ class RentPaymentRepositoryTest {
     }
 
     @Test
+    void deletesTheRentChangesFromAMonthOnAndKeepsTheEarlierOnes() {
+        rentChangeRepository.save(new ApartmentRentChange("change-1", apartment, YearMonth.of(2026, 8), new BigDecimal("900.00")));
+        rentChangeRepository.save(new ApartmentRentChange("change-2", apartment, YearMonth.of(2026, 9), new BigDecimal("950.00")));
+        rentChangeRepository.save(new ApartmentRentChange("change-3", apartment, YearMonth.of(2026, 10), new BigDecimal("1000.00")));
+        flushAndClear();
+
+        rentChangeRepository.deleteFrom("apartment-1", LocalDate.of(2026, 9, 1));
+        flushAndClear();
+
+        assertThat(rentChangeRepository.findAllByApartmentPropertyId("property-1")).extracting(ApartmentRentChange::id)
+                .containsExactly("change-1");
+    }
+
+    @Test
     void remembersARentChangeOnlyOncePerApartmentAndMonth() {
         rentChangeRepository.saveAndFlush(new ApartmentRentChange("change-1", apartment, YearMonth.of(2026, 10), new BigDecimal("800.00")));
 
-        assertThat(rentChangeRepository.existsByApartmentIdAndEffectiveMonth("apartment-1", LocalDate.of(2026, 10, 1))).isTrue();
-        assertThat(rentChangeRepository.existsByApartmentIdAndEffectiveMonth("apartment-1", LocalDate.of(2026, 11, 1))).isFalse();
         assertThatThrownBy(() -> rentChangeRepository.saveAndFlush(
                 new ApartmentRentChange("change-2", apartment, YearMonth.of(2026, 10), new BigDecimal("700.00"))))
                 .isInstanceOf(DataIntegrityViolationException.class);

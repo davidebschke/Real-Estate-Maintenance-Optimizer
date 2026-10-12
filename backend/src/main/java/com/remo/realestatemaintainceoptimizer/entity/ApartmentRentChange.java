@@ -15,7 +15,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 /**
- * A change of an apartment's total rent that took effect in one month, remembering the rent before it so earlier months keep being judged by that rent, persisted as one row of the {@code apartment_rent_changes} table.
+ * The total rent an apartment has from one month on until its next recorded change, so earlier months keep being judged by the rent they had, persisted as one row of the {@code apartment_rent_changes} table.
  */
 @Entity
 @Table(name = "apartment_rent_changes")
@@ -33,8 +33,8 @@ public class ApartmentRentChange {
     @Column(name = "effective_month", nullable = false)
     private LocalDate effectiveMonth;
 
-    @Column(name = "previous_rent", nullable = false, precision = 9, scale = 2)
-    private BigDecimal previousRent;
+    @Column(nullable = false, precision = 9, scale = 2)
+    private BigDecimal rent;
 
     @Version
     private Long version;
@@ -42,11 +42,11 @@ public class ApartmentRentChange {
     protected ApartmentRentChange() {
     }
 
-    public ApartmentRentChange(String id, Apartment apartment, YearMonth effectiveMonth, BigDecimal previousRent) {
+    public ApartmentRentChange(String id, Apartment apartment, YearMonth effectiveMonth, BigDecimal rent) {
         this.id = id;
         this.apartment = apartment;
         this.effectiveMonth = effectiveMonth.atDay(1);
-        this.previousRent = previousRent;
+        this.rent = rent;
     }
 
     public String id() {
@@ -61,7 +61,7 @@ public class ApartmentRentChange {
         return YearMonth.from(effectiveMonth);
     }
 
-    public BigDecimal previousRent() {
-        return previousRent;
+    public BigDecimal rent() {
+        return rent;
     }
 }

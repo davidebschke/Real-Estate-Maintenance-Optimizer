@@ -108,7 +108,7 @@ public class RentPaymentService {
         List<TenantRentYearResponse> tenants = apartmentRepository.findAllByPropertyId(propertyId).stream()
                 .flatMap(apartment -> toTenantRows(
                         apartment,
-                        RentSchedule.of(apartment.totalRent(), changesByApartment.getOrDefault(apartment.id(), List.of())),
+                        RentSchedule.of(apartment.rentBeforeChanges(), changesByApartment.getOrDefault(apartment.id(), List.of())),
                         paidByApartment.getOrDefault(apartment.id(), Map.of()),
                         new YearView(resolvedYear, trackingStartOf(apartment, trackingStart), today)))
                 .sorted(TENANT_ORDER)
@@ -135,7 +135,7 @@ public class RentPaymentService {
                 .filter(apartment -> apartment.property().rentTrackingStart() != null)
                 .flatMap(apartment -> {
                     RentAlertLevel alert = statusCalculator.alertLevel(
-                            RentSchedule.of(apartment.totalRent(), changesByApartment.getOrDefault(apartment.id(), List.of())),
+                            RentSchedule.of(apartment.rentBeforeChanges(), changesByApartment.getOrDefault(apartment.id(), List.of())),
                             paidByApartment.getOrDefault(apartment.id(), Map.of()),
                             trackingStartOf(apartment, apartment.property().rentTrackingStart()),
                             today);

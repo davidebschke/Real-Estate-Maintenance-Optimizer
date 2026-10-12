@@ -6,6 +6,7 @@ package com.remo.realestatemaintainceoptimizer.exception;
 public class InvalidRentRequestException extends RuntimeException {
 
     public static final String REASON_INVALID_YEAR = "invalidYear";
+    public static final String REASON_INVALID_RENT_MONTH = "invalidRentMonth";
     public static final String REASON_STATEMENT_EMPTY = "statementEmpty";
     public static final String REASON_STATEMENT_NOT_PDF = "statementNotPdf";
     public static final String REASON_STATEMENT_UNREADABLE = "statementUnreadable";

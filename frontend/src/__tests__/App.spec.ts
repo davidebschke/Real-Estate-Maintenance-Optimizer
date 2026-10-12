@@ -6,6 +6,8 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import DemoAccountBanner from '@/components/auth/DemoAccountBanner.vue'
 import PaymentScanPreviewDialog from '@/components/payments/PaymentScanPreviewDialog.vue'
+import ApartmentFormDialog from '@/components/tenants/ApartmentFormDialog.vue'
+import TenantFormDialog from '@/components/tenants/TenantFormDialog.vue'
 import { routes } from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import App from '../App.vue'
@@ -53,6 +55,15 @@ describe('App', () => {
     const wrapper = await mountAppAt('/')
 
     expect(wrapper.findComponent(PaymentScanPreviewDialog).exists()).toBe(true)
+  })
+
+  it('mounts the apartment and the tenant form once for the whole app', async () => {
+    logIn()
+
+    const wrapper = await mountAppAt('/')
+
+    expect(wrapper.findComponent(ApartmentFormDialog).exists()).toBe(true)
+    expect(wrapper.findComponent(TenantFormDialog).exists()).toBe(true)
   })
 
   it('shows nothing of the app shell on the login screen', async () => {

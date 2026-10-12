@@ -3,11 +3,13 @@ import axios from 'axios'
 import {
   addTenant,
   createApartment,
+  deleteApartment,
   deleteTenant,
   fetchApartments,
+  updateApartment,
   updateTenant,
 } from '@/services/apartmentService'
-import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
+import type { Apartment, ApartmentUpdatePayload, NewApartmentPayload } from '@/types/apartment'
 
 vi.mock('axios')
 
@@ -33,7 +35,7 @@ function createApartmentFixture(overrides: Partial<Apartment> = {}): Apartment {
   }
 }
 
-const payload: ApartmentWithTenantPayload = {
+const payload: NewApartmentPayload = {
   apartment: { floor: 2, areaSquareMeters: 64.5, totalRent: 850, coldRent: 650, additionalCosts: 200 },
   tenant: { firstName: 'Erika', lastName: 'Mustermann' },
 }
@@ -57,20 +59,48 @@ describe('apartmentService', () => {
     expect(created).toEqual(createApartmentFixture())
   })
 
+  it('creates an apartment without a tenant', async () => {
+    vi.mocked(axios.post).mockResolvedValue({ data: createApartmentFixture({ tenants: [] }) })
+    const vacantPayload: NewApartmentPayload = { apartment: payload.apartment }
+
+    const created = await createApartment('property-1', vacantPayload)
+
+    expect(axios.post).toHaveBeenCalledWith('/api/properties/property-1/apartments', vacantPayload)
+    expect(created.tenants).toEqual([])
+  })
+
+  it('updates an apartment together with the month its rent change applies from', async () => {
+    vi.mocked(axios.put).mockResolvedValue({ data: createApartmentFixture() })
+    const updatePayload: ApartmentUpdatePayload = { apartment: payload.apartment, rentEffectiveMonth: '2026-03' }
+
+    const updated = await updateApartment('apartment-1', updatePayload)
+
+    expect(axios.put).toHaveBeenCalledWith('/api/apartments/apartment-1', updatePayload)
+    expect(updated).toEqual(createApartmentFixture())
+  })
+
+  it('deletes an apartment', async () => {
+    vi.mocked(axios.delete).mockResolvedValue({})
+
+    await deleteApartment('apartment-1')
+
+    expect(axios.delete).toHaveBeenCalledWith('/api/apartments/apartment-1')
+  })
+
   it('adds a further tenant to an apartment', async () => {
     vi.mocked(axios.post).mockResolvedValue({ data: createApartmentFixture() })
 
-    await addTenant('apartment-1', payload.tenant)
+    await addTenant('apartment-1', payload.tenant!)
 
     expect(axios.post).toHaveBeenCalledWith('/api/apartments/apartment-1/tenants', payload.tenant)
   })
 
-  it('updates a tenant together with their apartment', async () => {
+  it('renames a tenant', async () => {
     vi.mocked(axios.put).mockResolvedValue({ data: createApartmentFixture() })
 
-    const updated = await updateTenant('tenant-1', payload)
+    const updated = await updateTenant('tenant-1', payload.tenant!)
 
-    expect(axios.put).toHaveBeenCalledWith('/api/tenants/tenant-1', payload)
+    expect(axios.put).toHaveBeenCalledWith('/api/tenants/tenant-1', payload.tenant)
     expect(updated).toEqual(createApartmentFixture())
   })
 

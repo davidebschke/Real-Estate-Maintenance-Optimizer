@@ -23,8 +23,8 @@ class RentScheduleTest {
     private static final Apartment APARTMENT =
             new Apartment("apartment-1", null, 1, new BigDecimal("60"), new BigDecimal("1000"), new BigDecimal("800"), new BigDecimal("200"));
 
-    private static ApartmentRentChange change(YearMonth month, String previousRent) {
-        return new ApartmentRentChange("change-" + month, APARTMENT, month, new BigDecimal(previousRent));
+    private static ApartmentRentChange change(YearMonth month, String rent) {
+        return new ApartmentRentChange("change-" + month, APARTMENT, month, new BigDecimal(rent));
     }
 
     @Test
@@ -37,7 +37,7 @@ class RentScheduleTest {
 
     @Test
     void aRaiseOnlyAppliesFromItsOwnMonthOn() {
-        RentSchedule schedule = RentSchedule.of(new BigDecimal("950"), List.of(change(YearMonth.of(2026, 3), "900")));
+        RentSchedule schedule = RentSchedule.of(new BigDecimal("900"), List.of(change(YearMonth.of(2026, 3), "950")));
 
         assertThat(schedule.rentFor(YearMonth.of(2026, 2))).isEqualByComparingTo("900");
         assertThat(schedule.rentFor(YearMonth.of(2026, 3))).isEqualByComparingTo("950");
@@ -46,8 +46,8 @@ class RentScheduleTest {
 
     @Test
     void severalChangesApplyInTheirOwnMonthsWhateverTheOrderTheyWereGivenIn() {
-        List<ApartmentRentChange> changes = List.of(change(YearMonth.of(2026, 8), "950"), change(YearMonth.of(2026, 3), "900"));
-        RentSchedule schedule = RentSchedule.of(new BigDecimal("1000"), changes);
+        List<ApartmentRentChange> changes = List.of(change(YearMonth.of(2026, 8), "1000"), change(YearMonth.of(2026, 3), "950"));
+        RentSchedule schedule = RentSchedule.of(new BigDecimal("900"), changes);
 
         assertThat(schedule.rentFor(YearMonth.of(2026, 2))).isEqualByComparingTo("900");
         assertThat(schedule.rentFor(YearMonth.of(2026, 3))).isEqualByComparingTo("950");
@@ -59,7 +59,7 @@ class RentScheduleTest {
     void aRaiseDoesNotTurnAlreadyPaidEarlierMonthsIntoAnAlert() {
         RentStatusCalculator calculator = new RentStatusCalculator(new PaymentProperties(
                 5, "claude-haiku-5-5", 8192, DataSize.ofMegabytes(5), 10, 200, ZoneId.of("Europe/Berlin")));
-        RentSchedule schedule = RentSchedule.of(new BigDecimal("950"), List.of(change(YearMonth.of(2026, 3), "900")));
+        RentSchedule schedule = RentSchedule.of(new BigDecimal("900"), List.of(change(YearMonth.of(2026, 3), "950")));
         Map<YearMonth, BigDecimal> paid = Map.of(
                 YearMonth.of(2026, 1), new BigDecimal("900"),
                 YearMonth.of(2026, 2), new BigDecimal("900"),
