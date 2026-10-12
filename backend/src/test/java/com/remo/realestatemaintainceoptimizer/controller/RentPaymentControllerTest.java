@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -92,10 +93,15 @@ class RentPaymentControllerTest {
         User owner = TestAccounts.saveRegularAccount(userRepository);
         mockMvc = TestAccounts.mockMvcAs(context, jwtService, owner);
         otherAccountMockMvc = TestAccounts.mockMvcAs(context, jwtService, TestAccounts.saveRegularAccount(userRepository));
-        Property property = propertyRepository.save(
-                new Property("property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        Property property = new Property("property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building");
+        property.activateRentTracking(CURRENT_MONTH);
+        property = propertyRepository.save(property);
         RentFixtures.saveApartment(apartmentRepository, property, "apartment-1", "850.00",
                 new TenantSpec("tenant-1", "Erika", "Mustermann"));
+        Property inactive = propertyRepository.save(
+                new Property("property-2", owner.id(), "Mediapark", "Im Mediapark 1", "pi-building"));
+        RentFixtures.saveApartment(apartmentRepository, inactive, "apartment-2", "700.00",
+                new TenantSpec("tenant-2", "Anna", "Adler"));
     }
 
     private static MockMultipartFile statement(byte[] content) {
@@ -117,7 +123,43 @@ class RentPaymentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(confirmBody("tenant-1", "850", 1)))
                 .andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(get("/api/properties/{id}/rent-payments", "property-1")).andExpect(status().isUnauthorized());
+        anonymousMockMvc.perform(put("/api/properties/{id}/rent-payments/tracking", "property-1").with(TestAccounts.withCsrfToken()))
+                .andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(get("/api/rent-payments/alerts")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void activatesTheCheckOfAPropertyFromTheCurrentMonthOnAndShowsItInTheYearlyTable() throws Exception {
+        mockMvc.perform(get("/api/properties/{id}/rent-payments", "property-2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trackingStart", equalTo(null)))
+                .andExpect(jsonPath("$.formerTenantPayments", hasSize(0)))
+                .andExpect(jsonPath("$.tenants[0].alert", equalTo("NONE")))
+                .andExpect(jsonPath("$.tenants[0].months[0].status", equalTo("UNTRACKED")));
+
+        mockMvc.perform(put("/api/properties/{id}/rent-payments/tracking", "property-2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trackingStart", equalTo(CURRENT_MONTH.toString())));
+
+        mockMvc.perform(get("/api/properties/{id}/rent-payments", "property-2"))
+                .andExpect(jsonPath("$.trackingStart", equalTo(CURRENT_MONTH.toString())))
+                .andExpect(jsonPath("$.tenants[0].months[%d].expectedAmount".formatted(CURRENT_MONTH.getMonthValue() - 1), equalTo(700.0)));
+    }
+
+    @Test
+    void scanningAndStoringOnAPropertyWithoutActivatedCheckAnswersConflict() throws Exception {
+        mockMvc.perform(multipart("/api/properties/{id}/rent-payments/scan", "property-2").file(statement(PDF)).header("Accept-Language", "de"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.")));
+        mockMvc.perform(post("/api/properties/{id}/rent-payments", "property-2")
+                        .contentType(MediaType.APPLICATION_JSON).content(confirmBody("tenant-2", "700", 1)))
+                .andExpect(status().isConflict());
+        assertThat(rentPaymentRepository.count()).isZero();
+    }
+
+    @Test
+    void anotherAccountCannotActivateTheCheck() throws Exception {
+        otherAccountMockMvc.perform(put("/api/properties/{id}/rent-payments/tracking", "property-2")).andExpect(status().isNotFound());
     }
 
     @Test

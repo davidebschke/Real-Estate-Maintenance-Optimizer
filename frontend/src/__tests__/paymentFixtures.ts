@@ -1,4 +1,5 @@
 import type {
+  FormerTenantPayment,
   MonthPayment,
   MonthPaymentStatus,
   PaymentAlertEntry,
@@ -29,6 +30,7 @@ export function createMonths(status: MonthPaymentStatus, overrides: Record<numbe
     month: index + 1,
     status,
     paidAmount: status === 'PAID' ? 950 : 0,
+    expectedAmount: 950,
     ...overrides[index + 1],
   }))
 }
@@ -50,7 +52,22 @@ export function createTenantPaymentYear(overrides: Partial<TenantPaymentYear> = 
 
 /** Builds the year table of a property with one tenant, with overridable fields. */
 export function createPaymentYearOverview(overrides: Partial<PaymentYearOverview> = {}): PaymentYearOverview {
-  return { year: 2026, tenants: [createTenantPaymentYear()], ...overrides }
+  return { year: 2026, trackingStart: '2026-01', tenants: [createTenantPaymentYear()], formerTenantPayments: [], ...overrides }
+}
+
+/** Builds a payment of the former tenant Mustermann, Erika for the apartment on the 2nd floor, with overridable fields. */
+export function createFormerTenantPayment(overrides: Partial<FormerTenantPayment> = {}): FormerTenantPayment {
+  return {
+    apartmentId: 'apartment-1',
+    floor: 2,
+    formerTenantName: 'Mustermann, Erika',
+    paymentDate: '2026-03-02',
+    amount: 950,
+    reference: 'Miete März 2026',
+    periodYear: 2026,
+    periodMonth: 3,
+    ...overrides,
+  }
 }
 
 /** Builds a payment alert entry of a tenant in a property, with overridable fields. */

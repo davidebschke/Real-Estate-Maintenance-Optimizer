@@ -24,6 +24,7 @@ import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutd
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
@@ -208,6 +209,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidRentRequest(InvalidRentRequestException exception, Locale locale) {
         String message = messageSource.getMessage("rentPayment.error." + exception.reasonCode(), null, locale);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(RentTrackingNotActiveException.class)
+    public ResponseEntity<ErrorResponse> handleRentTrackingNotActive(Locale locale) {
+        String message = messageSource.getMessage("rentPayment.error.trackingInactive", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler(RentStatementTooLargeException.class)

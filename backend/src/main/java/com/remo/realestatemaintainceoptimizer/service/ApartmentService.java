@@ -1,11 +1,13 @@
 package com.remo.realestatemaintainceoptimizer.service;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Apartment;
+import com.remo.realestatemaintainceoptimizer.entity.ApartmentRentChange;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
@@ -13,14 +15,19 @@ import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundExcepti
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.ApartmentRentChangeRepository;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.RentPaymentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.hibernate.Hibernate;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
+@EnableConfigurationProperties(PaymentProperties.class)
 public class ApartmentService {
 
     static final int MAX_APARTMENTS_PER_PROPERTY = 500;
@@ -48,16 +56,25 @@ public class ApartmentService {
     private final TenantRepository tenantRepository;
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
+    private final RentPaymentRepository rentPaymentRepository;
+    private final ApartmentRentChangeRepository rentChangeRepository;
+    private final PaymentProperties paymentProperties;
 
     public ApartmentService(
             ApartmentRepository apartmentRepository,
             TenantRepository tenantRepository,
             PropertyRepository propertyRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            RentPaymentRepository rentPaymentRepository,
+            ApartmentRentChangeRepository rentChangeRepository,
+            PaymentProperties paymentProperties) {
         this.apartmentRepository = apartmentRepository;
         this.tenantRepository = tenantRepository;
         this.propertyRepository = propertyRepository;
         this.userRepository = userRepository;
+        this.rentPaymentRepository = rentPaymentRepository;
+        this.rentChangeRepository = rentChangeRepository;
+        this.paymentProperties = paymentProperties;
     }
 
     /**
@@ -116,12 +133,14 @@ public class ApartmentService {
         tenant.updateName(request.tenant().firstName(), request.tenant().lastName());
         ApartmentDetailsRequest details = request.apartment();
         Apartment apartment = tenant.apartment();
+        BigDecimal previousRent = apartment.totalRent();
         apartment.updateDetails(
                 details.floor(),
                 details.areaSquareMeters(),
                 details.totalRent(),
                 details.coldRent(),
                 details.additionalCosts());
+        recordRentChange(apartment, previousRent);
         return toResponse(apartment);
     }
 
@@ -138,10 +157,24 @@ public class ApartmentService {
                 .filter(candidate -> candidate.id().equals(tenantId))
                 .findFirst()
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
+        rentPaymentRepository.markTenantAsFormer(tenantId, tenant.lastName() + ", " + tenant.firstName());
         if (apartment.hasSingleTenant()) {
             apartmentRepository.delete(apartment);
         } else {
             apartment.removeTenant(tenant);
+        }
+    }
+
+    /**
+     * Remembers the rent an apartment had before a change of its total rent, effective from the current month, so earlier months keep their rent; a second change in the same month keeps the first record.
+     */
+    private void recordRentChange(Apartment apartment, BigDecimal previousRent) {
+        if (previousRent.compareTo(apartment.totalRent()) == 0) {
+            return;
+        }
+        YearMonth month = YearMonth.now(paymentProperties.zone());
+        if (!rentChangeRepository.existsByApartmentIdAndEffectiveMonth(apartment.id(), month.atDay(1))) {
+            rentChangeRepository.save(new ApartmentRentChange(UUID.randomUUID().toString(), apartment, month, previousRent));
         }
     }
 

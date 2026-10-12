@@ -6,13 +6,12 @@ import com.remo.realestatemaintainceoptimizer.dto.RentMonthStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.Collection;
 import java.util.Map;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Derives the payment state of an apartment's monthly rent from the amounts paid, without any I/O: a month counts as late once the configured due day of that month has passed, and months before the first recorded payment are not tracked.
+ * Derives the payment state of an apartment's monthly rent from the amounts paid, without any I/O: a month counts as late once the configured due day of that month has passed, and months before the month the rent payment check was activated in are not tracked.
  */
 @Component
 @EnableConfigurationProperties(PaymentProperties.class)
@@ -22,14 +21,6 @@ public class RentStatusCalculator {
 
     public RentStatusCalculator(PaymentProperties properties) {
         this.properties = properties;
-    }
-
-    /**
-     * Returns the first month whose rent is tracked, which is the earliest month with a recorded payment or the current month while there is none.
-     */
-    public YearMonth trackingStart(Collection<YearMonth> paidMonths, LocalDate today) {
-        YearMonth current = YearMonth.from(today);
-        return paidMonths.stream().min(YearMonth::compareTo).filter(first -> first.isBefore(current)).orElse(current);
     }
 
     /**
@@ -53,15 +44,15 @@ public class RentStatusCalculator {
     }
 
     /**
-     * Returns the most urgent state over every tracked month up to the current one: overdue for a partial or overdue month, pending for a month still awaited, otherwise none.
+     * Returns the most urgent state over every tracked month from the tracking start up to the current one, each judged by the rent due in that month: overdue for a partial or overdue month, pending for a month still awaited, otherwise none.
      */
-    public RentAlertLevel alertLevel(BigDecimal monthlyRent, Map<YearMonth, BigDecimal> paidByMonth, LocalDate today) {
-        YearMonth trackingStart = trackingStart(paidByMonth.keySet(), today);
+    public RentAlertLevel alertLevel(
+            RentSchedule schedule, Map<YearMonth, BigDecimal> paidByMonth, YearMonth trackingStart, LocalDate today) {
         YearMonth current = YearMonth.from(today);
         RentAlertLevel alert = RentAlertLevel.NONE;
         for (YearMonth month = trackingStart; !month.isAfter(current); month = month.plusMonths(1)) {
             RentMonthStatus status = monthStatus(
-                    month, monthlyRent, paidByMonth.getOrDefault(month, BigDecimal.ZERO), trackingStart, today);
+                    month, schedule.rentFor(month), paidByMonth.getOrDefault(month, BigDecimal.ZERO), trackingStart, today);
             if (status == RentMonthStatus.OVERDUE || status == RentMonthStatus.PARTIAL) {
                 return RentAlertLevel.OVERDUE;
             }

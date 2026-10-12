@@ -31,9 +31,17 @@ function fullName(tenant: TenantPaymentYear): string {
   return `${tenant.firstName} ${tenant.lastName}`
 }
 
-/** Returns the amount paid in a month as money, or undefined if nothing was paid. */
-function paidDetail(month: MonthPayment): string | undefined {
-  return month.paidAmount > 0 ? formatMoney(month.paidAmount) : undefined
+/** Returns what was paid of the rent due in a month, or just the rent due if nothing was paid; undefined if neither applies. */
+function monthDetail(month: MonthPayment): string | undefined {
+  const hasExpected = month.expectedAmount > 0 && month.status !== 'UNTRACKED'
+  if (month.paidAmount <= 0) {
+    return hasExpected ? t('payments.table.expectedAmount', { expected: formatMoney(month.expectedAmount) }) : undefined
+  }
+  if (!hasExpected || month.paidAmount === month.expectedAmount) return formatMoney(month.paidAmount)
+  return t('payments.table.paidOfExpected', {
+    paid: formatMoney(month.paidAmount),
+    expected: formatMoney(month.expectedAmount),
+  })
 }
 
 /** Asks for the table of another year. */
@@ -108,7 +116,7 @@ function changeYear(delta: number) {
               </div>
             </th>
             <td v-for="month in tenant.months" :key="month.month" class="tenant-payment-table__cell">
-              <PaymentStatusBadge :status="month.status" :detail="paidDetail(month)" />
+              <PaymentStatusBadge :status="month.status" :detail="monthDetail(month)" />
             </td>
           </tr>
         </tbody>

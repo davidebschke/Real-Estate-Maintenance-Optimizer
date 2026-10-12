@@ -32,6 +32,8 @@ export const usePaymentsStore = defineStore('payments', () => {
   const scanSession = ref<ScanSession | null>(null)
   const isSaving = ref(false)
   const saveError = ref<PaymentRequestError | null>(null)
+  const isActivating = ref(false)
+  const activationError = ref<PaymentRequestError | null>(null)
   /** Bumped by every year fetch and by reset(), so an answer to an outdated year request is discarded. */
   let latestYearToken = 0
   /** Bumped by every alerts fetch and by reset(), so an answer to an outdated alerts request is discarded. */
@@ -136,6 +138,31 @@ export const usePaymentsStore = defineStore('payments', () => {
     return result
   }
 
+  /** Activates the rent payment check of the property and reloads its table and the alerts; returns false and records why if activating failed. */
+  async function activateTracking(propertyId: string): Promise<boolean> {
+    const requestEpoch = sessionEpoch
+    isActivating.value = true
+    activationError.value = null
+    try {
+      await paymentService.activateTracking(propertyId)
+    } catch (error) {
+      if (requestEpoch === sessionEpoch) {
+        activationError.value = toRequestError(error)
+        isActivating.value = false
+      }
+      return false
+    }
+    if (requestEpoch !== sessionEpoch) return false
+    isActivating.value = false
+    await Promise.all([fetchYear(propertyId), fetchAlerts()])
+    return true
+  }
+
+  /** Clears the failure of the last activation, e.g. once the user tries again. */
+  function clearActivationError() {
+    activationError.value = null
+  }
+
   /** Discards the scanned payments without saving anything. */
   function discardScan() {
     scanSession.value = null
@@ -163,6 +190,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     scanSession.value = null
     isSaving.value = false
     saveError.value = null
+    isActivating.value = false
+    activationError.value = null
   }
 
   return {
@@ -179,12 +208,16 @@ export const usePaymentsStore = defineStore('payments', () => {
     isPreviewOpen,
     isSaving,
     saveError,
+    isActivating,
+    activationError,
     alertForProperty,
     fetchYear,
     changeYear,
     fetchAlerts,
     scanStatement,
     savePayments,
+    activateTracking,
+    clearActivationError,
     discardScan,
     clearScanError,
     reset,

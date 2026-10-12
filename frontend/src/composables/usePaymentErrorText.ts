@@ -2,7 +2,7 @@ import { useI18n } from 'vue-i18n'
 import type { PaymentRequestError } from '@/stores/payments'
 
 /** Statuses of the rent payment endpoints that have their own localized fallback text. */
-const KNOWN_STATUSES = [400, 404, 413, 429, 501, 503]
+const KNOWN_STATUSES = [400, 404, 409, 413, 429, 501, 503]
 
 /** Provides the text to show for a failed scan or save request. */
 export function usePaymentErrorText() {

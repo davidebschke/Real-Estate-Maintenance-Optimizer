@@ -29,6 +29,7 @@ beforeEach(() => {
   vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
   vi.mocked(paymentService.scanStatement).mockReset().mockResolvedValue([createScannedPayment()])
   vi.mocked(paymentService.savePayments).mockReset().mockResolvedValue({ savedCount: 1, skippedCount: 0 })
+  vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-01' })
 })
 
 describe('usePaymentsStore', () => {
@@ -42,6 +43,8 @@ describe('usePaymentsStore', () => {
     expect(store.isPreviewOpen).toBe(false)
     expect(store.scanError).toBeNull()
     expect(store.saveError).toBeNull()
+    expect(store.isActivating).toBe(false)
+    expect(store.activationError).toBeNull()
     expect(store.hasYearLoadError).toBe(false)
     expect(store.hasAlertsLoadError).toBe(false)
   })
@@ -299,6 +302,98 @@ describe('usePaymentsStore', () => {
     })
   })
 
+  describe('activating the rent payment check', () => {
+    it('activates the check and reloads the table of the property and the alerts', async () => {
+      const store = usePaymentsStore()
+
+      const result = await store.activateTracking('property-1')
+
+      expect(result).toBe(true)
+      expect(paymentService.activateTracking).toHaveBeenCalledWith('property-1')
+      expect(store.isActivating).toBe(false)
+      expect(store.activationError).toBeNull()
+      expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', store.selectedYear)
+      expect(paymentService.fetchPaymentAlerts).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the activating state while the request is on its way', async () => {
+      let resolveActivation!: (activation: { trackingStart: string }) => void
+      vi.mocked(paymentService.activateTracking).mockImplementationOnce(() => new Promise((resolve) => (resolveActivation = resolve)))
+      const store = usePaymentsStore()
+
+      const activation = store.activateTracking('property-1')
+      expect(store.isActivating).toBe(true)
+      resolveActivation({ trackingStart: '2026-01' })
+      await activation
+
+      expect(store.isActivating).toBe(false)
+    })
+
+    it('records why activating failed and reloads nothing', async () => {
+      vi.mocked(paymentService.activateTracking).mockRejectedValue(httpError(404, { message: 'Objekt nicht gefunden.' }))
+      const store = usePaymentsStore()
+
+      const result = await store.activateTracking('property-1')
+
+      expect(result).toBe(false)
+      expect(store.activationError).toEqual({ status: 404, message: 'Objekt nicht gefunden.' })
+      expect(store.isActivating).toBe(false)
+      expect(paymentService.fetchPaymentYear).not.toHaveBeenCalled()
+      expect(paymentService.fetchPaymentAlerts).not.toHaveBeenCalled()
+    })
+
+    it('records an error without status or message for a failure without a response', async () => {
+      vi.mocked(paymentService.activateTracking).mockRejectedValue(new Error('Network Error'))
+      const store = usePaymentsStore()
+
+      await store.activateTracking('property-1')
+
+      expect(store.activationError).toEqual({ status: null, message: null })
+    })
+
+    it('clears the previous activation error when a new activation starts and on request', async () => {
+      vi.mocked(paymentService.activateTracking).mockRejectedValueOnce(httpError(503))
+      const store = usePaymentsStore()
+      await store.activateTracking('property-1')
+      expect(store.activationError).not.toBeNull()
+
+      await store.activateTracking('property-1')
+      expect(store.activationError).toBeNull()
+
+      vi.mocked(paymentService.activateTracking).mockRejectedValueOnce(httpError(503))
+      await store.activateTracking('property-1')
+      store.clearActivationError()
+      expect(store.activationError).toBeNull()
+    })
+
+    it('ignores an activation answered only after the account changed', async () => {
+      let resolveActivation!: (activation: { trackingStart: string }) => void
+      vi.mocked(paymentService.activateTracking).mockImplementationOnce(() => new Promise((resolve) => (resolveActivation = resolve)))
+      const store = usePaymentsStore()
+
+      const activation = store.activateTracking('property-1')
+      store.reset()
+      resolveActivation({ trackingStart: '2026-01' })
+
+      expect(await activation).toBe(false)
+      expect(store.isActivating).toBe(false)
+      expect(paymentService.fetchPaymentYear).not.toHaveBeenCalled()
+    })
+
+    it('ignores an activation failure answered only after the account changed', async () => {
+      let rejectActivation!: (error: unknown) => void
+      vi.mocked(paymentService.activateTracking).mockImplementationOnce(() => new Promise((_, reject) => (rejectActivation = reject)))
+      const store = usePaymentsStore()
+
+      const activation = store.activateTracking('property-1')
+      store.reset()
+      rejectActivation(httpError(503))
+
+      expect(await activation).toBe(false)
+      expect(store.activationError).toBeNull()
+    })
+  })
+
   describe('reset', () => {
     it('forgets every table, alert, scan and error and returns to the current year', async () => {
       vi.mocked(paymentService.fetchPaymentAlerts).mockResolvedValue([createAlertEntry()])
@@ -306,10 +401,14 @@ describe('usePaymentsStore', () => {
       await store.fetchYear('property-1')
       await store.fetchAlerts()
       await store.scanStatement('property-1', statement)
+      vi.mocked(paymentService.activateTracking).mockRejectedValueOnce(httpError(409))
+      await store.activateTracking('property-1')
       store.selectedYear = 2020
 
       store.reset()
 
+      expect(store.activationError).toBeNull()
+      expect(store.isActivating).toBe(false)
       expect(store.overviewsByProperty).toEqual({})
       expect(store.alerts).toEqual([])
       expect(store.scanSession).toBeNull()

@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 import { defineStore } from 'pinia'
 import * as apartmentService from '@/services/apartmentService'
 import { useAuthStore } from '@/stores/auth'
+import { usePaymentsStore } from '@/stores/payments'
 import { usePropertiesStore } from '@/stores/properties'
 import { getServerErrorMessage } from '@/utils/serverErrorMessage'
 import type { Apartment, ApartmentWithTenantPayload, Tenant, TenantDetails } from '@/types/apartment'
@@ -83,9 +84,14 @@ export const useTenantsStore = defineStore('tenants', () => {
     return applyTenantCreation(propertyId, () => apartmentService.addTenant(apartmentId, payload))
   }
 
-  /** Updates the given tenant together with the data of their apartment. */
-  function updateTenant(propertyId: string, tenantId: string, payload: ApartmentWithTenantPayload): Promise<boolean> {
-    return applyChange(propertyId, () => apartmentService.updateTenant(tenantId, payload), hasSaveError)
+  /** Updates the given tenant together with the data of their apartment and reloads an already loaded rent payment table, since a changed rent applies from the current month on. */
+  async function updateTenant(propertyId: string, tenantId: string, payload: ApartmentWithTenantPayload): Promise<boolean> {
+    const isUpdated = await applyChange(propertyId, () => apartmentService.updateTenant(tenantId, payload), hasSaveError)
+    const paymentsStore = usePaymentsStore()
+    if (isUpdated && paymentsStore.overviewsByProperty[propertyId]) {
+      await Promise.all([paymentsStore.fetchYear(propertyId), paymentsStore.fetchAlerts()])
+    }
+    return isUpdated
   }
 
   /** Deletes the given tenant, which also removes their apartment if they were its last tenant. */

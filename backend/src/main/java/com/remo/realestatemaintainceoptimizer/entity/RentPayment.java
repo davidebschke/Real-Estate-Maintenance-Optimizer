@@ -14,22 +14,31 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 /**
- * A rent payment of a tenant for one calendar month, persisted as one row of the {@code rent_payments} table; the source statement itself is never stored.
+ * A rent payment for an apartment and one calendar month, persisted as one row of the {@code rent_payments} table; it survives the deletion of the tenant who paid, whose name it then carries, and the source statement itself is never stored.
  */
 @Entity
 @Table(name = "rent_payments")
 public class RentPayment {
 
     public static final int REFERENCE_MAX_LENGTH = 200;
+    public static final int FORMER_TENANT_NAME_MAX_LENGTH = Tenant.NAME_MAX_LENGTH * 2 + 2;
 
     @Id
     @Column(length = 36)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tenant_id", nullable = false)
+    @JoinColumn(name = "apartment_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    private Apartment apartment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Tenant tenant;
+
+    @Column(name = "former_tenant_name", length = FORMER_TENANT_NAME_MAX_LENGTH)
+    private String formerTenantName;
 
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
@@ -54,6 +63,7 @@ public class RentPayment {
 
     public RentPayment(
             String id,
+            Apartment apartment,
             Tenant tenant,
             LocalDate paymentDate,
             BigDecimal amount,
@@ -61,6 +71,7 @@ public class RentPayment {
             int periodYear,
             int periodMonth) {
         this.id = id;
+        this.apartment = apartment;
         this.tenant = tenant;
         this.paymentDate = paymentDate;
         this.amount = amount;
@@ -73,8 +84,16 @@ public class RentPayment {
         return id;
     }
 
+    public Apartment apartment() {
+        return apartment;
+    }
+
     public Tenant tenant() {
         return tenant;
+    }
+
+    public String formerTenantName() {
+        return formerTenantName;
     }
 
     public LocalDate paymentDate() {

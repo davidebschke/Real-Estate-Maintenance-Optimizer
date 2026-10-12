@@ -6,10 +6,12 @@ import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.dto.RentPaymentScanResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ScannedPaymentResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Tenant;
+import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.RentPaymentRepository;
@@ -74,15 +76,19 @@ public class RentPaymentScanService {
      */
     public RentPaymentScanResponse scan(String ownerId, String propertyId, MultipartFile statement) {
         advisor.requireEnabled();
-        readOnlyTransaction.executeWithoutResult(status -> requireProperty(ownerId, propertyId));
+        readOnlyTransaction.executeWithoutResult(status -> requireActivatedProperty(ownerId, propertyId));
         byte[] statementPdf = readStatement(statement);
         acquireScanBudget(ownerId);
         List<ExtractedPayment> extracted = advisor.extractPayments(statementPdf);
         return readOnlyTransaction.execute(status -> assignToTenants(propertyId, extracted));
     }
 
-    private void requireProperty(String ownerId, String propertyId) {
-        propertyRepository.findByIdAndOwnerId(propertyId, ownerId).orElseThrow(() -> new PropertyNotFoundException(propertyId));
+    private void requireActivatedProperty(String ownerId, String propertyId) {
+        Property property = propertyRepository.findByIdAndOwnerId(propertyId, ownerId)
+                .orElseThrow(() -> new PropertyNotFoundException(propertyId));
+        if (property.rentTrackingStart() == null) {
+            throw new RentTrackingNotActiveException(propertyId);
+        }
     }
 
     private byte[] readStatement(MultipartFile statement) {
@@ -138,8 +144,8 @@ public class RentPaymentScanService {
 
     private ScannedPaymentResponse toScannedPayment(ExtractedPayment payment, Assignment assignment) {
         Tenant tenant = assignment.tenant();
-        boolean alreadyRecorded = tenant != null && rentPaymentRepository.existsByTenantIdAndPaymentDateAndAmountAndReference(
-                tenant.id(), payment.paymentDate(), payment.amount(), payment.reference());
+        boolean alreadyRecorded = tenant != null && rentPaymentRepository.existsByApartmentIdAndPaymentDateAndAmountAndReference(
+                tenant.apartment().id(), payment.paymentDate(), payment.amount(), payment.reference());
         return new ScannedPaymentResponse(
                 payment.paymentDate(),
                 payment.amount(),

@@ -2,6 +2,7 @@ package com.remo.realestatemaintainceoptimizer.controller;
 
 import com.remo.realestatemaintainceoptimizer.dto.RentAlertResponse;
 import com.remo.realestatemaintainceoptimizer.dto.RentPaymentScanResponse;
+import com.remo.realestatemaintainceoptimizer.dto.RentTrackingResponse;
 import com.remo.realestatemaintainceoptimizer.dto.RentYearResponse;
 import com.remo.realestatemaintainceoptimizer.dto.SaveRentPaymentsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.SaveRentPaymentsResponse;
@@ -17,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,6 +39,14 @@ public class RentPaymentController {
     public RentPaymentController(RentPaymentService rentPaymentService, RentPaymentScanService scanService) {
         this.rentPaymentService = rentPaymentService;
         this.scanService = scanService;
+    }
+
+    /**
+     * Activates the rent payment check of the given property from the current month on.
+     */
+    @PutMapping("/properties/{propertyId}/rent-payments/tracking")
+    public RentTrackingResponse activateTracking(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String propertyId) {
+        return rentPaymentService.activateTracking(user.id(), propertyId);
     }
 
     /**

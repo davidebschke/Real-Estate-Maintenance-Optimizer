@@ -24,9 +24,22 @@ export interface ScannedPaymentJson {
   alreadyRecorded: boolean
 }
 
+/** A payment of a former tenant as the year endpoint returns it. */
+export interface FormerTenantPaymentJson {
+  apartmentId: string
+  floor: number
+  formerTenantName: string
+  paymentDate: string
+  amount: number
+  reference: string
+  periodYear: number
+  periodMonth: number
+}
+
 /** What the payment mocks recorded about the requests of a test. */
 export interface PaymentMockLog {
   scanCount: number
+  activationCount: number
   savedBodies: { payments: Record<string, unknown>[] }[]
   requestedYears: number[]
 }
@@ -73,10 +86,37 @@ export function scannedPaymentJson(tenantId: string | null, overrides: Partial<S
   }
 }
 
-/** The year table of one tenant as the backend returns it, with the given months paid and the other tracked months untracked. */
-export function yearJson(tenant: TestTenant, year: number, paidMonths: number[], alert: 'NONE' | 'PENDING' | 'OVERDUE' = 'NONE') {
+/** The first tracked month the mocked backend reports once the check is active. */
+export const TRACKING_START = `${CURRENT_YEAR}-01`
+
+/** A payment of a former tenant for March of the current year. */
+export function formerTenantPaymentJson(tenant: TestTenant, overrides: Partial<FormerTenantPaymentJson> = {}): FormerTenantPaymentJson {
+  return {
+    apartmentId: tenant.apartmentId,
+    floor: tenant.floor,
+    formerTenantName: 'Meier, Max',
+    paymentDate: `${CURRENT_YEAR}-03-02`,
+    amount: tenant.monthlyRent,
+    reference: `Miete März ${CURRENT_YEAR}`,
+    periodYear: CURRENT_YEAR,
+    periodMonth: 3,
+    ...overrides,
+  }
+}
+
+/** The year table of one tenant as the backend returns it, with the given months paid and the other tracked months untracked; a null tracking start means the check is not activated. */
+export function yearJson(
+  tenant: TestTenant,
+  year: number,
+  paidMonths: number[],
+  alert: 'NONE' | 'PENDING' | 'OVERDUE' = 'NONE',
+  trackingStart: string | null = TRACKING_START,
+  formerTenantPayments: FormerTenantPaymentJson[] = [],
+) {
   return {
     year,
+    trackingStart,
+    formerTenantPayments,
     tenants: [
       {
         tenantId: tenant.tenantId,
@@ -90,6 +130,7 @@ export function yearJson(tenant: TestTenant, year: number, paidMonths: number[],
           month: index + 1,
           status: paidMonths.includes(index + 1) ? 'PAID' : 'UNTRACKED',
           paidAmount: paidMonths.includes(index + 1) ? tenant.monthlyRent : 0,
+          expectedAmount: tenant.monthlyRent,
         })),
       },
     ],
@@ -105,7 +146,7 @@ export async function mockPaymentAlerts(page: Page, alerts: { propertyId: string
 
 /**
  * Answers the scan, save and year requests of one tenant's rent payments instead of the real backend, so no AI run is needed.
- * The year table reports every saved October payment as paid, which lets a test watch the table refresh after saving.
+ * The year table reports every saved October payment as paid, which lets a test watch the table refresh after saving, and the rent payment check is active unless told otherwise until the activation request arrives.
  */
 export async function mockRentPayments(
   page: Page,
@@ -113,10 +154,24 @@ export async function mockRentPayments(
   options: {
     scanned?: ScannedPaymentJson[]
     scanFailure?: { status: number; message: string }
+    isTrackingActive?: boolean
+    activationFailure?: { status: number; message: string }
+    formerTenantPayments?: FormerTenantPaymentJson[]
   } = {},
 ): Promise<PaymentMockLog> {
-  const log: PaymentMockLog = { scanCount: 0, savedBodies: [], requestedYears: [] }
+  const log: PaymentMockLog = { scanCount: 0, activationCount: 0, savedBodies: [], requestedYears: [] }
   const paidMonths: number[] = []
+  let isTrackingActive = options.isTrackingActive ?? true
+
+  await page.route((url) => url.pathname.endsWith('/rent-payments/tracking'), async (route) => {
+    log.activationCount++
+    if (options.activationFailure) {
+      await route.fulfill({ status: options.activationFailure.status, json: { message: options.activationFailure.message } })
+      return
+    }
+    isTrackingActive = true
+    await route.fulfill({ json: { trackingStart: TRACKING_START } })
+  })
 
   await page.route((url) => url.pathname.endsWith('/rent-payments/scan'), async (route) => {
     log.scanCount++
@@ -138,7 +193,9 @@ export async function mockRentPayments(
     }
     const year = Number(new URL(request.url()).searchParams.get('year'))
     log.requestedYears.push(year)
-    await route.fulfill({ json: yearJson(tenant, year, year === CURRENT_YEAR ? paidMonths : []) })
+    const trackingStart = isTrackingActive ? TRACKING_START : null
+    const formerTenantPayments = (options.formerTenantPayments ?? []).filter((payment) => payment.periodYear === year)
+    await route.fulfill({ json: yearJson(tenant, year, year === CURRENT_YEAR ? paidMonths : [], 'NONE', trackingStart, formerTenantPayments) })
   })
 
   return log

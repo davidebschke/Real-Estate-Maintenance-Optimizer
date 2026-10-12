@@ -1,0 +1,28 @@
+.rent-tracking-activation {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rent-tracking-activation__explanation {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.rent-tracking-activation__active {
+  align-items: center;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  display: flex;
+  font-size: 0.9rem;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.rent-tracking-activation__error {
+  color: #f87171;
+  font-size: 0.9rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

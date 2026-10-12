@@ -5,6 +5,7 @@ import type {
   PaymentYearOverview,
   SavePaymentsResult,
   ScannedPayment,
+  TrackingActivation,
 } from '@/types/payment'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
@@ -39,5 +40,11 @@ export async function fetchPaymentYear(propertyId: string, year: number): Promis
 /** Fetches every tenant of the logged-in account with a pending or overdue rent payment. */
 export async function fetchPaymentAlerts(): Promise<PaymentAlertEntry[]> {
   const { data } = await axios.get<PaymentAlertEntry[]>(`${apiBaseUrl}/api/rent-payments/alerts`)
+  return data
+}
+
+/** Activates the rent payment check for the given property, counting from the current month. */
+export async function activateTracking(propertyId: string): Promise<TrackingActivation> {
+  const { data } = await axios.put<TrackingActivation>(`${apiBaseUrl}/api/properties/${propertyId}/rent-payments/tracking`)
   return data
 }

@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { AxiosError, type AxiosResponse } from 'axios'
 import { useTenantsStore } from '@/stores/tenants'
 import { useAuthStore } from '@/stores/auth'
+import { usePaymentsStore } from '@/stores/payments'
 import * as apartmentService from '@/services/apartmentService'
 import * as propertyService from '@/services/propertyService'
 import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
@@ -134,6 +135,28 @@ describe('useTenantsStore', () => {
 
     expect(succeeded).toBe(true)
     expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', payload)
+  })
+
+  it('reloads an already loaded rent payment table after a tenant update, since a changed rent applies from the current month on', async () => {
+    const store = useTenantsStore()
+    const paymentsStore = usePaymentsStore()
+    paymentsStore.overviewsByProperty = { 'property-1': { year: 2026, trackingStart: '2026-01', tenants: [], formerTenantPayments: [] } }
+    const fetchYear = vi.spyOn(paymentsStore, 'fetchYear').mockResolvedValue()
+    const fetchAlerts = vi.spyOn(paymentsStore, 'fetchAlerts').mockResolvedValue()
+
+    await store.updateTenant('property-1', 'tenant-1', payload)
+
+    expect(fetchYear).toHaveBeenCalledWith('property-1')
+    expect(fetchAlerts).toHaveBeenCalled()
+  })
+
+  it('does not load a rent payment table that was never opened after a tenant update', async () => {
+    const store = useTenantsStore()
+    const fetchYear = vi.spyOn(usePaymentsStore(), 'fetchYear').mockResolvedValue()
+
+    await store.updateTenant('property-1', 'tenant-1', payload)
+
+    expect(fetchYear).not.toHaveBeenCalled()
   })
 
   it('records a save error and skips the reload when a save fails', async () => {

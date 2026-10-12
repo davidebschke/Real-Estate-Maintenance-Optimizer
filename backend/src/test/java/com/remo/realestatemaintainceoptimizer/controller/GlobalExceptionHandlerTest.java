@@ -18,6 +18,7 @@ import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotP
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutdatedException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
@@ -239,6 +240,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void anInactiveRentCheckReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/rent-tracking-inactive").header("Accept-Language", "en"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("The rent payment check is not activated for this property yet.")));
+    }
+
+    @Test
     void aTooLargeStatementReturnsALocalizedContentTooLarge() throws Exception {
         mockMvc.perform(get("/statement-too-large").header("Accept-Language", "en"))
                 .andExpect(status().isContentTooLarge())
@@ -274,6 +282,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/statement-not-pdf")
         void statementNotPdf() {
             throw new InvalidRentRequestException(InvalidRentRequestException.REASON_STATEMENT_NOT_PDF);
+        }
+
+        @GetMapping("/rent-tracking-inactive")
+        void rentTrackingInactive() {
+            throw new RentTrackingNotActiveException("property-1");
         }
 
         @GetMapping("/statement-too-large")

@@ -11,7 +11,13 @@ import { usePaymentsStore } from '@/stores/payments'
 import * as apartmentService from '@/services/apartmentService'
 import * as propertyService from '@/services/propertyService'
 import * as paymentService from '@/services/paymentService'
-import { createAlertEntry, createMonths, createPaymentYearOverview, createTenantPaymentYear } from '@/__tests__/paymentFixtures'
+import {
+  createAlertEntry,
+  createFormerTenantPayment,
+  createMonths,
+  createPaymentYearOverview,
+  createTenantPaymentYear,
+} from '@/__tests__/paymentFixtures'
 import type { Apartment } from '@/types/apartment'
 import type { Property } from '@/types/property'
 
@@ -56,6 +62,8 @@ beforeEach(() => {
   vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.deleteTenant).mockReset().mockResolvedValue()
   vi.mocked(paymentService.fetchPaymentYear).mockReset().mockResolvedValue(createPaymentYearOverview())
+  vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
+  vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-01' })
   vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
   document.body.innerHTML = ''
   usePropertiesStore().properties = [createProperty()]
@@ -302,6 +310,99 @@ describe('PropertyDetailDrawer', () => {
 
       const errors = Array.from(document.body.querySelectorAll('.property-detail-drawer__error')).map((error) => error.textContent)
       expect(errors).toEqual(['Die Mietzahlungen konnten nicht geladen werden.'])
+    })
+
+    it('shows the activation note, the upload and the table once the check is active', async () => {
+      await mountDrawer()
+
+      expect(document.body.querySelector('.rent-tracking-activation__active')?.textContent).toContain('Aktiv seit 01/2026')
+      expect(document.body.querySelector('.rent-tracking-activation__button')).toBeNull()
+      expect(document.body.querySelector('.payment-upload-button')).not.toBeNull()
+      expect(document.body.querySelector('.tenant-payment-table')).not.toBeNull()
+    })
+
+    it('offers only the activation, without upload and table, while the check is not activated', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(createPaymentYearOverview({ trackingStart: null, tenants: [] }))
+
+      await mountDrawer()
+
+      expect(document.body.querySelector('.rent-tracking-activation__explanation')).not.toBeNull()
+      expect(document.body.querySelector('.rent-tracking-activation__button')?.textContent).toContain('Mietzahlungscheck aktivieren')
+      expect(document.body.querySelector('.payment-upload-button')).toBeNull()
+      expect(document.body.querySelector('.tenant-payment-table')).toBeNull()
+    })
+
+    it('activates the check for this property and then shows the upload and the table', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValueOnce(createPaymentYearOverview({ trackingStart: null, tenants: [] }))
+      await mountDrawer()
+
+      ;(document.body.querySelector('.rent-tracking-activation__button') as HTMLElement).click()
+      await flushPromises()
+
+      expect(paymentService.activateTracking).toHaveBeenCalledWith('property-1')
+      expect(document.body.querySelector('.rent-tracking-activation__active')?.textContent).toContain('Aktiv seit 01/2026')
+      expect(document.body.querySelector('.payment-upload-button')).not.toBeNull()
+      expect(document.body.querySelector('.tenant-payment-table')).not.toBeNull()
+    })
+
+    it('lists the payments of former tenants below the table only when there are some', async () => {
+      await mountDrawer()
+      expect(document.body.querySelector('.former-tenant-payment-list')).toBeNull()
+      document.body.innerHTML = ''
+
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(
+        createPaymentYearOverview({ formerTenantPayments: [createFormerTenantPayment()] }),
+      )
+      await mountDrawer()
+
+      expect(document.body.querySelector('.former-tenant-payment-list__heading')?.textContent).toBe('Zahlungen früherer Mieter')
+      expect(document.body.querySelector('.former-tenant-payment-list__note')?.textContent).toContain(
+        'Zahlung des vorherigen Mieters Mustermann, Erika',
+      )
+    })
+
+    it('does not show former tenant payments of another year under the selected year', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(
+        createPaymentYearOverview({ formerTenantPayments: [createFormerTenantPayment()] }),
+      )
+      await mountDrawer()
+      vi.mocked(paymentService.fetchPaymentYear).mockRejectedValue(new Error('Network Error'))
+
+      ;(document.body.querySelector('.tenant-payment-table__previous') as HTMLElement).click()
+      await flushPromises()
+
+      expect(document.body.querySelector('.former-tenant-payment-list')).toBeNull()
+    })
+
+    it('reloads the table and the alerts after a tenant was deleted', async () => {
+      const require = vi.fn<(options: Record<string, unknown>) => void>()
+      vi.mocked(useConfirm).mockReturnValue({ require } as never)
+      vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+      await mountDrawer()
+      vi.mocked(paymentService.fetchPaymentYear).mockClear()
+      vi.mocked(paymentService.fetchPaymentAlerts).mockClear()
+
+      ;(document.body.querySelector('.apartment-card__tenant-delete') as HTMLElement).click()
+      ;(require.mock.calls[0]![0].accept as () => void)()
+      await flushPromises()
+
+      expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', usePaymentsStore().selectedYear)
+      expect(paymentService.fetchPaymentAlerts).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not reload the rent payments when deleting a tenant fails', async () => {
+      const require = vi.fn<(options: Record<string, unknown>) => void>()
+      vi.mocked(useConfirm).mockReturnValue({ require } as never)
+      vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+      vi.mocked(apartmentService.deleteTenant).mockRejectedValue(new Error('500'))
+      await mountDrawer()
+      vi.mocked(paymentService.fetchPaymentYear).mockClear()
+
+      ;(document.body.querySelector('.apartment-card__tenant-delete') as HTMLElement).click()
+      ;(require.mock.calls[0]![0].accept as () => void)()
+      await flushPromises()
+
+      expect(paymentService.fetchPaymentYear).not.toHaveBeenCalled()
     })
 
     it('shows the empty hint of the table for a property without tenants', async () => {

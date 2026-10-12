@@ -48,6 +48,8 @@ export interface MonthPayment {
   month: number
   status: MonthPaymentStatus
   paidAmount: number
+  /** The rent due in this month, i.e. the rent valid for it after any rent increase. */
+  expectedAmount: number
 }
 
 /** One tenant's row of the year table with the payment state of all twelve months. */
@@ -62,10 +64,34 @@ export interface TenantPaymentYear {
   months: MonthPayment[]
 }
 
+/** A payment of a tenant who has since been deleted, kept with the apartment it was made for. */
+export interface FormerTenantPayment {
+  apartmentId: string
+  floor: number
+  /** The former tenant as "last name, first name". */
+  formerTenantName: string
+  /** ISO date (YYYY-MM-DD) the money arrived. */
+  paymentDate: string
+  amount: number
+  reference: string
+  periodYear: number
+  /** 1 to 12, the month the rent was paid for. */
+  periodMonth: number
+}
+
 /** The rent payment table of a property for one year. */
 export interface PaymentYearOverview {
   year: number
+  /** The first tracked month as `YYYY-MM`, or null while the rent payment check is not activated for the property. */
+  trackingStart: string | null
   tenants: TenantPaymentYear[]
+  formerTenantPayments: FormerTenantPayment[]
+}
+
+/** The outcome of activating the rent payment check for a property. */
+export interface TrackingActivation {
+  /** The first tracked month as `YYYY-MM`. */
+  trackingStart: string
 }
 
 /** A tenant with a pending or overdue payment, account-wide. */

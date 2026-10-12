@@ -15,6 +15,7 @@
     "errors": {
       "status400": "Die Datei ist kein gültiges PDF oder enthält keine Zahlungen.",
       "status404": "Das Objekt wurde nicht gefunden.",
+      "status409": "Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.",
       "status413": "Die Datei ist zu groß. Erlaubt sind höchstens 5 MB.",
       "status429": "Zu viele Anfragen. Bitte später erneut versuchen.",
       "status501": "Das Einlesen von Kontoauszügen ist auf diesem Server nicht aktiviert.",
@@ -69,7 +70,25 @@
       "loadError": "Die Mietzahlungen konnten nicht geladen werden.",
       "regionLabel": "Mietzahlungen {year}",
       "tenantColumn": "Mieter",
-      "legend": "Legende der Zahlungsstatus"
+      "legend": "Legende der Zahlungsstatus",
+      "expectedAmount": "Soll {expected}",
+      "paidOfExpected": "{paid} von {expected}"
+    },
+    "tracking": {
+      "explanation": "Der Mietzahlungscheck ist für dieses Objekt nicht aktiviert. Nach der Aktivierung werden die Mietzahlungen ab dem aktuellen Monat geprüft, auch wenn Sie ihn mitten im Monat einschalten.",
+      "activate": "Mietzahlungscheck aktivieren",
+      "activating": "Wird aktiviert …",
+      "activeSince": "Aktiv seit {month}",
+      "error": "Der Mietzahlungscheck konnte nicht aktiviert werden."
+    },
+    "former": {
+      "heading": "Zahlungen früherer Mieter",
+      "dateColumn": "Datum",
+      "amountColumn": "Betrag",
+      "periodColumn": "Zahlungsmonat",
+      "apartmentColumn": "Wohnung",
+      "noteColumn": "Vermerk",
+      "note": "Zahlung des vorherigen Mieters {name}"
     },
     "alerts": {
       "loadError": "Offene Mietzahlungen konnten nicht geladen werden."

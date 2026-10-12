@@ -40,3 +40,9 @@ export function generatePeriodOptions(anchorYear: number, locale: string, extraK
     return { value: key, label: formatMonthYear(year, month, locale) }
   })
 }
+
+/** Formats a `YYYY-MM` key as a localized numeric month and year (e.g. "01/2026"). */
+export function formatNumericMonthYear(key: string, locale: string): string {
+  const { year, month } = parsePeriodKey(key)
+  return new Intl.DateTimeFormat(locale, { month: '2-digit', year: 'numeric' }).format(new Date(year, month - 1, 1))
+}

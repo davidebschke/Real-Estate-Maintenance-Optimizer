@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatMonthYear,
+  formatNumericMonthYear,
   formatShortMonth,
   generatePeriodOptions,
   parsePeriodKey,
@@ -16,6 +17,11 @@ describe('paymentPeriods', () => {
   it('formats a month with its year in German and English', () => {
     expect(formatMonthYear(2026, 10, 'de')).toBe('Oktober 2026')
     expect(formatMonthYear(2026, 10, 'en')).toBe('October 2026')
+  })
+
+  it('formats a period key as numeric month and year', () => {
+    expect(formatNumericMonthYear('2026-01', 'de')).toBe('01/2026')
+    expect(formatNumericMonthYear('2026-01', 'en')).toBe('01/2026')
   })
 
   it('formats the short month name in German and English', () => {

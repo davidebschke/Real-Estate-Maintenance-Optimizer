@@ -28,6 +28,7 @@ import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestExcept
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
 import com.remo.realestatemaintainceoptimizer.repository.RentPaymentRepository;
@@ -35,6 +36,7 @@ import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,8 +84,9 @@ class RentPaymentScanServiceTest {
     void seedProperty() {
         userRepository.deleteAllInBatch();
         owner = TestAccounts.saveRegularAccount(userRepository);
-        property = propertyRepository.save(
-                new Property("property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building"));
+        property = new Property("property-1", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building");
+        property.activateRentTracking(YearMonth.of(2026, 1));
+        property = propertyRepository.save(property);
         RentFixtures.saveApartment(apartmentRepository, property, "apartment-1", "850.00",
                 new TenantSpec("tenant-1", "Erika", "Mustermann"));
         RentFixtures.saveApartment(apartmentRepository, property, "apartment-2", "700.00",
@@ -133,7 +136,7 @@ class RentPaymentScanServiceTest {
     void flagsAPaymentThatIsAlreadyRecorded() {
         Tenant erika = apartmentRepository.findAllByPropertyId("property-1").stream()
                 .flatMap(apartment -> apartment.tenants().stream()).filter(tenant -> tenant.id().equals("tenant-1")).findFirst().orElseThrow();
-        rentPaymentRepository.save(new RentPayment("payment-1", erika, DATE, new BigDecimal("850.00"), "Miete Oktober 2026", 2026, 10));
+        rentPaymentRepository.save(new RentPayment("payment-1", erika.apartment(), erika, DATE, new BigDecimal("850.00"), "Miete Oktober 2026", 2026, 10));
         when(advisor.extractPayments(PDF)).thenReturn(List.of(
                 extracted("Erika Mustermann", "850.00"), extracted("Erika Mustermann", "851.00")));
 
@@ -154,6 +157,16 @@ class RentPaymentScanServiceTest {
         doThrow(new AiDisabledException()).when(advisor).requireEnabled();
 
         assertThatThrownBy(() -> service.scan(owner.id(), "unknown", statement(PDF))).isInstanceOf(AiDisabledException.class);
+
+        verify(advisor, never()).extractPayments(any());
+    }
+
+    @Test
+    void aPropertyWithoutActivatedRentCheckIsRejectedWithoutConsultingTheAi() {
+        propertyRepository.save(new Property("property-2", owner.id(), "Mediapark", "Im Mediapark 1", "pi-building"));
+
+        assertThatThrownBy(() -> service.scan(owner.id(), "property-2", statement(PDF)))
+                .isInstanceOf(RentTrackingNotActiveException.class);
 
         verify(advisor, never()).extractPayments(any());
     }

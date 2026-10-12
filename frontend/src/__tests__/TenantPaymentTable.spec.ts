@@ -44,7 +44,7 @@ describe('TenantPaymentTable', () => {
     expect(wrapper.findAll('.tenant-payment-table__cell')).toHaveLength(12)
   })
 
-  it('marks the status of every month with its label, including the amount of a partial payment', () => {
+  it('marks the status of every month with its label, including the paid and the due amount', () => {
     const months = createMonths('PAID', {
       1: { status: 'UNTRACKED', paidAmount: 0 },
       3: { status: 'PARTIAL', paidAmount: 500 },
@@ -59,10 +59,40 @@ describe('TenantPaymentTable', () => {
       .map((badge) => badge.attributes('aria-label'))
     expect(labels[0]).toBe('Nicht erfasst')
     expect(labels[1]).toMatch(/^Bezahlt: 950,00\s€$/)
-    expect(labels[2]).toMatch(/^Teilweise bezahlt: 500,00\s€$/)
-    expect(labels[3]).toBe('Überfällig')
-    expect(labels[9]).toBe('Noch offen')
-    expect(labels[10]).toBe('Folgt noch')
+    expect(labels[2]).toMatch(/^Teilweise bezahlt: 500,00\s€ von 950,00\s€$/)
+    expect(labels[3]).toMatch(/^Überfällig: Soll 950,00\s€$/)
+    expect(labels[9]).toMatch(/^Noch offen: Soll 950,00\s€$/)
+    expect(labels[10]).toMatch(/^Folgt noch: Soll 950,00\s€$/)
+  })
+
+  it('compares the payment of a month with the rent valid for that month after a rent increase', () => {
+    const months = createMonths('PAID', {
+      5: { status: 'PARTIAL', paidAmount: 850, expectedAmount: 900 },
+      6: { status: 'PAID', paidAmount: 900, expectedAmount: 900 },
+      7: { status: 'OVERDUE', paidAmount: 0, expectedAmount: 900 },
+    })
+    const wrapper = mountTable({ tenants: [createTenantPaymentYear({ months })] })
+
+    const labels = wrapper
+      .findAll('.tenant-payment-table__cell .payment-status-badge')
+      .map((badge) => badge.attributes('aria-label'))
+    expect(labels[4]).toMatch(/^Teilweise bezahlt: 850,00\s€ von 900,00\s€$/)
+    expect(labels[5]).toMatch(/^Bezahlt: 900,00\s€$/)
+    expect(labels[6]).toMatch(/^Überfällig: Soll 900,00\s€$/)
+  })
+
+  it('shows no amount for a month that is not tracked or has no rent due', () => {
+    const months = createMonths('PAID', {
+      1: { status: 'UNTRACKED', paidAmount: 0, expectedAmount: 950 },
+      2: { status: 'UPCOMING', paidAmount: 0, expectedAmount: 0 },
+    })
+    const wrapper = mountTable({ tenants: [createTenantPaymentYear({ months })] })
+
+    const labels = wrapper
+      .findAll('.tenant-payment-table__cell .payment-status-badge')
+      .map((badge) => badge.attributes('aria-label'))
+    expect(labels[0]).toBe('Nicht erfasst')
+    expect(labels[1]).toBe('Folgt noch')
   })
 
   it('highlights a tenant with an alert and shows the alert badge', () => {

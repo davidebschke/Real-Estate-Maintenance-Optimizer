@@ -33,6 +33,7 @@ describe('usePaymentErrorText', () => {
   it.each([
     [400, 'Die Datei ist kein gültiges PDF oder enthält keine Zahlungen.'],
     [404, 'Das Objekt wurde nicht gefunden.'],
+    [409, 'Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.'],
     [413, 'Die Datei ist zu groß. Erlaubt sind höchstens 5 MB.'],
     [429, 'Zu viele Anfragen. Bitte später erneut versuchen.'],
     [501, 'Das Einlesen von Kontoauszügen ist auf diesem Server nicht aktiviert.'],

@@ -12,18 +12,25 @@ import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.entity.Apartment;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
+import com.remo.realestatemaintainceoptimizer.entity.RentPayment;
+import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import com.remo.realestatemaintainceoptimizer.entity.User;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.ApartmentRentChangeRepository;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.RentPaymentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +59,12 @@ class ApartmentServiceTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RentPaymentRepository rentPaymentRepository;
+
+    @Autowired
+    private ApartmentRentChangeRepository rentChangeRepository;
 
     private User owner;
 
@@ -104,6 +117,62 @@ class ApartmentServiceTest {
         assertThat(service.listByProperty(owner.id(), "property-1"))
                 .extracting(apartment -> apartment.tenants().get(0).lastName())
                 .containsExactly("Albrecht", "Zander", "Meier");
+    }
+
+    private ApartmentWithTenantRequest rentRequest(String totalRent) {
+        return new ApartmentWithTenantRequest(
+                new ApartmentDetailsRequest(2, new BigDecimal("64.50"), new BigDecimal(totalRent), new BigDecimal("650.00"), new BigDecimal("200.00")),
+                new TenantDetailsRequest("Erika", "Mustermann"));
+    }
+
+    @Test
+    void remembersTheRentBeforeAChangeEffectiveFromTheCurrentMonthOnly() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        String tenantId = created.tenants().get(0).id();
+
+        service.updateTenant(owner.id(), tenantId, rentRequest("850.00"));
+        assertThat(rentChangeRepository.count()).isZero();
+
+        service.updateTenant(owner.id(), tenantId, rentRequest("900.00"));
+        service.updateTenant(owner.id(), tenantId, rentRequest("950.00"));
+
+        assertThat(rentChangeRepository.findAllByApartmentPropertyId("property-1")).singleElement().satisfies(change -> {
+            assertThat(change.previousRent()).isEqualByComparingTo("850.00");
+            assertThat(change.effectiveMonth()).isEqualTo(YearMonth.now(ZoneId.of("Europe/Berlin")));
+        });
+    }
+
+    @Test
+    void deletingATenantKeepsTheirPaymentsNotedAsPaymentsOfTheFormerTenant() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        service.addTenant(owner.id(), created.id(), new TenantDetailsRequest("Max", "Mustermann"));
+        Apartment apartment = apartmentRepository.findAllByPropertyId("property-1").getFirst();
+        Tenant erika = apartment.tenants().stream().filter(tenant -> "Erika".equals(tenant.firstName())).findFirst().orElseThrow();
+        Tenant max = apartment.tenants().stream().filter(tenant -> "Max".equals(tenant.firstName())).findFirst().orElseThrow();
+        rentPaymentRepository.save(new RentPayment("payment-1", apartment, erika, LocalDate.of(2026, 10, 2), new BigDecimal("850.00"), "Miete", 2026, 10));
+        rentPaymentRepository.save(new RentPayment("payment-2", apartment, max, LocalDate.of(2026, 9, 2), new BigDecimal("850.00"), "Miete", 2026, 9));
+
+        service.deleteTenant(owner.id(), erika.id());
+
+        RentPayment formerPayment = rentPaymentRepository.findById("payment-1").orElseThrow();
+        assertThat(formerPayment.tenant()).isNull();
+        assertThat(formerPayment.formerTenantName()).isEqualTo("Mustermann, Erika");
+        assertThat(rentPaymentRepository.sumByApartmentAndMonthForProperty("property-1"))
+                .extracting(sum -> sum.getApartmentId()).containsOnly(created.id());
+        assertThat(rentPaymentRepository.findById("payment-2").orElseThrow().formerTenantName()).isNull();
+    }
+
+    @Test
+    void deletingTheLastTenantRemovesTheApartmentWithItsPayments() {
+        ApartmentResponse created = service.create(owner.id(), "property-1", request(2, "Erika", "Mustermann"));
+        Apartment apartment = apartmentRepository.findAllByPropertyId("property-1").getFirst();
+        rentPaymentRepository.save(new RentPayment("payment-1", apartment, apartment.tenants().getFirst(), LocalDate.of(2026, 10, 2),
+                new BigDecimal("850.00"), "Miete", 2026, 10));
+
+        service.deleteTenant(owner.id(), created.tenants().get(0).id());
+
+        assertThat(apartmentRepository.count()).isZero();
+        assertThat(rentPaymentRepository.count()).isZero();
     }
 
     @Test

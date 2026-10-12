@@ -3,6 +3,7 @@ import { createTestProperty, deleteTestProperty, type TestProperty } from './sup
 import {
   CURRENT_YEAR,
   createTestTenant,
+  formerTenantPaymentJson,
   mockPaymentAlerts,
   mockRentPayments,
   scannedPaymentJson,
@@ -47,6 +48,63 @@ test.describe('rent payment check', () => {
     await expect(table.locator('.tenant-payment-table__year')).toHaveText(String(CURRENT_YEAR))
     await expect(table.locator('.tenant-payment-table__cell')).toHaveCount(12)
     await expect(page.getByRole('button', { name: 'Kontoauszug einlesen' })).toBeVisible()
+  })
+
+  test('shows since when the check is active', async ({ page }) => {
+    await mockRentPayments(page, tenant)
+
+    await openPropertyDetails(page, property)
+
+    await expect(page.locator('.rent-tracking-activation__active')).toHaveText(`Aktiv seit 01/${CURRENT_YEAR}`)
+    await expect(page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' })).toHaveCount(0)
+  })
+
+  test('offers only the activation while the check is off and then shows upload and table', async ({ page }) => {
+    const log = await mockRentPayments(page, tenant, { isTrackingActive: false })
+    await openPropertyDetails(page, property)
+    await expect(page.locator('.rent-tracking-activation__explanation')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Kontoauszug einlesen' })).toHaveCount(0)
+    await expect(page.locator('.tenant-payment-table')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
+
+    await expect(page.locator('.rent-tracking-activation__active')).toHaveText(`Aktiv seit 01/${CURRENT_YEAR}`)
+    await expect(page.getByRole('button', { name: 'Kontoauszug einlesen' })).toBeVisible()
+    await expect(page.locator('.tenant-payment-table__cell')).toHaveCount(12)
+    expect(log.activationCount).toBe(1)
+  })
+
+  test('shows the backend message when the activation fails', async ({ page }) => {
+    await mockRentPayments(page, tenant, {
+      isTrackingActive: false,
+      activationFailure: { status: 404, message: 'Objekt nicht gefunden.' },
+    })
+    await openPropertyDetails(page, property)
+
+    await page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
+
+    await expect(page.locator('.rent-tracking-activation__error')).toHaveText('Objekt nicht gefunden.')
+    await expect(page.locator('.tenant-payment-table')).toHaveCount(0)
+  })
+
+  test('lists the payments of a former tenant below the table', async ({ page }) => {
+    await mockRentPayments(page, tenant, { formerTenantPayments: [formerTenantPaymentJson(tenant)] })
+
+    await openPropertyDetails(page, property)
+
+    const list = page.locator('.former-tenant-payment-list')
+    await expect(list.getByRole('heading', { name: 'Zahlungen früherer Mieter' })).toBeVisible()
+    await expect(list.locator('.former-tenant-payment-list__row')).toHaveCount(1)
+    await expect(list.locator('.former-tenant-payment-list__note')).toContainText('Zahlung des vorherigen Mieters Meier, Max')
+    await expect(list.locator('.former-tenant-payment-list__amount')).toContainText('950,00')
+  })
+
+  test('shows no list of former tenant payments when there are none', async ({ page }) => {
+    await mockRentPayments(page, tenant)
+
+    await openPropertyDetails(page, property)
+
+    await expect(page.locator('.former-tenant-payment-list')).toHaveCount(0)
   })
 
   test('navigates the year table to the previous year', async ({ page }) => {
@@ -149,6 +207,20 @@ test.describe('rent payment check', () => {
     await expect(page.locator('.payment-scan-preview-dialog')).toHaveCount(0)
   })
 
+  test('shows the backend message when the scan is refused because the check is not activated', async ({ page }) => {
+    await mockRentPayments(page, tenant, {
+      scanFailure: { status: 409, message: 'Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.' },
+    })
+    await openPropertyDetails(page, property)
+
+    await page.locator('.payment-upload-button input[type="file"]').setInputFiles(statementPdf)
+
+    await expect(page.locator('.payment-upload-button__error')).toHaveText(
+      'Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.',
+    )
+    await expect(page.locator('.payment-scan-preview-dialog')).toHaveCount(0)
+  })
+
   test('rejects a file that is too large or not a PDF without sending it', async ({ page }) => {
     const log = await mockRentPayments(page, tenant)
     await openPropertyDetails(page, property)
@@ -178,11 +250,15 @@ test.describe('rent payment check', () => {
   })
 
   test('fits a phone screen: the year table scrolls inside its own region and the preview needs no page scrolling', async ({ page }) => {
-    await mockRentPayments(page, tenant, { scanned: [scannedPaymentJson(tenant.tenantId)] })
+    await mockRentPayments(page, tenant, {
+      scanned: [scannedPaymentJson(tenant.tenantId)],
+      formerTenantPayments: [formerTenantPaymentJson(tenant)],
+    })
     await page.setViewportSize({ width: 360, height: 740 })
     await openPropertyDetails(page, property)
 
     await expect(page.locator('.tenant-payment-table__scroll')).toBeVisible()
+    await expect(page.locator('.former-tenant-payment-list__row')).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false)
 
     await page.locator('.payment-upload-button input[type="file"]').setInputFiles(statementPdf)
