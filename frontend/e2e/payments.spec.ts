@@ -56,7 +56,7 @@ test.describe('rent payment check', () => {
     await openPropertyDetails(page, property)
 
     await expect(page.locator('.rent-tracking-activation__active')).toHaveText(`Aktiv seit 01/${CURRENT_YEAR}`)
-    await expect(page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' })).toHaveCount(0)
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Mietzahlungscheck aktivieren' })).toHaveCount(0)
   })
 
   test('offers only the activation while the check is off and then shows upload and table', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('rent payment check', () => {
     await expect(page.getByRole('button', { name: 'Kontoauszug einlesen' })).toHaveCount(0)
     await expect(page.locator('.tenant-payment-table')).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
 
     await expect(page.locator('.rent-tracking-activation__active')).toHaveText(`Aktiv seit 01/${CURRENT_YEAR}`)
     await expect(page.getByRole('button', { name: 'Kontoauszug einlesen' })).toBeVisible()
@@ -81,7 +81,7 @@ test.describe('rent payment check', () => {
     })
     await openPropertyDetails(page, property)
 
-    await page.getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Mietzahlungscheck aktivieren' }).click()
 
     await expect(page.locator('.rent-tracking-activation__error')).toHaveText('Objekt nicht gefunden.')
     await expect(page.locator('.tenant-payment-table')).toHaveCount(0)

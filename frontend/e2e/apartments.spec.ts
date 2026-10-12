@@ -39,7 +39,7 @@ test.describe('apartments and tenants', () => {
   test('creates a vacant apartment without a tenant', async ({ page }) => {
     await openPropertyDetails(page, property)
 
-    await page.getByRole('button', { name: 'Wohnung hinzufügen' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Wohnung hinzufügen' }).click()
     await fillApartmentForm(page)
     await page.getByRole('button', { name: 'Wohnung anlegen', exact: true }).click()
 
@@ -52,7 +52,7 @@ test.describe('apartments and tenants', () => {
   test('creates an apartment together with its first tenant', async ({ page }) => {
     await openPropertyDetails(page, property)
 
-    await page.getByRole('button', { name: 'Wohnung hinzufügen' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Wohnung hinzufügen' }).click()
     await fillApartmentForm(page)
     await page.locator('#apartment-tenant-first-name').fill('Erika')
     await page.locator('#apartment-tenant-last-name').fill('Mustermann')
@@ -66,7 +66,7 @@ test.describe('apartments and tenants', () => {
   test('refuses a first tenant with only one name filled', async ({ page }) => {
     await openPropertyDetails(page, property)
 
-    await page.getByRole('button', { name: 'Wohnung hinzufügen' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Wohnung hinzufügen' }).click()
     await fillApartmentForm(page)
     await page.locator('#apartment-tenant-first-name').fill('Erika')
 
