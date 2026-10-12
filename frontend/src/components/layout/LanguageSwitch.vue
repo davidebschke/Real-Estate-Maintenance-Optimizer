@@ -11,6 +11,7 @@ const { isActive, setLocale } = useLocale()
 
 <template>
   <div class="language-switch" role="group" aria-label="Language selection">
+    <i class="pi pi-globe language-switch__icon" aria-hidden="true"></i>
     <button
       v-for="localeOption in availableLocales"
       :key="localeOption"
