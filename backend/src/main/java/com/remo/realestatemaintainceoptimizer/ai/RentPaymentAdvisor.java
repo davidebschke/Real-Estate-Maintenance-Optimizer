@@ -109,7 +109,7 @@ public class RentPaymentAdvisor {
                 .flatMap(Optional::stream)
                 .limit(MAX_PAYMENTS)
                 .toList();
-        if (payments.size() < rows.size()) {
+        if (payments.size() < rows.size() && log.isWarnEnabled()) {
             log.warn("AI payment scan kept {} of {} rows, dropping implausible ones and any beyond {}", payments.size(), rows.size(), MAX_PAYMENTS);
         }
         return payments;
