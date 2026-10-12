@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
+import PaymentAlertBadge from '@/components/payments/PaymentAlertBadge.vue'
 import { useApartmentFormatting } from '@/composables/useApartmentFormatting'
 import type { Apartment, Tenant } from '@/types/apartment'
+import type { ActivePaymentAlert } from '@/types/payment'
 
-defineProps<{ apartment: Apartment }>()
+withDefaults(defineProps<{ apartment: Apartment; alertByTenant?: Record<string, ActivePaymentAlert> }>(), {
+  alertByTenant: () => ({}),
+})
 
 defineEmits<{
   'add-tenant': [apartment: Apartment]
@@ -47,6 +51,7 @@ function fullName(tenant: Tenant): string {
     <ul class="apartment-card__tenants">
       <li v-for="tenant in apartment.tenants" :key="tenant.id" class="apartment-card__tenant">
         <span class="apartment-card__tenant-name">{{ fullName(tenant) }}</span>
+        <PaymentAlertBadge :alert="alertByTenant[tenant.id] ?? 'NONE'" />
         <button
           type="button"
           class="apartment-card__tenant-edit"

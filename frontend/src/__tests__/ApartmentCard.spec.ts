@@ -53,6 +53,23 @@ describe('ApartmentCard', () => {
     ])
   })
 
+  it('shows a payment alert badge only for the tenants that have an alert', () => {
+    const wrapper = mount(ApartmentCard, {
+      props: { apartment: createApartment(), alertByTenant: { 'tenant-2': 'OVERDUE' } },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+
+    const tenants = wrapper.findAll('.apartment-card__tenant')
+    expect(tenants[0]!.find('.payment-alert-badge').exists()).toBe(false)
+    expect(tenants[1]!.find('.payment-alert-badge').text()).toBe('Zahlung überfällig')
+  })
+
+  it('shows no payment alert badge without alerts', () => {
+    const wrapper = mountCard(createApartment())
+
+    expect(wrapper.find('.payment-alert-badge').exists()).toBe(false)
+  })
+
   it('emits the apartment when another tenant is to be added', async () => {
     const apartment = createApartment()
     const wrapper = mountCard(apartment)

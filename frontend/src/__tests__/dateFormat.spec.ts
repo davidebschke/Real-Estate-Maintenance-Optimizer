@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatDurationMinutes,
   formatLocalizedDateTime,
+  formatLocalizedIsoDate,
   formatLocalizedTime,
   isSameDay,
 } from '@/utils/dateFormat'
@@ -51,5 +52,15 @@ describe('formatLocalizedDateTime', () => {
 
   it('formats the date and time in English', () => {
     expect(formatLocalizedDateTime(new Date(2026, 7, 20, 16, 30), 'en')).toMatch(/08\/20\/2026,\s*04:30\s?PM/)
+  })
+})
+
+describe('formatLocalizedIsoDate', () => {
+  it('formats an ISO date as day, month and year in German without a time zone shift', () => {
+    expect(formatLocalizedIsoDate('2026-10-02', 'de')).toBe('02.10.2026')
+  })
+
+  it('formats an ISO date in English', () => {
+    expect(formatLocalizedIsoDate('2026-01-31', 'en')).toBe('01/31/2026')
   })
 })

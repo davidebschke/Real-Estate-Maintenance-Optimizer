@@ -90,6 +90,27 @@ describe('PropertyCard', () => {
     expect(wrapper.emitted('open-detail')).toEqual([['7']])
   })
 
+  it('shows no payment alert badge by default', () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty() },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.find('.property-card__payment-alert').exists()).toBe(false)
+  })
+
+  it.each([
+    ['PENDING', 'Zahlung offen'],
+    ['OVERDUE', 'Zahlung überfällig'],
+  ] as const)('shows the %s payment alert of the property below its address', (alert, label) => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty(), paymentAlert: alert },
+      global: globalMountOptions,
+    })
+
+    expect(wrapper.find('.property-card__payment-alert').text()).toBe(label)
+  })
+
   it('renders the control panel below the tenant count', () => {
     const wrapper = mount(PropertyCard, {
       props: { property: createProperty() },

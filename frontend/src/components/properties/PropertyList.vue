@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePaymentsStore } from '@/stores/payments'
 import { usePropertiesStore } from '@/stores/properties'
 import { usePropertyDeleteConfirmation } from '@/composables/usePropertyDeleteConfirmation'
 import PropertyCard from '@/components/properties/PropertyCard.vue'
@@ -9,10 +10,12 @@ import type { Property } from '@/types/property'
 
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
+const paymentsStore = usePaymentsStore()
 const { confirmDelete } = usePropertyDeleteConfirmation()
 
 onMounted(() => {
   propertiesStore.fetchProperties()
+  paymentsStore.fetchAlerts()
 })
 
 function handleDeleteProperty(property: Property) {
@@ -27,6 +30,9 @@ function handleDeleteProperty(property: Property) {
     <p v-if="propertiesStore.hasDeleteError" class="property-list__error">
       {{ t('properties.list.deleteError') }}
     </p>
+    <p v-if="paymentsStore.hasAlertsLoadError" class="property-list__error">
+      {{ t('payments.alerts.loadError') }}
+    </p>
     <p v-if="propertiesStore.hasLoadError" class="property-list__error">
       {{ t('properties.list.loadError') }}
     </p>
@@ -40,6 +46,7 @@ function handleDeleteProperty(property: Property) {
       v-for="property in propertiesStore.properties"
       :key="property.id"
       :property="property"
+      :payment-alert="paymentsStore.alertForProperty(property.id)"
       @open-detail="propertiesStore.openDetail"
       @edit-property="propertiesStore.openEditDialog"
       @delete-property="handleDeleteProperty"

@@ -29,6 +29,12 @@ spring:
     # Dedicated schema instead of "public", which Supabase exposes through its auto-generated Data API
     schemas: remo
 
+  servlet:
+    multipart:
+      # Bank statement uploads of the rent payment check; remo.payments.max-statement-size is the authoritative limit
+      max-file-size: 5MB
+      max-request-size: 6MB
+
 server:
   # Trusts X-Forwarded-For only from local/private reverse proxies, so rate limits see the real client address behind one
   forward-headers-strategy: native
@@ -90,4 +96,14 @@ remo:
     # openrouteservice matrix requests allow at most 3,500 location pairs (59 locations) and 500 requests per day on the free plan
     max-matrix-locations: 50
     max-matrix-requests-per-day: 400
+    zone: Europe/Berlin
+  payments:
+    # Day of the month after which a rent not paid in full counts as late
+    due-day: 5
+    # Claude model reading the bank statement PDFs; claude-sonnet-5-5 is the fallback if the Haiku model cannot read PDFs
+    scan-model: ${REMO_PAYMENTS_SCAN_MODEL:claude-haiku-5-5}
+    scan-max-tokens: 8192
+    max-statement-size: 5MB
+    max-scans-per-account-per-hour: 10
+    max-scans-per-day: 200
     zone: Europe/Berlin

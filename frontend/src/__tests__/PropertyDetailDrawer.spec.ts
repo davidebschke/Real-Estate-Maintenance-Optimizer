@@ -7,13 +7,17 @@ import { i18n } from '@/i18n'
 import PropertyDetailDrawer from '@/components/properties/PropertyDetailDrawer.vue'
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
+import { usePaymentsStore } from '@/stores/payments'
 import * as apartmentService from '@/services/apartmentService'
 import * as propertyService from '@/services/propertyService'
+import * as paymentService from '@/services/paymentService'
+import { createAlertEntry, createMonths, createPaymentYearOverview, createTenantPaymentYear } from '@/__tests__/paymentFixtures'
 import type { Apartment } from '@/types/apartment'
 import type { Property } from '@/types/property'
 
 vi.mock('@/services/apartmentService')
 vi.mock('@/services/propertyService')
+vi.mock('@/services/paymentService')
 vi.mock('primevue/useconfirm')
 
 /** Builds a sample property for tests, with overridable fields. */
@@ -51,6 +55,7 @@ beforeEach(() => {
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
   vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.deleteTenant).mockReset().mockResolvedValue()
+  vi.mocked(paymentService.fetchPaymentYear).mockReset().mockResolvedValue(createPaymentYearOverview())
   vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
   document.body.innerHTML = ''
   usePropertiesStore().properties = [createProperty()]
@@ -208,5 +213,91 @@ describe('PropertyDetailDrawer', () => {
 
     expect(document.body.querySelector('.property-detail-drawer__name')).toBeNull()
     expect(apartmentService.fetchApartments).not.toHaveBeenCalled()
+    expect(paymentService.fetchPaymentYear).not.toHaveBeenCalled()
+  })
+
+  describe('rent payments', () => {
+    it('loads the payment table of the selected year and shows it below the apartments', async () => {
+      await mountDrawer()
+
+      expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', usePaymentsStore().selectedYear)
+      const headings = Array.from(document.body.querySelectorAll('.property-detail-drawer__section h3')).map((heading) => heading.textContent)
+      expect(headings).toEqual(['Mieter', 'Mietzahlungen'])
+      expect(document.body.querySelector('.tenant-payment-table__tenant-name')?.textContent).toBe('Erika Mustermann')
+      expect(document.body.querySelectorAll('.tenant-payment-table__cell')).toHaveLength(12)
+    })
+
+    it('offers the bank statement upload for this property', async () => {
+      await mountDrawer()
+
+      expect(document.body.querySelector('.payment-upload-button input[type="file"]')).not.toBeNull()
+      expect(document.body.querySelector('.payment-upload-button__button')?.textContent).toContain('Kontoauszug einlesen')
+    })
+
+    it('scans a chosen statement for this property and opens the preview in the store', async () => {
+      vi.mocked(paymentService.scanStatement).mockResolvedValue([])
+      await mountDrawer()
+      const input = document.body.querySelector('.payment-upload-button input[type="file"]') as HTMLInputElement
+      const file = new File(['%PDF-1.7'], 'statement.pdf', { type: 'application/pdf' })
+      Object.defineProperty(input, 'files', { value: [file], configurable: true })
+
+      input.dispatchEvent(new Event('change'))
+      await flushPromises()
+
+      expect(paymentService.scanStatement).toHaveBeenCalledWith('property-1', file)
+      expect(usePaymentsStore().scanSession).toEqual({ propertyId: 'property-1', payments: [] })
+    })
+
+    it('shows the account-wide payment alert next to the affected tenant of an apartment', async () => {
+      vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment()])
+      usePaymentsStore().alerts = [createAlertEntry({ tenantId: 'tenant-1', alert: 'PENDING' })]
+
+      await mountDrawer()
+
+      expect(document.body.querySelector('.apartment-card__tenant .payment-alert-badge')?.textContent).toContain('Zahlung offen')
+    })
+
+    it('highlights a tenant with an alert in the payment table', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(
+        createPaymentYearOverview({
+          tenants: [createTenantPaymentYear({ alert: 'OVERDUE', months: createMonths('OVERDUE') })],
+        }),
+      )
+
+      await mountDrawer()
+
+      expect(document.body.querySelector('.tenant-payment-table__row--alert')).not.toBeNull()
+    })
+
+    it('loads the table of the previous and the next year on request', async () => {
+      await mountDrawer()
+      const year = usePaymentsStore().selectedYear
+
+      ;(document.body.querySelector('.tenant-payment-table__previous') as HTMLElement).click()
+      await flushPromises()
+      expect(paymentService.fetchPaymentYear).toHaveBeenLastCalledWith('property-1', year - 1)
+      expect(document.body.querySelector('.tenant-payment-table__year')?.textContent).toBe(String(year - 1))
+
+      ;(document.body.querySelector('.tenant-payment-table__next') as HTMLElement).click()
+      await flushPromises()
+      expect(paymentService.fetchPaymentYear).toHaveBeenLastCalledWith('property-1', year)
+    })
+
+    it('shows an error hint when the payment table cannot be loaded', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockRejectedValue(new Error('Network Error'))
+
+      await mountDrawer()
+
+      const errors = Array.from(document.body.querySelectorAll('.property-detail-drawer__error')).map((error) => error.textContent)
+      expect(errors).toEqual(['Die Mietzahlungen konnten nicht geladen werden.'])
+    })
+
+    it('shows the empty hint of the table for a property without tenants', async () => {
+      vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(createPaymentYearOverview({ tenants: [] }))
+
+      await mountDrawer()
+
+      expect(document.body.querySelector('.tenant-payment-table__empty')).not.toBeNull()
+    })
   })
 })

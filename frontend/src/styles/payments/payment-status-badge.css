@@ -1,0 +1,7 @@
+.payment-status-badge {
+  align-items: center;
+  color: var(--payment-severity-color);
+  display: inline-flex;
+  font-size: 1.15rem;
+  justify-content: center;
+}

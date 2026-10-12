@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useCardTilt } from '@/composables/useCardTilt'
+import PaymentAlertBadge from '@/components/payments/PaymentAlertBadge.vue'
 import PropertyCardControls from '@/components/properties/PropertyCardControls.vue'
+import type { PaymentAlert } from '@/types/payment'
 import type { Property } from '@/types/property'
 
-defineProps<{
-  property: Property
-}>()
+withDefaults(
+  defineProps<{
+    property: Property
+    paymentAlert?: PaymentAlert
+  }>(),
+  { paymentAlert: 'NONE' },
+)
 
 defineEmits<{
   'open-detail': [propertyId: string]
@@ -39,6 +45,7 @@ const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
           </button>
         </h3>
         <p class="property-card__address">{{ property.address }}</p>
+        <PaymentAlertBadge class="property-card__payment-alert" :alert="paymentAlert" />
       </div>
     </div>
 

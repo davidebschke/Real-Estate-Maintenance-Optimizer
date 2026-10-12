@@ -1,0 +1,78 @@
+{
+  "payments": {
+    "upload": {
+      "button": "Read bank statement",
+      "scanning": "Reading bank statement …",
+      "scanningHint": "The AI is reading the bank statement. This may take a moment.",
+      "hint": "PDF only, at most 5 MB. The file is not stored.",
+      "error": "The bank statement could not be read.",
+      "problem": {
+        "empty": "The file is empty.",
+        "notPdf": "Please choose a PDF file.",
+        "tooLarge": "The file is larger than 5 MB."
+      }
+    },
+    "errors": {
+      "status400": "The file is not a valid PDF or contains no payments.",
+      "status404": "The property was not found.",
+      "status413": "The file is too large. At most 5 MB are allowed.",
+      "status429": "Too many requests. Please try again later.",
+      "status501": "Reading bank statements is not enabled on this server.",
+      "status503": "The AI is currently unavailable. Please try again later."
+    },
+    "preview": {
+      "title": "Review detected payments",
+      "summary": "Payments detected in the bank statement: {count}",
+      "reviewHint": "The assignment of {count} payment(s) is uncertain or missing. Please check or choose the tenant.",
+      "empty": "No payments were detected in the bank statement.",
+      "dateColumn": "Date",
+      "amountColumn": "Amount",
+      "payerColumn": "Sender and reference",
+      "tenantColumn": "Tenant",
+      "periodColumn": "Rent month",
+      "includeRow": "Include the payment from {payer}",
+      "tenantSelect": "Tenant for the payment from {payer}",
+      "periodSelect": "Rent month of the payment from {payer}",
+      "tenantPlaceholder": "Choose tenant",
+      "alreadyRecorded": "Already recorded",
+      "save": "Save {count} payment(s)",
+      "cancel": "Cancel",
+      "saveError": "The payments could not be saved.",
+      "savedTitle": "Payments saved",
+      "savedMessage": "Saved: {saved}, skipped: {skipped}"
+    },
+    "match": {
+      "MATCH": "Confident match",
+      "POSSIBLE": "Uncertain match",
+      "NONE": "No match",
+      "MANUAL": "Assigned manually"
+    },
+    "status": {
+      "PAID": "Paid",
+      "PARTIAL": "Partially paid",
+      "PENDING": "Still open",
+      "OVERDUE": "Overdue",
+      "UPCOMING": "Upcoming",
+      "UNTRACKED": "Not tracked"
+    },
+    "alert": {
+      "NONE": "No open payments",
+      "PENDING": "Payment pending",
+      "OVERDUE": "Payment overdue"
+    },
+    "table": {
+      "heading": "Rent payments",
+      "previousYear": "Previous year",
+      "nextYear": "Next year",
+      "loading": "Loading rent payments …",
+      "empty": "No tenants have been added to this property yet.",
+      "loadError": "The rent payments could not be loaded.",
+      "regionLabel": "Rent payments {year}",
+      "tenantColumn": "Tenant",
+      "legend": "Legend of the payment statuses"
+    },
+    "alerts": {
+      "loadError": "Open rent payments could not be loaded."
+    }
+  }
+}

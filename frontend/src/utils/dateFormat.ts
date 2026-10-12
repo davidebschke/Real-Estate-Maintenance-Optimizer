@@ -43,3 +43,11 @@ export function formatLocalizedDateTime(date: Date, locale: string): string {
     minute: '2-digit',
   }).format(date)
 }
+
+/** Formats an ISO calendar date (YYYY-MM-DD) as a localized numeric day, month and year, without any time zone shift. */
+export function formatLocalizedIsoDate(isoDate: string, locale: string): string {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  return new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
+    new Date(year!, month! - 1, day),
+  )
+}

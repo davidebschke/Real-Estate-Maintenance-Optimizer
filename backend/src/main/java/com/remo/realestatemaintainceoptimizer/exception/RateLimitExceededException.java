@@ -15,6 +15,8 @@ public class RateLimitExceededException extends RuntimeException {
     public static final String REASON_TOO_MANY_OPTIMIZATIONS = "tooManyOptimizations";
     public static final String REASON_OPTIMIZATION_QUOTA_EXHAUSTED = "optimizationQuotaExhausted";
     public static final String REASON_OPTIMIZATION_IN_PROGRESS = "optimizationInProgress";
+    public static final String REASON_TOO_MANY_PAYMENT_SCANS = "tooManyPaymentScans";
+    public static final String REASON_PAYMENT_SCAN_QUOTA_EXHAUSTED = "paymentScanQuotaExhausted";
 
     private final String reasonCode;
 

@@ -1,0 +1,114 @@
+.tenant-payment-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.tenant-payment-table__nav {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tenant-payment-table__year {
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.tenant-payment-table__status,
+.tenant-payment-table__empty {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  margin: 0;
+}
+
+.tenant-payment-table__scroll {
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.625rem;
+  overflow-x: auto;
+}
+
+.tenant-payment-table__table {
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 42rem;
+  width: 100%;
+}
+
+.tenant-payment-table__tenant-head,
+.tenant-payment-table__month-head {
+  background: var(--remo-calendar-hover-bg-color, #1f242b);
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.tenant-payment-table__tenant-head {
+  left: 0;
+  padding-inline: 0.75rem;
+  position: sticky;
+  text-align: left;
+  z-index: 1;
+}
+
+.tenant-payment-table__tenant {
+  background: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-top: 1px solid var(--remo-calendar-border-color, #24282e);
+  left: 0;
+  max-width: 11rem;
+  min-width: 9rem;
+  padding: 0.625rem 0.75rem;
+  position: sticky;
+  text-align: left;
+  z-index: 1;
+}
+
+.tenant-payment-table__tenant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tenant-payment-table__tenant-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tenant-payment-table__tenant-meta {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.tenant-payment-table__row--alert .tenant-payment-table__tenant {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.tenant-payment-table__cell {
+  border-top: 1px solid var(--remo-calendar-border-color, #24282e);
+  min-width: 2.75rem;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+}
+
+.tenant-payment-table__legend {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  gap: 0.375rem 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tenant-payment-table__legend-item {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}

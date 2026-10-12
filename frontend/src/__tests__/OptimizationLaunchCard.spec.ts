@@ -131,10 +131,10 @@ describe('OptimizationLaunchCard', () => {
     await flushPromises()
     expect(wrapper.find('.optimization-launch-card__error').text()).toBe('Die Optimierung konnte nicht gestartet werden.')
 
-    store.runErrorMessage = 'Die KI-Optimierung ist auf diesem Server nicht aktiviert.'
+    store.runErrorMessage = 'Die KI-Funktion ist auf diesem Server nicht aktiviert.'
     await flushPromises()
     expect(wrapper.find('.optimization-launch-card__error').text()).toBe(
-      'Die KI-Optimierung ist auf diesem Server nicht aktiviert.',
+      'Die KI-Funktion ist auf diesem Server nicht aktiviert.',
     )
   })
 

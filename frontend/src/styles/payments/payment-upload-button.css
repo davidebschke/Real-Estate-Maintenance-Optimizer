@@ -1,0 +1,25 @@
+.payment-upload-button {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.payment-upload-button__hint {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.payment-upload-button__status {
+  color: var(--remo-calendar-accent-color, #3b82f6);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.payment-upload-button__error {
+  color: #f87171;
+  font-size: 0.9rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

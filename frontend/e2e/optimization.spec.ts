@@ -73,7 +73,7 @@ test.describe('AI appointment optimization', () => {
   test('shows the backend message when the run fails', async ({ page }) => {
     await mockPendingProposals(page, [])
     await page.route('**/api/optimizations', async (route) => {
-      await route.fulfill({ status: 501, json: { message: 'Die KI-Optimierung ist auf diesem Server nicht aktiviert.' } })
+      await route.fulfill({ status: 501, json: { message: 'Die KI-Funktion ist auf diesem Server nicht aktiviert.' } })
     })
     await page.goto('/optimization')
 
@@ -81,7 +81,7 @@ test.describe('AI appointment optimization', () => {
     await expect(page.getByRole('alertdialog')).toContainText('0,5 bis 2 Cent')
     await page.getByRole('button', { name: 'Optimierung starten' }).click()
 
-    await expect(page.getByRole('alert')).toHaveText('Die KI-Optimierung ist auf diesem Server nicht aktiviert.')
+    await expect(page.getByRole('alert')).toHaveText('Die KI-Funktion ist auf diesem Server nicht aktiviert.')
   })
 
   test('the overview banner counts the pending proposals and leads to them', async ({ page }) => {

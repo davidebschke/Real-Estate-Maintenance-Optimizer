@@ -4,6 +4,7 @@ import * as authService from '@/services/authService'
 import * as accountService from '@/services/accountService'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { useOptimizationStore } from '@/stores/optimization'
+import { usePaymentsStore } from '@/stores/payments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
 import type { CurrentUser } from '@/types/auth'
@@ -83,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     usePropertiesStore().reset()
     useTenantsStore().reset()
     useOptimizationStore().reset()
+    usePaymentsStore().reset()
   }
 
   /** Switches to the given account, dropping any data cached for a previous one. */
@@ -91,6 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
     usePropertiesStore().reset()
     useTenantsStore().reset()
     useOptimizationStore().reset()
+    usePaymentsStore().reset()
     currentUser.value = user
     isSessionChecked.value = true
   }

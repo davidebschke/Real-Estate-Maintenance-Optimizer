@@ -70,6 +70,7 @@ You can find the prototype here: https://github.com/davidebschke/Real-Estate-Mai
 - **Completion Tracking:** Mark a job as done directly from the detail view; it is recolored and its calendar block is drawn to the actual end time.
 - **Daily Overview:** Today's appointments as a sorted list next to a map with numbered, connected markers.
 - **Properties & Tenants:** List of all properties; each one opens a detail view with its apartments (floor, living area, rent, base rent, service charges) and tenants. Several tenants can share one apartment.
+- **Rent Payment Check:** Upload a bank statement PDF per property (nothing is stored; only the payments you confirm are saved); Claude reads the incoming payments, the app assigns them to the tenants, and each tenant gets a yearly table (January to December) of paid, partly paid, pending and overdue rent. Tenants and properties with overdue or awaited rent are highlighted (rent is due on the 5th of the month). Needs `REMO_AI_ENABLED=true` with `REMO_AI_API_KEY` (the deploy workflow currently only enables the AI while `REMO_ROUTING_API_KEY` is set as well).
 - **Property Statistics:** A statistics page lists every property with its open and completed appointments and its next appointment.
 
 #### 2. ➕ Appointment Creation (`Term creation`)
@@ -166,7 +167,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: password of the account `account_default`, applied on the first start (afterwards stored as a BCrypt hash; changing the value later has no effect).
 - `REMO_AUTH_COOKIE_SECURE=false`: locally you work over `http://localhost` instead of HTTPS, so the "Secure" flag of the login cookie has to be switched off (in production it stays on).
 - Write the values without quotation marks, and save the file without a BOM (UTF-8 without signature). Visual Studio Code does this by default; in Windows PowerShell 5.1 therefore do not use `Out-File`/`Set-Content` without `-Encoding ascii`.
-- Optional: `REMO_ROUTING_ENABLED=true` with `REMO_ROUTING_API_KEY=<openrouteservice-key>` enables road routes, and additionally `REMO_AI_ENABLED=true` with `REMO_AI_API_KEY=<anthropic-key>` the AI appointment optimization (it needs road routing for the travel matrix; see `backend/.env.example`).
+- Optional: `REMO_ROUTING_ENABLED=true` with `REMO_ROUTING_API_KEY=<openrouteservice-key>` enables road routes, and additionally `REMO_AI_ENABLED=true` with `REMO_AI_API_KEY=<anthropic-key>` the AI appointment optimization and the rent payment check (the optimization needs road routing for the travel matrix; see `backend/.env.example`).
 
 #### 5. Start the backend
 
@@ -258,6 +259,7 @@ Hier finden Sie den Prototypen: https://github.com/davidebschke/Real-Estate-Main
 - **Erledigt-Status:** Ein Auftrag kann direkt in der Detailansicht als erledigt markiert werden; er wird daraufhin farblich hervorgehoben und im Kalender bis zur tatsächlichen Endzeit dargestellt.
 - **Tagesübersicht:** Die heutigen Termine als sortierte Liste neben einer Karte mit nummerierten, verbundenen Markern.
 - **Objekte & Mieter:** Liste aller Objekte; jedes öffnet eine Detailansicht mit seinen Wohnungen (Stockwerk, Wohnfläche, Mietpreis, Kaltmiete, Nebenkosten) und Mietern. Mehrere Mieter können sich eine Wohnung teilen.
+- **Mietzahlungscheck:** Pro Objekt ein Kontoauszug-PDF hochladen (es wird nichts gespeichert, nur die von Ihnen bestätigten Zahlungen); Claude liest die eingehenden Zahlungen, die App ordnet sie den Mietern zu, und jeder Mieter bekommt eine Jahrestabelle (Januar bis Dezember) mit bezahlter, teilweise bezahlter, ausstehender und überfälliger Miete. Mieter und Objekte mit überfälliger oder noch ausstehender Miete werden markiert (Fälligkeit ist der 5. des Monats). Benötigt `REMO_AI_ENABLED=true` mit `REMO_AI_API_KEY` (der Deploy-Workflow schaltet die KI derzeit nur ein, wenn zusätzlich `REMO_ROUTING_API_KEY` gesetzt ist).
 - **Objektstatistik:** Eine Statistikseite listet jedes Objekt mit seinen offenen und erledigten Terminen sowie dem nächsten Termin.
 
 #### 2. ➕ Terminerstellung
@@ -353,7 +355,7 @@ REMO_AUTH_COOKIE_SECURE=false
 - `REMO_AUTH_INITIAL_USER_PASSWORD`: Passwort des Accounts `account_default`, das beim ersten Start gesetzt wird (danach als BCrypt-Hash gespeichert; eine spätere Änderung des Werts hat keine Wirkung mehr).
 - `REMO_AUTH_COOKIE_SECURE=false`: lokal wird über `http://localhost` statt HTTPS gearbeitet, daher muss das Sicherheitsmerkmal „Secure" des Anmelde-Cookies ausgeschaltet sein (in Produktion bleibt es an).
 - Die Werte stehen ohne Anführungszeichen in der Datei, und sie muss ohne BOM (UTF-8 ohne Signatur) gespeichert sein. In Visual Studio Code ist das der Standard; in Windows PowerShell 5.1 daher nicht `Out-File`/`Set-Content` ohne `-Encoding ascii` verwenden.
-- Optional: `REMO_ROUTING_ENABLED=true` mit `REMO_ROUTING_API_KEY=<openrouteservice-key>` schaltet Straßenrouten ein, zusätzlich `REMO_AI_ENABLED=true` mit `REMO_AI_API_KEY=<anthropic-key>` die KI-Terminoptimierung (sie braucht das Straßenrouting für die Reisematrix; siehe `backend/.env.example`).
+- Optional: `REMO_ROUTING_ENABLED=true` mit `REMO_ROUTING_API_KEY=<openrouteservice-key>` schaltet Straßenrouten ein, zusätzlich `REMO_AI_ENABLED=true` mit `REMO_AI_API_KEY=<anthropic-key>` die KI-Terminoptimierung und den Mietzahlungscheck (die Optimierung braucht das Straßenrouting für die Reisematrix; siehe `backend/.env.example`).
 
 #### 5. Backend starten
 
@@ -449,5 +451,5 @@ Damit läuft das Projekt vollständig lokal.
 * **Database:** PostgreSQL on Supabase (Termine, Objekte & User/Auth / Appointments, Objects & User/Auth), Flyway migrations
 
 ### 🤖 AI / Intelligence
-* **Framework:** LangChain4j (`langchain4j-anthropic`) mit Claude Haiku 4.5 (KI-Terminoptimierung / AI appointment optimization)
+* **Framework:** LangChain4j (`langchain4j-anthropic`) mit Claude Haiku 4.5 (KI-Terminoptimierung / AI appointment optimization) und Claude Haiku 5.5 (Mietzahlungscheck / rent payment check)
 

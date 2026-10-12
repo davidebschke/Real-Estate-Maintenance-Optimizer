@@ -1,0 +1,18 @@
+.payment-alert-badge {
+  align-items: center;
+  background: color-mix(in srgb, var(--payment-severity-color) 15%, transparent);
+  border: 1px solid var(--payment-severity-color);
+  border-radius: 999px;
+  color: var(--payment-severity-color);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  line-height: 1.2;
+  padding: 0.1rem 0.55rem;
+  width: fit-content;
+}
+
+.payment-alert-badge--compact {
+  padding: 0.2rem 0.3rem;
+}

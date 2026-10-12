@@ -8,10 +8,13 @@ import PropertyList from '@/components/properties/PropertyList.vue'
 import { usePropertiesStore } from '@/stores/properties'
 import * as propertyService from '@/services/propertyService'
 import * as appointmentService from '@/services/appointmentService'
+import * as paymentService from '@/services/paymentService'
+import { createAlertEntry } from '@/__tests__/paymentFixtures'
 import type { Property } from '@/types/property'
 
 vi.mock('@/services/propertyService')
 vi.mock('@/services/appointmentService')
+vi.mock('@/services/paymentService')
 vi.mock('primevue/useconfirm')
 
 const globalMountOptions = { plugins: [PrimeVue, i18n], directives: { tooltip: {} } }
@@ -36,6 +39,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date(2026, 7, 10, 9, 0))
   vi.mocked(propertyService.fetchProperties).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
+  vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
   vi.mocked(useConfirm).mockReturnValue({
     require: (options: { accept?: () => void }) => options.accept?.(),
   } as never)
@@ -77,6 +81,54 @@ describe('PropertyList', () => {
     expect(cards[0]!.find('.property-card__name').text()).toBe('Wohnanlage Sonnenhof')
     expect(cards[0]!.find('.property-card__stat-value').text()).toBe('4')
     expect(cards[1]!.find('.property-card__stat-value').text()).toBe('0')
+  })
+
+  it('loads the payment alerts of the account along with the properties', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
+    mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    expect(paymentService.fetchPaymentAlerts).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks every property with the worst payment alert of its tenants', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([
+      createProperty({ id: '1', name: 'Wohnanlage Sonnenhof' }),
+      createProperty({ id: '2', name: 'Wohnpark Lindenthal' }),
+      createProperty({ id: '3', name: 'Rheinhaus Deutz' }),
+    ])
+    vi.mocked(paymentService.fetchPaymentAlerts).mockResolvedValue([
+      createAlertEntry({ propertyId: '1', tenantId: 'tenant-1', alert: 'PENDING' }),
+      createAlertEntry({ propertyId: '1', tenantId: 'tenant-2', alert: 'OVERDUE' }),
+      createAlertEntry({ propertyId: '2', tenantId: 'tenant-3', alert: 'PENDING' }),
+    ])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    const alerts = wrapper.findAll('.property-card').map((card) => {
+      const badge = card.find('.property-card__payment-alert')
+      return badge.exists() ? badge.text() : null
+    })
+    expect(alerts).toEqual(['Zahlung überfällig', 'Zahlung offen', null])
+  })
+
+  it('shows a hint when the payment alerts cannot be loaded but still lists the properties', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty()])
+    vi.mocked(paymentService.fetchPaymentAlerts).mockRejectedValue(new Error('network error'))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    expect(wrapper.find('.property-list__error').text()).toBe('Offene Mietzahlungen konnten nicht geladen werden.')
+    expect(wrapper.findAll('.property-card')).toHaveLength(1)
+  })
+
+  it('still shows the empty-state message next to an alerts error when there are no properties', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
+    vi.mocked(paymentService.fetchPaymentAlerts).mockRejectedValue(new Error('network error'))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    expect(wrapper.find('.property-list__empty').exists()).toBe(true)
   })
 
   it('opens the property creation dialog when the pinned create card is clicked', async () => {

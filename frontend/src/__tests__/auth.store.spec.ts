@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
+import { usePaymentsStore } from '@/stores/payments'
+import { createAlertEntry } from '@/__tests__/paymentFixtures'
 import * as authService from '@/services/authService'
 import * as accountService from '@/services/accountService'
 import type { CurrentUser } from '@/types/auth'
@@ -55,6 +57,7 @@ function fillDataStoresOfPreviousAccount() {
   useAppointmentsStore().appointments = [{ id: 'old' } as never]
   usePropertiesStore().properties = [{ id: 'old' } as never]
   useTenantsStore().apartmentsByProperty = { old: [] }
+  usePaymentsStore().alerts = [createAlertEntry()]
 }
 
 describe('useAuthStore', () => {
@@ -99,6 +102,7 @@ describe('useAuthStore', () => {
     expect(useAppointmentsStore().appointments).toEqual([])
     expect(usePropertiesStore().properties).toEqual([])
     expect(useTenantsStore().apartmentsByProperty).toEqual({})
+    expect(usePaymentsStore().alerts).toEqual([])
   })
 
   it('keeps the user logged out when the login is rejected', async () => {
@@ -131,6 +135,7 @@ describe('useAuthStore', () => {
     expect(useAppointmentsStore().appointments).toEqual([])
     expect(usePropertiesStore().properties).toEqual([])
     expect(useTenantsStore().apartmentsByProperty).toEqual({})
+    expect(usePaymentsStore().alerts).toEqual([])
   })
 
   it('forgets the account locally even when the logout request fails', async () => {
@@ -186,6 +191,7 @@ describe('useAuthStore', () => {
     expect(store.isSessionChecked).toBe(true)
     expect(usePropertiesStore().properties).toEqual([])
     expect(useTenantsStore().apartmentsByProperty).toEqual({})
+    expect(usePaymentsStore().alerts).toEqual([])
     expect(authService.logout).not.toHaveBeenCalled()
   })
 
