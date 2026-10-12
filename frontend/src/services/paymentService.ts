@@ -48,3 +48,8 @@ export async function activateTracking(propertyId: string): Promise<TrackingActi
   const { data } = await axios.put<TrackingActivation>(`${apiBaseUrl}/api/properties/${propertyId}/rent-payments/tracking`)
   return data
 }
+
+/** Deactivates the rent payment check for the given property; its stored payments are kept. */
+export async function deactivateTracking(propertyId: string): Promise<void> {
+  await axios.delete(`${apiBaseUrl}/api/properties/${propertyId}/rent-payments/tracking`)
+}

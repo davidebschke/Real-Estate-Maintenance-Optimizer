@@ -22,6 +22,7 @@ function createExistingProperty(overrides: Partial<Property> = {}): Property {
     latitude: null,
     longitude: null,
     tenantCount: 0,
+    rentTrackingStart: null,
     ...overrides,
   }
 }
@@ -328,6 +329,7 @@ describe('PropertyFormDialog', () => {
       latitude: null,
       longitude: null,
       tenantCount: 0,
+      rentTrackingStart: null,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -369,6 +371,7 @@ describe('PropertyFormDialog', () => {
       latitude: 50.9420135,
       longitude: 6.8771884,
       tenantCount: 0,
+      rentTrackingStart: null,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -393,6 +396,7 @@ describe('PropertyFormDialog', () => {
       latitude: 50.97,
       longitude: 6.95,
       tenantCount: 0,
+      rentTrackingStart: null,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()
@@ -421,6 +425,7 @@ describe('PropertyFormDialog', () => {
       latitude: null,
       longitude: null,
       tenantCount: 0,
+      rentTrackingStart: null,
     })
     const wrapper = await mountDialog()
     await fillRequiredFields()

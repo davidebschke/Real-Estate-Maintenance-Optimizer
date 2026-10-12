@@ -20,8 +20,8 @@ describe('paymentPeriods', () => {
   })
 
   it('formats a period key as numeric month and year', () => {
-    expect(formatNumericMonthYear('2026-01', 'de')).toBe('01/2026')
-    expect(formatNumericMonthYear('2026-01', 'en')).toBe('01/2026')
+    expect(formatNumericMonthYear('2026-01')).toBe('01/2026')
+    expect(formatNumericMonthYear('2026-12')).toBe('12/2026')
   })
 
   it('formats the short month name in German and English', () => {

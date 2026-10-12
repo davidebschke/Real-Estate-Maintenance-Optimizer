@@ -82,6 +82,14 @@ public class Property {
     }
 
     /**
+     * Deactivates the rent payment check, so no payment is judged or stored any more until it is activated again; already stored payments stay.
+     */
+    @SuppressWarnings("PMD.NullAssignment")
+    public void deactivateRentTracking() {
+        this.rentTrackingStart = null;
+    }
+
+    /**
      * Returns the first month whose rent payments are checked, or null while the rent payment check is not activated.
      */
     public YearMonth rentTrackingStart() {

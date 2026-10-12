@@ -15,6 +15,7 @@ import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +48,15 @@ public class RentPaymentController {
     @PutMapping("/properties/{propertyId}/rent-payments/tracking")
     public RentTrackingResponse activateTracking(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String propertyId) {
         return rentPaymentService.activateTracking(user.id(), propertyId);
+    }
+
+    /**
+     * Deactivates the rent payment check of the given property, keeping its stored payments.
+     */
+    @DeleteMapping("/properties/{propertyId}/rent-payments/tracking")
+    public ResponseEntity<Void> deactivateTracking(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable String propertyId) {
+        rentPaymentService.deactivateTracking(user.id(), propertyId);
+        return ResponseEntity.noContent().build();
     }
 
     /**

@@ -16,6 +16,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     latitude: 50.94,
     longitude: 6.88,
     tenantCount: 0,
+    rentTrackingStart: null,
     ...overrides,
   }
 }
@@ -129,6 +130,50 @@ describe('PropertyCard', () => {
     await wrapper.findComponent(PropertyCardControls).vm.$emit('manage-tenants')
 
     expect(wrapper.emitted('open-detail')).toEqual([['7']])
+  })
+
+  it('emits the property id when the control panel asks to add an apartment', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ id: '7' }) },
+      global: globalMountOptions,
+    })
+
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('add-apartment')
+
+    expect(wrapper.emitted('add-apartment')).toEqual([['7']])
+  })
+
+  it('emits the property id when the control panel asks to activate the rent payment check', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ id: '7' }) },
+      global: globalMountOptions,
+    })
+
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('activate-tracking')
+
+    expect(wrapper.emitted('activate-tracking')).toEqual([['7']])
+  })
+
+  it('emits the property id when the control panel asks to deactivate the rent payment check', async () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty({ id: '7' }) },
+      global: globalMountOptions,
+    })
+
+    await wrapper.findComponent(PropertyCardControls).vm.$emit('deactivate-tracking')
+
+    expect(wrapper.emitted('deactivate-tracking')).toEqual([['7']])
+  })
+
+  it('passes the tracking state on to the control panel', () => {
+    const wrapper = mount(PropertyCard, {
+      props: { property: createProperty(), isTrackingActive: true, isTrackingBusy: true },
+      global: globalMountOptions,
+    })
+
+    const controls = wrapper.findComponent(PropertyCardControls)
+    expect(controls.props('isTrackingActive')).toBe(true)
+    expect(controls.props('isTrackingBusy')).toBe(true)
   })
 
   it('emits the property when the control panel asks to edit it', async () => {

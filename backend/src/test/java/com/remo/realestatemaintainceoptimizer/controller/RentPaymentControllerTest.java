@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -125,6 +126,8 @@ class RentPaymentControllerTest {
         anonymousMockMvc.perform(get("/api/properties/{id}/rent-payments", "property-1")).andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(put("/api/properties/{id}/rent-payments/tracking", "property-1").with(TestAccounts.withCsrfToken()))
                 .andExpect(status().isUnauthorized());
+        anonymousMockMvc.perform(delete("/api/properties/{id}/rent-payments/tracking", "property-1").with(TestAccounts.withCsrfToken()))
+                .andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(get("/api/rent-payments/alerts")).andExpect(status().isUnauthorized());
     }
 
@@ -144,6 +147,23 @@ class RentPaymentControllerTest {
         mockMvc.perform(get("/api/properties/{id}/rent-payments", "property-2"))
                 .andExpect(jsonPath("$.trackingStart", equalTo(CURRENT_MONTH.toString())))
                 .andExpect(jsonPath("$.tenants[0].months[%d].expectedAmount".formatted(CURRENT_MONTH.getMonthValue() - 1), equalTo(700.0)));
+    }
+
+    @Test
+    void deactivatesTheCheckOfAPropertyAndShowsItInTheYearlyTable() throws Exception {
+        mockMvc.perform(delete("/api/properties/{id}/rent-payments/tracking", "property-1")).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/properties/{id}/rent-payments", "property-1"))
+                .andExpect(jsonPath("$.trackingStart", equalTo(null)))
+                .andExpect(jsonPath("$.tenants[0].months[0].status", equalTo("UNTRACKED")));
+        mockMvc.perform(get("/api/rent-payments/alerts")).andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void anotherAccountCannotDeactivateTheCheck() throws Exception {
+        otherAccountMockMvc.perform(delete("/api/properties/{id}/rent-payments/tracking", "property-1")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/properties/{id}/rent-payments", "property-1"))
+                .andExpect(jsonPath("$.trackingStart", equalTo(CURRENT_MONTH.toString())));
     }
 
     @Test

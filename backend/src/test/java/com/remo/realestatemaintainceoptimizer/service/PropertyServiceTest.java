@@ -114,6 +114,17 @@ class PropertyServiceTest {
     }
 
     @Test
+    void reportsTheRentTrackingStartOfAPropertyOrNullWhileTheCheckIsNotActivated() {
+        repository.save(new Property("1", owner.id(), "Wohnanlage Rheinblick", "Rheinuferstr. 8", "pi-building"));
+        Property tracked = new Property("2", owner.id(), "Wohnanlage Sonnenhof", "Aachener Str. 512", "pi-building");
+        tracked.activateRentTracking(java.time.YearMonth.of(2026, 3));
+        repository.save(tracked);
+
+        assertThat(service.getById(owner.id(), "1").rentTrackingStart()).isNull();
+        assertThat(service.getById(owner.id(), "2").rentTrackingStart()).isEqualTo("2026-03");
+    }
+
+    @Test
     void aNewlyCreatedPropertyHasNoTenants() {
         var response = service.create(owner.id(), new CreatePropertyRequest("Wohnanlage Nordpark", "Nordparkstr. 3", null, null));
 

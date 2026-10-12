@@ -14,6 +14,7 @@ const property: Property = {
   latitude: 50.94,
   longitude: 6.88,
   tenantCount: 3,
+  rentTrackingStart: null,
 }
 
 /** Builds a sample appointment for tests, with overridable fields. */

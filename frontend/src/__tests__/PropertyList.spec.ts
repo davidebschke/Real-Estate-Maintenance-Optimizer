@@ -6,10 +6,12 @@ import { useConfirm } from 'primevue/useconfirm'
 import { i18n } from '@/i18n'
 import PropertyList from '@/components/properties/PropertyList.vue'
 import { usePropertiesStore } from '@/stores/properties'
+import { useTenantsStore } from '@/stores/tenants'
 import * as propertyService from '@/services/propertyService'
 import * as appointmentService from '@/services/appointmentService'
 import * as paymentService from '@/services/paymentService'
-import { createAlertEntry } from '@/__tests__/paymentFixtures'
+import { httpError } from '@/__tests__/httpError'
+import { createAlertEntry, createPaymentYearOverview } from '@/__tests__/paymentFixtures'
 import type { Property } from '@/types/property'
 
 vi.mock('@/services/propertyService')
@@ -29,6 +31,7 @@ function createProperty(overrides: Partial<Property> = {}): Property {
     latitude: 50.94,
     longitude: 6.88,
     tenantCount: 0,
+    rentTrackingStart: null,
     ...overrides,
   }
 }
@@ -40,6 +43,9 @@ beforeEach(() => {
   vi.mocked(propertyService.fetchProperties).mockReset()
   vi.mocked(appointmentService.fetchAppointments).mockReset().mockResolvedValue([])
   vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
+  vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-08' })
+  vi.mocked(paymentService.deactivateTracking).mockReset().mockResolvedValue(undefined)
+  vi.mocked(paymentService.fetchPaymentYear).mockReset().mockResolvedValue(createPaymentYearOverview())
   vi.mocked(useConfirm).mockReturnValue({
     require: (options: { accept?: () => void }) => options.accept?.(),
   } as never)
@@ -163,6 +169,89 @@ describe('PropertyList', () => {
     await wrapper.find('.property-card-controls__edit').trigger('click')
 
     expect(propertiesStore.editingProperty).toEqual(property)
+  })
+
+  it('opens the apartment creation dialog for the clicked property', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+    const tenantsStore = useTenantsStore()
+
+    await wrapper.find('.property-card-controls__apartment').trigger('click')
+
+    expect(tenantsStore.isApartmentFormDialogOpen).toBe(true)
+  })
+
+  it('activates the rent payment check of the clicked property and then offers its deactivation', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+    expect(wrapper.find('.property-card-controls__tracking').text()).toBe('Mietzahlungscheck aktivieren')
+
+    await wrapper.find('.property-card-controls__tracking').trigger('click')
+    await flushPromises()
+
+    expect(paymentService.activateTracking).toHaveBeenCalledWith('1')
+    expect(wrapper.find('.property-card-controls__tracking').text()).toBe('Mietzahlungscheck deaktivieren')
+  })
+
+  it('offers the deactivation right away for a property that came with an active check', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1', rentTrackingStart: '2026-03' })])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    expect(wrapper.find('.property-card-controls__tracking').text()).toBe('Mietzahlungscheck deaktivieren')
+  })
+
+  it('deactivates the rent payment check after confirmation and then offers its activation again', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1', rentTrackingStart: '2026-03' })])
+    vi.mocked(paymentService.fetchPaymentYear).mockResolvedValue(createPaymentYearOverview({ trackingStart: null }))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    await wrapper.find('.property-card-controls__tracking').trigger('click')
+    await flushPromises()
+
+    expect(paymentService.deactivateTracking).toHaveBeenCalledWith('1')
+    expect(wrapper.find('.property-card-controls__tracking').text()).toBe('Mietzahlungscheck aktivieren')
+  })
+
+  it('does not deactivate the rent payment check when the confirmation is declined', async () => {
+    vi.mocked(useConfirm).mockReturnValue({ require: () => undefined } as never)
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1', rentTrackingStart: '2026-03' })])
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    await wrapper.find('.property-card-controls__tracking').trigger('click')
+    await flushPromises()
+
+    expect(paymentService.deactivateTracking).not.toHaveBeenCalled()
+  })
+
+  it('shows the failure and keeps the deactivation button when deactivating the rent payment check fails', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1', rentTrackingStart: '2026-03' })])
+    vi.mocked(paymentService.deactivateTracking).mockRejectedValue(new Error('Network Error'))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    await wrapper.find('.property-card-controls__tracking').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.property-list__error[role="alert"]').text()).toBe('Der Mietzahlungscheck konnte nicht deaktiviert werden.')
+    expect(wrapper.find('.property-card-controls__tracking').text()).toBe('Mietzahlungscheck deaktivieren')
+  })
+
+  it('shows the failure and keeps the button when activating the rent payment check fails', async () => {
+    vi.mocked(propertyService.fetchProperties).mockResolvedValue([createProperty({ id: '1' })])
+    vi.mocked(paymentService.activateTracking).mockRejectedValue(httpError(404, { message: 'Objekt nicht gefunden.' }))
+    const wrapper = mount(PropertyList, { global: globalMountOptions })
+    await flushPromises()
+
+    await wrapper.find('.property-card-controls__tracking').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.property-list__error[role="alert"]').text()).toBe('Objekt nicht gefunden.')
+    expect(wrapper.find('.property-card-controls__tracking').exists()).toBe(true)
   })
 
   it('deletes a property after confirmation and refreshes the appointments', async () => {

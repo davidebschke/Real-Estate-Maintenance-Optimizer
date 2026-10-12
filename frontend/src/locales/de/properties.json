@@ -19,6 +19,9 @@
     "controls": {
       "label": "Objektverwaltung",
       "manageTenants": "Mieter verwalten",
+      "addApartment": "Wohnung hinzufügen",
+      "activateTracking": "Mietzahlungscheck aktivieren",
+      "deactivateTracking": "Mietzahlungscheck deaktivieren",
       "edit": "Bearbeiten",
       "delete": "Löschen"
     },

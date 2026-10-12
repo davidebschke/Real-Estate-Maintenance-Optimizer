@@ -2,20 +2,23 @@
 import { computed, onBeforeUnmount } from 'vue'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
-import { useLocale } from '@/composables/useLocale'
 import { usePaymentErrorText } from '@/composables/usePaymentErrorText'
+import { useTrackingDeactivationConfirmation } from '@/composables/useTrackingDeactivationConfirmation'
 import { usePaymentsStore } from '@/stores/payments'
 import { formatNumericMonthYear } from '@/utils/paymentPeriods'
 
 const props = defineProps<{ propertyId: string; trackingStart: string | null }>()
 
 const { t } = useI18n()
-const { currentLocale } = useLocale()
 const store = usePaymentsStore()
 const { describeError } = usePaymentErrorText()
+const { confirmDeactivation } = useTrackingDeactivationConfirmation()
 
 const errorText = computed(() =>
   store.activationError ? describeError(store.activationError, 'payments.tracking.error') : null,
+)
+const deactivationErrorText = computed(() =>
+  store.deactivationError ? describeError(store.deactivationError, 'payments.tracking.deactivateError') : null,
 )
 
 /** Activates the rent payment check for the property. */
@@ -24,15 +27,37 @@ async function activate() {
   await store.activateTracking(props.propertyId)
 }
 
-onBeforeUnmount(() => store.clearActivationError())
+/** Asks for confirmation, then deactivates the rent payment check for the property. */
+function requestDeactivation() {
+  store.clearDeactivationError()
+  confirmDeactivation(() => store.deactivateTracking(props.propertyId))
+}
+
+onBeforeUnmount(() => {
+  store.clearActivationError()
+  store.clearDeactivationError()
+})
 </script>
 
 <template>
   <div class="rent-tracking-activation">
-    <p v-if="trackingStart" class="rent-tracking-activation__active">
-      <i class="pi pi-check-circle" aria-hidden="true"></i>
-      {{ t('payments.tracking.activeSince', { month: formatNumericMonthYear(trackingStart, currentLocale) }) }}
-    </p>
+    <template v-if="trackingStart">
+      <p class="rent-tracking-activation__active">
+        <i class="pi pi-check-circle" aria-hidden="true"></i>
+        {{ t('payments.tracking.activeSince', { month: formatNumericMonthYear(trackingStart) }) }}
+      </p>
+      <Button
+        class="rent-tracking-activation__deactivate"
+        icon="pi pi-power-off"
+        :label="store.isDeactivating ? t('payments.tracking.deactivating') : t('payments.tracking.deactivate')"
+        :loading="store.isDeactivating"
+        :disabled="store.isDeactivating"
+        severity="secondary"
+        outlined
+        size="small"
+        @click="requestDeactivation"
+      />
+    </template>
     <template v-else>
       <p class="rent-tracking-activation__explanation">{{ t('payments.tracking.explanation') }}</p>
       <Button
@@ -46,6 +71,7 @@ onBeforeUnmount(() => store.clearActivationError())
       />
     </template>
     <p v-if="errorText" class="rent-tracking-activation__error" role="alert">{{ errorText }}</p>
+    <p v-if="deactivationErrorText" class="rent-tracking-activation__error" role="alert">{{ deactivationErrorText }}</p>
   </div>
 </template>
 

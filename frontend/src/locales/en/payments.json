@@ -79,7 +79,16 @@
       "activate": "Activate rent payment check",
       "activating": "Activating …",
       "activeSince": "Active since {month}",
-      "error": "The rent payment check could not be activated."
+      "error": "The rent payment check could not be activated.",
+      "deactivate": "Deactivate",
+      "deactivating": "Deactivating …",
+      "deactivateError": "The rent payment check could not be deactivated.",
+      "deactivateConfirm": {
+        "header": "Deactivate rent payment check",
+        "message": "Do you really want to deactivate the rent payment check for this property? Until it is activated again, no rent payments are checked and no warnings appear; payments that are already stored are kept.",
+        "confirm": "Deactivate",
+        "cancel": "Cancel"
+      }
     },
     "former": {
       "heading": "Payments of former tenants",

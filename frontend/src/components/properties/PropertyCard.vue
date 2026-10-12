@@ -10,12 +10,17 @@ withDefaults(
   defineProps<{
     property: Property
     paymentAlert?: PaymentAlert
+    isTrackingActive?: boolean
+    isTrackingBusy?: boolean
   }>(),
-  { paymentAlert: 'NONE' },
+  { paymentAlert: 'NONE', isTrackingActive: false, isTrackingBusy: false },
 )
 
 defineEmits<{
   'open-detail': [propertyId: string]
+  'add-apartment': [propertyId: string]
+  'activate-tracking': [propertyId: string]
+  'deactivate-tracking': [propertyId: string]
   'edit-property': [property: Property]
   'delete-property': [property: Property]
 }>()
@@ -57,7 +62,12 @@ const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
     </div>
 
     <PropertyCardControls
+      :is-tracking-active="isTrackingActive"
+      :is-tracking-busy="isTrackingBusy"
       @manage-tenants="$emit('open-detail', property.id)"
+      @add-apartment="$emit('add-apartment', property.id)"
+      @activate-tracking="$emit('activate-tracking', property.id)"
+      @deactivate-tracking="$emit('deactivate-tracking', property.id)"
       @edit="$emit('edit-property', property)"
       @delete="$emit('delete-property', property)"
     />

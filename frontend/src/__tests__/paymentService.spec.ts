@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import axios from 'axios'
-import { activateTracking, fetchPaymentAlerts, fetchPaymentYear, savePayments, scanStatement } from '@/services/paymentService'
+import { activateTracking, deactivateTracking, fetchPaymentAlerts, fetchPaymentYear, savePayments, scanStatement } from '@/services/paymentService'
 import { createAlertEntry, createPaymentYearOverview, createScannedPayment } from '@/__tests__/paymentFixtures'
 import type { PaymentToSave } from '@/types/payment'
 
@@ -10,6 +10,7 @@ afterEach(() => {
   vi.mocked(axios.get).mockReset()
   vi.mocked(axios.put).mockReset()
   vi.mocked(axios.post).mockReset()
+  vi.mocked(axios.delete).mockReset()
 })
 
 const paymentToSave: PaymentToSave = {
@@ -82,6 +83,20 @@ describe('paymentService', () => {
     vi.mocked(axios.put).mockRejectedValue(new Error('Network Error'))
 
     await expect(activateTracking('property-1')).rejects.toThrow('Network Error')
+  })
+
+  it('deactivates the rent payment check with a delete request', async () => {
+    vi.mocked(axios.delete).mockResolvedValue({ data: '' })
+
+    await deactivateTracking('property-1')
+
+    expect(axios.delete).toHaveBeenCalledWith('/api/properties/property-1/rent-payments/tracking')
+  })
+
+  it('lets a failing deactivation propagate to the caller', async () => {
+    vi.mocked(axios.delete).mockRejectedValue(new Error('Network Error'))
+
+    await expect(deactivateTracking('property-1')).rejects.toThrow('Network Error')
   })
 
   it('lets a failing request propagate to the caller', async () => {

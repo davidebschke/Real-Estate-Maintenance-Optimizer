@@ -136,6 +136,38 @@ class RentPaymentServiceTest {
     }
 
     @Test
+    void deactivatingTheCheckStopsTrackingAndAlertsButKeepsTheStoredPaymentsAndAllowsReactivation() {
+        service.save(owner.id(), "property-1", new SaveRentPaymentsRequest(List.of(request("tenant-1", "850.00", today, currentMonth))));
+
+        service.deactivateTracking(owner.id(), "property-1");
+
+        RentYearResponse overview = service.yearOverview(owner.id(), "property-1", null);
+        assertThat(overview.trackingStart()).isNull();
+        assertThat(overview.tenants().getFirst().months()).allSatisfy(month -> assertThat(month.status()).isEqualTo(RentMonthStatus.UNTRACKED));
+        assertThat(service.alerts(owner.id())).extracting(RentAlertResponse::propertyId).doesNotContain("property-1");
+        assertThat(rentPaymentRepository.count()).isEqualTo(1);
+        assertThatThrownBy(() -> service.save(owner.id(), "property-1",
+                new SaveRentPaymentsRequest(List.of(request("tenant-1", "850.00", today, currentMonth)))))
+                .isInstanceOf(RentTrackingNotActiveException.class);
+        assertThat(service.activateTracking(owner.id(), "property-1").trackingStart()).isEqualTo(currentMonth.toString());
+    }
+
+    @Test
+    void deactivatingAnInactiveCheckChangesNothing() {
+        saveProperty("property-2", null);
+
+        service.deactivateTracking(owner.id(), "property-2");
+
+        assertThat(service.yearOverview(owner.id(), "property-2", null).trackingStart()).isNull();
+    }
+
+    @Test
+    void anotherAccountCannotDeactivateTheCheckOfAProperty() {
+        assertThatThrownBy(() -> service.deactivateTracking(otherOwner.id(), "property-1")).isInstanceOf(PropertyNotFoundException.class);
+        assertThat(service.yearOverview(owner.id(), "property-1", null).trackingStart()).isEqualTo(currentMonth.toString());
+    }
+
+    @Test
     void anotherAccountCannotActivateAPropertyOrSeeItsPayments() {
         SaveRentPaymentsRequest request = new SaveRentPaymentsRequest(List.of(request("tenant-1", "850.00", today, currentMonth)));
 

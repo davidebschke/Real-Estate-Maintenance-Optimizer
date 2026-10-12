@@ -79,7 +79,16 @@
       "activate": "Mietzahlungscheck aktivieren",
       "activating": "Wird aktiviert …",
       "activeSince": "Aktiv seit {month}",
-      "error": "Der Mietzahlungscheck konnte nicht aktiviert werden."
+      "error": "Der Mietzahlungscheck konnte nicht aktiviert werden.",
+      "deactivate": "Deaktivieren",
+      "deactivating": "Wird deaktiviert …",
+      "deactivateError": "Der Mietzahlungscheck konnte nicht deaktiviert werden.",
+      "deactivateConfirm": {
+        "header": "Mietzahlungscheck deaktivieren",
+        "message": "Soll der Mietzahlungscheck für dieses Objekt wirklich deaktiviert werden? Bis zur erneuten Aktivierung werden keine Mietzahlungen mehr geprüft und es erscheinen keine Warnungen; bereits gespeicherte Zahlungen bleiben erhalten.",
+        "confirm": "Deaktivieren",
+        "cancel": "Abbrechen"
+      }
     },
     "former": {
       "heading": "Zahlungen früherer Mieter",

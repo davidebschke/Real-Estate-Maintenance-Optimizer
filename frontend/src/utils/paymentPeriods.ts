@@ -41,8 +41,8 @@ export function generatePeriodOptions(anchorYear: number, locale: string, extraK
   })
 }
 
-/** Formats a `YYYY-MM` key as a localized numeric month and year (e.g. "01/2026"). */
-export function formatNumericMonthYear(key: string, locale: string): string {
+/** Formats a `YYYY-MM` key as a numeric month and year with a fixed separator (e.g. "01/2026"), independent of the runtime's ICU data. */
+export function formatNumericMonthYear(key: string): string {
   const { year, month } = parsePeriodKey(key)
-  return new Intl.DateTimeFormat(locale, { month: '2-digit', year: 'numeric' }).format(new Date(year, month - 1, 1))
+  return `${String(month).padStart(2, '0')}/${year}`
 }

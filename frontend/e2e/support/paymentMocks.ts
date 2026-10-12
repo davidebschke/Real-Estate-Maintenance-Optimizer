@@ -164,6 +164,11 @@ export async function mockRentPayments(
   let isTrackingActive = options.isTrackingActive ?? true
 
   await page.route((url) => url.pathname.endsWith('/rent-payments/tracking'), async (route) => {
+    if (route.request().method() === 'DELETE') {
+      isTrackingActive = false
+      await route.fulfill({ status: 204 })
+      return
+    }
     log.activationCount++
     if (options.activationFailure) {
       await route.fulfill({ status: options.activationFailure.status, json: { message: options.activationFailure.message } })

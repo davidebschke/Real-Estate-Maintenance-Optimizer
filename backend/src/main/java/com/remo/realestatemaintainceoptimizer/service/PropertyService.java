@@ -101,6 +101,7 @@ public class PropertyService {
     private PropertyResponse toResponse(Property property, long tenantCount) {
         return new PropertyResponse(
                 property.id(), property.name(), property.address(), property.icon(),
-                property.latitude(), property.longitude(), tenantCount);
+                property.latitude(), property.longitude(), tenantCount,
+                property.rentTrackingStart() == null ? null : property.rentTrackingStart().toString());
     }
 }

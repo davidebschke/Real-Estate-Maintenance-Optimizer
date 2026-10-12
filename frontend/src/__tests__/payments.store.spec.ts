@@ -30,6 +30,7 @@ beforeEach(() => {
   vi.mocked(paymentService.scanStatement).mockReset().mockResolvedValue([createScannedPayment()])
   vi.mocked(paymentService.savePayments).mockReset().mockResolvedValue({ savedCount: 1, skippedCount: 0 })
   vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-01' })
+  vi.mocked(paymentService.deactivateTracking).mockReset().mockResolvedValue(undefined)
 })
 
 describe('usePaymentsStore', () => {
@@ -45,6 +46,8 @@ describe('usePaymentsStore', () => {
     expect(store.saveError).toBeNull()
     expect(store.isActivating).toBe(false)
     expect(store.activationError).toBeNull()
+    expect(store.isDeactivating).toBe(false)
+    expect(store.deactivationError).toBeNull()
     expect(store.hasYearLoadError).toBe(false)
     expect(store.hasAlertsLoadError).toBe(false)
   })
@@ -349,6 +352,60 @@ describe('usePaymentsStore', () => {
       await store.activateTracking('property-1')
 
       expect(store.activationError).toEqual({ status: null, message: null })
+    })
+
+    it('deactivates the check, then reloads the table of the property and the alerts', async () => {
+      const store = usePaymentsStore()
+
+      const result = await store.deactivateTracking('property-1')
+
+      expect(result).toBe(true)
+      expect(paymentService.deactivateTracking).toHaveBeenCalledWith('property-1')
+      expect(store.isDeactivating).toBe(false)
+      expect(store.deactivationError).toBeNull()
+      expect(paymentService.fetchPaymentYear).toHaveBeenCalledWith('property-1', store.selectedYear)
+      expect(paymentService.fetchPaymentAlerts).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the deactivating state while the request is on its way', async () => {
+      let resolveDeactivation!: () => void
+      vi.mocked(paymentService.deactivateTracking).mockImplementationOnce(() => new Promise((resolve) => (resolveDeactivation = resolve)))
+      const store = usePaymentsStore()
+
+      const deactivation = store.deactivateTracking('property-1')
+      expect(store.isDeactivating).toBe(true)
+      resolveDeactivation()
+      await deactivation
+
+      expect(store.isDeactivating).toBe(false)
+    })
+
+    it('records why deactivating failed and reloads nothing', async () => {
+      vi.mocked(paymentService.deactivateTracking).mockRejectedValue(httpError(404, { message: 'Objekt nicht gefunden.' }))
+      const store = usePaymentsStore()
+
+      const result = await store.deactivateTracking('property-1')
+
+      expect(result).toBe(false)
+      expect(store.deactivationError).toEqual({ status: 404, message: 'Objekt nicht gefunden.' })
+      expect(store.isDeactivating).toBe(false)
+      expect(paymentService.fetchPaymentYear).not.toHaveBeenCalled()
+      expect(paymentService.fetchPaymentAlerts).not.toHaveBeenCalled()
+    })
+
+    it('clears the previous deactivation error when a new deactivation starts and on request', async () => {
+      vi.mocked(paymentService.deactivateTracking).mockRejectedValueOnce(httpError(503))
+      const store = usePaymentsStore()
+      await store.deactivateTracking('property-1')
+      expect(store.deactivationError).not.toBeNull()
+
+      await store.deactivateTracking('property-1')
+      expect(store.deactivationError).toBeNull()
+
+      vi.mocked(paymentService.deactivateTracking).mockRejectedValueOnce(httpError(503))
+      await store.deactivateTracking('property-1')
+      store.clearDeactivationError()
+      expect(store.deactivationError).toBeNull()
     })
 
     it('clears the previous activation error when a new activation starts and on request', async () => {

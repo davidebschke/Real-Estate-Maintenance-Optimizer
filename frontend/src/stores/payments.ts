@@ -34,6 +34,8 @@ export const usePaymentsStore = defineStore('payments', () => {
   const saveError = ref<PaymentRequestError | null>(null)
   const isActivating = ref(false)
   const activationError = ref<PaymentRequestError | null>(null)
+  const isDeactivating = ref(false)
+  const deactivationError = ref<PaymentRequestError | null>(null)
   /** Bumped by every year fetch and by reset(), so an answer to an outdated year request is discarded. */
   let latestYearToken = 0
   /** Bumped by every alerts fetch and by reset(), so an answer to an outdated alerts request is discarded. */
@@ -158,6 +160,31 @@ export const usePaymentsStore = defineStore('payments', () => {
     return true
   }
 
+  /** Deactivates the rent payment check of the property and reloads its table and the alerts; returns false and records why if deactivating failed. */
+  async function deactivateTracking(propertyId: string): Promise<boolean> {
+    const requestEpoch = sessionEpoch
+    isDeactivating.value = true
+    deactivationError.value = null
+    try {
+      await paymentService.deactivateTracking(propertyId)
+    } catch (error) {
+      if (requestEpoch === sessionEpoch) {
+        deactivationError.value = toRequestError(error)
+        isDeactivating.value = false
+      }
+      return false
+    }
+    if (requestEpoch !== sessionEpoch) return false
+    isDeactivating.value = false
+    await Promise.all([fetchYear(propertyId), fetchAlerts()])
+    return true
+  }
+
+  /** Clears the failure of the last deactivation, e.g. once the user tries again. */
+  function clearDeactivationError() {
+    deactivationError.value = null
+  }
+
   /** Clears the failure of the last activation, e.g. once the user tries again. */
   function clearActivationError() {
     activationError.value = null
@@ -192,6 +219,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     saveError.value = null
     isActivating.value = false
     activationError.value = null
+    isDeactivating.value = false
+    deactivationError.value = null
   }
 
   return {
@@ -210,6 +239,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     saveError,
     isActivating,
     activationError,
+    isDeactivating,
+    deactivationError,
     alertForProperty,
     fetchYear,
     changeYear,
@@ -218,6 +249,8 @@ export const usePaymentsStore = defineStore('payments', () => {
     savePayments,
     activateTracking,
     clearActivationError,
+    deactivateTracking,
+    clearDeactivationError,
     discardScan,
     clearScanError,
     reset,

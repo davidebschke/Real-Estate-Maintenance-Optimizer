@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import { useConfirm } from 'primevue/useconfirm'
 import { i18n } from '@/i18n'
 import RentTrackingActivation from '@/components/payments/RentTrackingActivation.vue'
 import { usePaymentsStore } from '@/stores/payments'
@@ -10,6 +11,7 @@ import { httpError } from '@/__tests__/httpError'
 import { createPaymentYearOverview } from '@/__tests__/paymentFixtures'
 
 vi.mock('@/services/paymentService')
+vi.mock('primevue/useconfirm')
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -17,6 +19,10 @@ beforeEach(() => {
   vi.mocked(paymentService.activateTracking).mockReset().mockResolvedValue({ trackingStart: '2026-01' })
   vi.mocked(paymentService.fetchPaymentYear).mockReset().mockResolvedValue(createPaymentYearOverview())
   vi.mocked(paymentService.fetchPaymentAlerts).mockReset().mockResolvedValue([])
+  vi.mocked(paymentService.deactivateTracking).mockReset().mockResolvedValue(undefined)
+  vi.mocked(useConfirm).mockReturnValue({
+    require: (options: { accept?: () => void }) => options.accept?.(),
+  } as never)
 })
 
 afterEach(() => {
@@ -44,8 +50,54 @@ describe('RentTrackingActivation', () => {
     const wrapper = mountActivation('2026-01')
 
     expect(wrapper.find('.rent-tracking-activation__active').text()).toBe('Aktiv seit 01/2026')
-    expect(wrapper.find('button').exists()).toBe(false)
+    expect(wrapper.find('.rent-tracking-activation__button').exists()).toBe(false)
     expect(wrapper.find('.rent-tracking-activation__explanation').exists()).toBe(false)
+  })
+
+  it('offers the deactivation next to the start month while the check is active', () => {
+    const wrapper = mountActivation('2026-01')
+
+    expect(wrapper.find('.rent-tracking-activation__deactivate').text()).toBe('Deaktivieren')
+  })
+
+  it('deactivates the check of the property after confirmation', async () => {
+    const wrapper = mountActivation('2026-01')
+
+    await wrapper.find('.rent-tracking-activation__deactivate').trigger('click')
+    await flushPromises()
+
+    expect(paymentService.deactivateTracking).toHaveBeenCalledWith('property-1')
+    expect(paymentService.fetchPaymentYear).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not deactivate the check when the confirmation is declined', async () => {
+    vi.mocked(useConfirm).mockReturnValue({ require: () => undefined } as never)
+    const wrapper = mountActivation('2026-01')
+
+    await wrapper.find('.rent-tracking-activation__deactivate').trigger('click')
+    await flushPromises()
+
+    expect(paymentService.deactivateTracking).not.toHaveBeenCalled()
+  })
+
+  it('shows the backend message when deactivating fails', async () => {
+    vi.mocked(paymentService.deactivateTracking).mockRejectedValue(httpError(404, { message: 'Objekt nicht gefunden.' }))
+    const wrapper = mountActivation('2026-01')
+
+    await wrapper.find('.rent-tracking-activation__deactivate').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.rent-tracking-activation__error').text()).toBe('Objekt nicht gefunden.')
+  })
+
+  it('falls back to a generic text when deactivating fails without a message', async () => {
+    vi.mocked(paymentService.deactivateTracking).mockRejectedValue(new Error('Network Error'))
+    const wrapper = mountActivation('2026-01')
+
+    await wrapper.find('.rent-tracking-activation__deactivate').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.rent-tracking-activation__error').text()).toBe('Der Mietzahlungscheck konnte nicht deaktiviert werden.')
   })
 
   it('renders the English texts when the locale is switched', () => {

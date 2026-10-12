@@ -90,6 +90,13 @@ public class RentPaymentService {
     }
 
     /**
+     * Deactivates the rent payment check of the given property, which stops judging and storing its payments and raises no alert for it, while already stored payments stay; deactivating an inactive check changes nothing.
+     */
+    public void deactivateTracking(String ownerId, String propertyId) {
+        loadPropertyOrThrow(ownerId, propertyId).deactivateRentTracking();
+    }
+
+    /**
      * Returns the rent payment table of the given property for the given year, or the current year if none is given, with one row per tenant and the payments of former tenants; an apartment's rent is judged by the payments of all its tenants together and, month by month, by the rent due in that month, and nothing is tracked while the check is not activated.
      */
     @Transactional(readOnly = true)

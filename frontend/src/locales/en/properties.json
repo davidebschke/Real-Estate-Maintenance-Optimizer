@@ -19,6 +19,9 @@
     "controls": {
       "label": "Property management",
       "manageTenants": "Manage tenants",
+      "addApartment": "Add apartment",
+      "activateTracking": "Activate rent payment check",
+      "deactivateTracking": "Deactivate rent payment check",
       "edit": "Edit",
       "delete": "Delete"
     },
