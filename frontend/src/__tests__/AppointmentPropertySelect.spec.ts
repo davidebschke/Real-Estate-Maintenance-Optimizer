@@ -20,6 +20,7 @@ beforeEach(() => {
       latitude: 50.94,
       longitude: 6.88,
       tenantCount: 0,
+      rentTrackingStart: null,
     },
   ])
 })

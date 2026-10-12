@@ -1,0 +1,106 @@
+{
+  "payments": {
+    "upload": {
+      "button": "Kontoauszug einlesen",
+      "scanning": "Kontoauszug wird gelesen …",
+      "scanningHint": "Die KI liest den Kontoauszug. Das kann einen Moment dauern.",
+      "hint": "Nur PDF, höchstens 5 MB. Die Datei wird nicht gespeichert.",
+      "error": "Der Kontoauszug konnte nicht eingelesen werden.",
+      "problem": {
+        "empty": "Die Datei ist leer.",
+        "notPdf": "Bitte eine PDF-Datei auswählen.",
+        "tooLarge": "Die Datei ist größer als 5 MB."
+      }
+    },
+    "errors": {
+      "status400": "Die Datei ist kein gültiges PDF oder enthält keine Zahlungen.",
+      "status404": "Das Objekt wurde nicht gefunden.",
+      "status409": "Der Mietzahlungscheck ist für dieses Objekt noch nicht aktiviert.",
+      "status413": "Die Datei ist zu groß. Erlaubt sind höchstens 5 MB.",
+      "status429": "Zu viele Anfragen. Bitte später erneut versuchen.",
+      "status501": "Das Einlesen von Kontoauszügen ist auf diesem Server nicht aktiviert.",
+      "status503": "Die KI ist gerade nicht verfügbar. Bitte später erneut versuchen."
+    },
+    "preview": {
+      "title": "Erkannte Zahlungen prüfen",
+      "summary": "Im Kontoauszug erkannte Zahlungen: {count}",
+      "reviewHint": "Bei {count} Zahlung(en) ist die Zuordnung unsicher oder fehlt. Bitte den Mieter prüfen oder auswählen.",
+      "empty": "Im Kontoauszug wurden keine Zahlungen erkannt.",
+      "dateColumn": "Datum",
+      "amountColumn": "Betrag",
+      "payerColumn": "Absender und Verwendungszweck",
+      "tenantColumn": "Mieter",
+      "periodColumn": "Mietmonat",
+      "includeRow": "Zahlung von {payer} übernehmen",
+      "tenantSelect": "Mieter für die Zahlung von {payer}",
+      "periodSelect": "Mietmonat der Zahlung von {payer}",
+      "tenantPlaceholder": "Mieter wählen",
+      "alreadyRecorded": "Bereits erfasst",
+      "save": "{count} Zahlung(en) speichern",
+      "cancel": "Abbrechen",
+      "saveError": "Die Zahlungen konnten nicht gespeichert werden.",
+      "savedTitle": "Zahlungen gespeichert",
+      "savedMessage": "Gespeichert: {saved}, übersprungen: {skipped}"
+    },
+    "match": {
+      "MATCH": "Sichere Zuordnung",
+      "POSSIBLE": "Unsichere Zuordnung",
+      "NONE": "Keine Zuordnung",
+      "MANUAL": "Manuell zugeordnet"
+    },
+    "status": {
+      "PAID": "Bezahlt",
+      "PARTIAL": "Teilweise bezahlt",
+      "PENDING": "Noch offen",
+      "OVERDUE": "Überfällig",
+      "UPCOMING": "Folgt noch",
+      "UNTRACKED": "Nicht erfasst"
+    },
+    "alert": {
+      "NONE": "Keine offenen Zahlungen",
+      "PENDING": "Zahlung offen",
+      "OVERDUE": "Zahlung überfällig"
+    },
+    "table": {
+      "heading": "Mietzahlungen",
+      "previousYear": "Vorheriges Jahr",
+      "nextYear": "Nächstes Jahr",
+      "loading": "Mietzahlungen werden geladen …",
+      "empty": "Für dieses Objekt sind noch keine Mieter hinterlegt.",
+      "loadError": "Die Mietzahlungen konnten nicht geladen werden.",
+      "regionLabel": "Mietzahlungen {year}",
+      "tenantColumn": "Mieter",
+      "legend": "Legende der Zahlungsstatus",
+      "expectedAmount": "Soll {expected}",
+      "paidOfExpected": "{paid} von {expected}"
+    },
+    "tracking": {
+      "explanation": "Der Mietzahlungscheck ist für dieses Objekt nicht aktiviert. Nach der Aktivierung werden die Mietzahlungen ab dem aktuellen Monat geprüft, auch wenn Sie ihn mitten im Monat einschalten.",
+      "activate": "Mietzahlungscheck aktivieren",
+      "activating": "Wird aktiviert …",
+      "activeSince": "Aktiv seit {month}",
+      "error": "Der Mietzahlungscheck konnte nicht aktiviert werden.",
+      "deactivate": "Deaktivieren",
+      "deactivating": "Wird deaktiviert …",
+      "deactivateError": "Der Mietzahlungscheck konnte nicht deaktiviert werden.",
+      "deactivateConfirm": {
+        "header": "Mietzahlungscheck deaktivieren",
+        "message": "Soll der Mietzahlungscheck für dieses Objekt wirklich deaktiviert werden? Bis zur erneuten Aktivierung werden keine Mietzahlungen mehr geprüft und es erscheinen keine Warnungen; bereits gespeicherte Zahlungen bleiben erhalten.",
+        "confirm": "Deaktivieren",
+        "cancel": "Abbrechen"
+      }
+    },
+    "former": {
+      "heading": "Zahlungen früherer Mieter",
+      "dateColumn": "Datum",
+      "amountColumn": "Betrag",
+      "periodColumn": "Zahlungsmonat",
+      "apartmentColumn": "Wohnung",
+      "noteColumn": "Vermerk",
+      "note": "Zahlung des vorherigen Mieters {name}"
+    },
+    "alerts": {
+      "loadError": "Offene Mietzahlungen konnten nicht geladen werden."
+    }
+  }
+}

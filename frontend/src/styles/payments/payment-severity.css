@@ -1,0 +1,19 @@
+.payment-severity--success {
+  --payment-severity-color: #22c55e;
+}
+
+.payment-severity--warn {
+  --payment-severity-color: #f59e0b;
+}
+
+.payment-severity--danger {
+  --payment-severity-color: #f87171;
+}
+
+.payment-severity--info {
+  --payment-severity-color: var(--remo-calendar-accent-color, #3b82f6);
+}
+
+.payment-severity--muted {
+  --payment-severity-color: var(--remo-calendar-muted-text-color, #8b8f96);
+}

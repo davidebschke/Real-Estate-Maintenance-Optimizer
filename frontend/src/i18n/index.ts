@@ -21,6 +21,8 @@ import profileDe from '@/locales/de/profile.json'
 import profileEn from '@/locales/en/profile.json'
 import optimizationDe from '@/locales/de/optimization.json'
 import optimizationEn from '@/locales/en/optimization.json'
+import paymentsDe from '@/locales/de/payments.json'
+import paymentsEn from '@/locales/en/payments.json'
 
 /** Merges all namespaced message files into one locale bundle. */
 const messages = {
@@ -36,6 +38,7 @@ const messages = {
     ...authDe,
     ...profileDe,
     ...optimizationDe,
+    ...paymentsDe,
   },
   en: {
     ...headerEn,
@@ -49,6 +52,7 @@ const messages = {
     ...authEn,
     ...profileEn,
     ...optimizationEn,
+    ...paymentsEn,
   },
 }
 

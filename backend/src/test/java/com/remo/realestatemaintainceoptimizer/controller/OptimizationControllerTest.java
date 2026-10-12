@@ -13,8 +13,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationAvailabilityResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationProposalResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationRunResponse;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationUnavailableReason;
 import com.remo.realestatemaintainceoptimizer.dto.SavingsGranularity;
 import com.remo.realestatemaintainceoptimizer.dto.SavingsPeriodResponse;
 import com.remo.realestatemaintainceoptimizer.dto.SavingsStatisticsResponse;
@@ -92,9 +94,25 @@ class OptimizationControllerTest {
         anonymousMockMvc.perform(post("/api/optimizations").with(TestAccounts.withCsrfToken()))
                 .andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(get("/api/optimizations/proposals")).andExpect(status().isUnauthorized());
+        anonymousMockMvc.perform(get("/api/optimizations/availability")).andExpect(status().isUnauthorized());
         anonymousMockMvc.perform(get("/api/optimizations/savings")).andExpect(status().isUnauthorized());
 
         verifyNoInteractions(optimizationService, proposalService, savingsService);
+    }
+
+    @Test
+    void reportsWhetherAnOptimizationCanBeStartedAndWhyNot() throws Exception {
+        when(optimizationService.availability()).thenReturn(
+                new OptimizationAvailabilityResponse(false, OptimizationUnavailableReason.ROUTING_DISABLED),
+                new OptimizationAvailabilityResponse(true, null));
+
+        mockMvc.perform(get("/api/optimizations/availability"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.available", equalTo(false)))
+                .andExpect(jsonPath("$.reason", equalTo("ROUTING_DISABLED")));
+        mockMvc.perform(get("/api/optimizations/availability"))
+                .andExpect(jsonPath("$.available", equalTo(true)))
+                .andExpect(jsonPath("$.reason", equalTo(null)));
     }
 
     @Test

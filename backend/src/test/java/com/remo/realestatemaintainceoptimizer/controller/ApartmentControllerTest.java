@@ -112,14 +112,9 @@ class ApartmentControllerTest {
 
         mockMvc.perform(put("/api/tenants/{id}", firstTenantId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "apartment": {"floor": 3, "areaSquareMeters": 70, "totalRent": 900, "coldRent": 700, "additionalCosts": 200},
-                                  "tenant": {"firstName": "Erika", "lastName": "Musterfrau"}
-                                }
-                                """))
+                        .content("{\"firstName\": \"Erika\", \"lastName\": \"Musterfrau\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.floor", equalTo(3)))
+                .andExpect(jsonPath("$.floor", equalTo(2)))
                 .andExpect(jsonPath("$.tenants[*].lastName", containsInAnyOrder("Musterfrau", "Mustermann")));
 
         mockMvc.perform(delete("/api/tenants/{id}", firstTenantId)).andExpect(status().isNoContent());
@@ -131,7 +126,7 @@ class ApartmentControllerTest {
     }
 
     @Test
-    void deletingTheLastTenantRemovesTheApartment() throws Exception {
+    void deletingTheLastTenantKeepsTheVacantApartment() throws Exception {
         String created = mockMvc.perform(post("/api/properties/{id}/apartments", "1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CREATE_BODY))
@@ -140,7 +135,67 @@ class ApartmentControllerTest {
         mockMvc.perform(delete("/api/tenants/{id}", (String) JsonPath.read(created, "$.tenants[0].id")))
                 .andExpect(status().isNoContent());
 
+        mockMvc.perform(get("/api/properties/{id}/apartments", "1"))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].tenants", hasSize(0)));
+    }
+
+    @Test
+    void createsAVacantApartmentEditsItAndDeletesIt() throws Exception {
+        String vacantBody = "{\"apartment\": {\"floor\": 1, \"areaSquareMeters\": 50, \"totalRent\": 600, \"coldRent\": 450, \"additionalCosts\": 150}}";
+        String created = mockMvc.perform(post("/api/properties/{id}/apartments", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(vacantBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tenants", hasSize(0)))
+                .andReturn().getResponse().getContentAsString();
+        String apartmentId = JsonPath.read(created, "$.id");
+
+        mockMvc.perform(put("/api/apartments/{id}", apartmentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "apartment": {"floor": 2, "areaSquareMeters": 55, "totalRent": 650, "coldRent": 480, "additionalCosts": 170},
+                                  "rentEffectiveMonth": "2026-01"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.floor", equalTo(2)))
+                .andExpect(jsonPath("$.totalRent", equalTo(650)))
+                .andExpect(jsonPath("$.tenants", hasSize(0)));
+
+        mockMvc.perform(post("/api/apartments/{id}/tenants", apartmentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\": \"Max\", \"lastName\": \"Mustermann\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tenants", hasSize(1)));
+
+        mockMvc.perform(delete("/api/apartments/{id}", apartmentId)).andExpect(status().isNoContent());
+
         mockMvc.perform(get("/api/properties/{id}/apartments", "1")).andExpect(jsonPath("$", hasSize(0)));
+        assertThat(tenantRepository.count()).isZero();
+    }
+
+    @Test
+    void rejectsAnInvalidApartmentUpdate() throws Exception {
+        String created = mockMvc.perform(post("/api/properties/{id}/apartments", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_BODY))
+                .andReturn().getResponse().getContentAsString();
+        String apartmentId = JsonPath.read(created, "$.id");
+        String details = "{\"floor\": 2, \"areaSquareMeters\": 64.5, \"totalRent\": 900, \"coldRent\": 650, \"additionalCosts\": 200}";
+
+        for (String body : new String[] {
+            "{\"rentEffectiveMonth\": \"2026-01\"}",
+            "{\"apartment\": " + details + ", \"rentEffectiveMonth\": \"2999-01\"}",
+            "{\"apartment\": " + details + ", \"rentEffectiveMonth\": \"1999-12\"}"
+        }) {
+            mockMvc.perform(put("/api/apartments/{id}", apartmentId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(get("/api/properties/{id}/apartments", "1")).andExpect(jsonPath("$[0].totalRent", equalTo(850.0)));
     }
 
     @Test
@@ -215,8 +270,13 @@ class ApartmentControllerTest {
                 .andExpect(status().isNotFound());
         mockMvc.perform(put("/api/tenants/{id}", "unknown")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(CREATE_BODY))
+                        .content("{\"firstName\": \"Max\", \"lastName\": \"Mustermann\"}"))
                 .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/apartments/{id}", "unknown")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"apartment\": {\"floor\": 1, \"areaSquareMeters\": 50, \"totalRent\": 600, \"coldRent\": 450, \"additionalCosts\": 150}}"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/apartments/{id}", "unknown")).andExpect(status().isNotFound());
         mockMvc.perform(delete("/api/tenants/{id}", "unknown")).andExpect(status().isNotFound());
     }
 
@@ -240,8 +300,13 @@ class ApartmentControllerTest {
                 .andExpect(status().isNotFound());
         otherAccountMockMvc.perform(put("/api/tenants/{id}", tenantId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(CREATE_BODY))
+                        .content("{\"firstName\": \"Hans\", \"lastName\": \"Fremd\"}"))
                 .andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(put("/api/apartments/{id}", apartmentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"apartment\": {\"floor\": 1, \"areaSquareMeters\": 50, \"totalRent\": 600, \"coldRent\": 450, \"additionalCosts\": 150}}"))
+                .andExpect(status().isNotFound());
+        otherAccountMockMvc.perform(delete("/api/apartments/{id}", apartmentId)).andExpect(status().isNotFound());
         otherAccountMockMvc.perform(delete("/api/tenants/{id}", tenantId)).andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/properties/{id}/apartments", "1"))

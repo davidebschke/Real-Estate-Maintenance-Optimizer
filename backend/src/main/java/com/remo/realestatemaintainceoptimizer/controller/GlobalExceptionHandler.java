@@ -1,5 +1,6 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.dto.AppointmentConflictResponse;
 import com.remo.realestatemaintainceoptimizer.dto.ErrorResponse;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
@@ -16,11 +17,14 @@ import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsExcept
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCurrentPasswordException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidNewPasswordException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidRecurrenceException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotPendingException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutdatedException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
@@ -35,6 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Translates domain exceptions into localized HTTP error responses.
@@ -42,10 +47,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private final MessageSource messageSource;
+    private static final long BYTES_PER_MEGABYTE = 1024L * 1024L;
 
-    public GlobalExceptionHandler(MessageSource messageSource) {
+    private final MessageSource messageSource;
+    private final PaymentProperties paymentProperties;
+
+    public GlobalExceptionHandler(MessageSource messageSource, PaymentProperties paymentProperties) {
         this.messageSource = messageSource;
+        this.paymentProperties = paymentProperties;
     }
 
     @ExceptionHandler(AppointmentNotFoundException.class)
@@ -194,6 +203,34 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleOptimizationProposalOutdated(Locale locale) {
         String message = messageSource.getMessage("optimization.error.proposalOutdated", null, locale);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(InvalidRentRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRentRequest(InvalidRentRequestException exception, Locale locale) {
+        String message = messageSource.getMessage("rentPayment.error." + exception.reasonCode(), null, locale);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(RentTrackingNotActiveException.class)
+    public ResponseEntity<ErrorResponse> handleRentTrackingNotActive(Locale locale) {
+        String message = messageSource.getMessage("rentPayment.error.trackingInactive", null, locale);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(RentStatementTooLargeException.class)
+    public ResponseEntity<ErrorResponse> handleRentStatementTooLarge(RentStatementTooLargeException exception, Locale locale) {
+        return statementTooLargeResponse(exception.maxBytes(), locale);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleUploadTooLarge(Locale locale) {
+        return statementTooLargeResponse(paymentProperties.maxStatementSize().toBytes(), locale);
+    }
+
+    private ResponseEntity<ErrorResponse> statementTooLargeResponse(long maxBytes, Locale locale) {
+        long maxMegabytes = Math.max(1, maxBytes / BYTES_PER_MEGABYTE);
+        String message = messageSource.getMessage("rentPayment.error.statementTooLarge", new Object[] {maxMegabytes}, locale);
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(new ErrorResponse(message));
     }
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, DataIntegrityViolationException.class})

@@ -1,5 +1,6 @@
 package com.remo.realestatemaintainceoptimizer.controller;
 
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationAvailabilityResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationProposalResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationRunResponse;
 import com.remo.realestatemaintainceoptimizer.dto.SavingsGranularity;
@@ -36,6 +37,14 @@ public class OptimizationController {
         this.optimizationService = optimizationService;
         this.proposalService = proposalService;
         this.savingsService = savingsService;
+    }
+
+    /**
+     * Returns whether an optimization run can be started on this server and, if not, whether the AI or road routing is switched off.
+     */
+    @GetMapping("/availability")
+    public OptimizationAvailabilityResponse availability() {
+        return optimizationService.availability();
     }
 
     /**

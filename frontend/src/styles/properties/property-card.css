@@ -77,3 +77,7 @@
   color: var(--remo-calendar-muted-text-color, #8b8f96);
   font-size: 1.1rem;
 }
+
+.property-card__payment-alert {
+  margin-top: 0.5rem;
+}

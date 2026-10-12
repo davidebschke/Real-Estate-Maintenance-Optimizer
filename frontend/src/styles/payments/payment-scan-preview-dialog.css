@@ -1,0 +1,212 @@
+/* PrimeVue injects its own `.p-dialog` background/border rule into the document on first mount, after
+   this stylesheet, so a plain single-class selector loses that tie; `.p-dialog` here isn't decoration,
+   it's what makes this override win regardless of injection order */
+.payment-scan-preview-dialog.p-dialog {
+  background: color-mix(in srgb, var(--remo-calendar-bg-color, #0d1013) 95%, white 5%);
+  border-color: var(--remo-calendar-border-color, #24282e);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 24px -16px rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 35%, transparent),
+    inset 0 0 1.25rem -0.75rem color-mix(in srgb, var(--remo-calendar-accent-color, #3b82f6) 75%, transparent);
+  overflow: hidden;
+  width: min(70rem, 96vw);
+}
+
+.payment-scan-preview-dialog .p-dialog-header,
+.payment-scan-preview-dialog .p-dialog-content,
+.payment-scan-preview-dialog .p-dialog-footer {
+  background: transparent;
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  position: relative;
+  z-index: 1;
+}
+
+.payment-scan-preview-dialog .p-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-block: 1.25rem;
+}
+
+.payment-scan-preview-dialog .p-dialog-close-button {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.payment-scan-preview-dialog .p-dialog-close-button:hover {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+}
+
+.payment-scan-preview-dialog .p-select {
+  background-color: var(--remo-calendar-hover-bg-color, #1f242b);
+  border-color: var(--remo-calendar-border-color, #3a3f47);
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  width: 100%;
+}
+
+/* Explicit override, same reasoning as the `.p-dialog` rule above: PrimeVue's own `.p-invalid` border
+   color is injected after this stylesheet and would otherwise be masked by the plain select rule. */
+.payment-scan-preview-dialog .p-select.p-invalid {
+  border-color: #f59e0b;
+}
+
+.payment-scan-preview-dialog__summary {
+  font-weight: 600;
+  margin: 0;
+}
+
+.payment-scan-preview-dialog__review-hint {
+  align-items: center;
+  color: #f59e0b;
+  display: flex;
+  font-size: 0.9rem;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.payment-scan-preview-dialog__empty {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  margin: 0;
+}
+
+.payment-scan-preview-dialog__head,
+.payment-scan-preview-dialog__row {
+  align-items: center;
+  column-gap: 0.75rem;
+  display: grid;
+  grid-template-columns: 2.5rem 5.5rem 6.5rem minmax(0, 1.5fr) minmax(0, 1.4fr) minmax(0, 1.1fr);
+}
+
+.payment-scan-preview-dialog__head {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding-inline: 0.75rem;
+  text-transform: uppercase;
+}
+
+.payment-scan-preview-dialog__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.payment-scan-preview-dialog__row {
+  background: var(--remo-calendar-hover-bg-color, #1f242b);
+  border: 1px solid var(--remo-calendar-border-color, #24282e);
+  border-radius: 0.625rem;
+  padding: 0.75rem;
+}
+
+.payment-scan-preview-dialog__row--review {
+  border-color: #f59e0b;
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.payment-scan-preview-dialog__row--excluded .payment-scan-preview-dialog__cell:not(.payment-scan-preview-dialog__cell--include) {
+  opacity: 0.55;
+}
+
+.payment-scan-preview-dialog__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.payment-scan-preview-dialog__cell-label {
+  display: none;
+}
+
+.payment-scan-preview-dialog__amount {
+  font-weight: 600;
+}
+
+.payment-scan-preview-dialog__payer {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.payment-scan-preview-dialog__reference {
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.payment-scan-preview-dialog__recorded {
+  align-items: center;
+  color: #22c55e;
+  display: flex;
+  font-size: 0.8rem;
+  gap: 0.3rem;
+}
+
+.payment-scan-preview-dialog__match {
+  color: var(--payment-severity-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.payment-scan-preview-dialog__error {
+  color: #f87171;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.payment-scan-preview-dialog__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.payment-scan-preview-dialog__cancel {
+  background: none;
+  border: none;
+  color: var(--remo-calendar-muted-text-color, #8b8f96);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* below this width the columns would be too narrow, so every row becomes a card with labelled fields */
+@media (max-width: 60rem) {
+  .payment-scan-preview-dialog__head {
+    display: none;
+  }
+
+  .payment-scan-preview-dialog__row {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    row-gap: 0.75rem;
+  }
+
+  .payment-scan-preview-dialog__cell {
+    grid-column: 2;
+  }
+
+  .payment-scan-preview-dialog__cell--include {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .payment-scan-preview-dialog__cell--date {
+    grid-row: 1;
+  }
+
+  .payment-scan-preview-dialog__cell-label {
+    color: var(--remo-calendar-muted-text-color, #8b8f96);
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 30rem) {
+  .payment-scan-preview-dialog.p-dialog {
+    width: 100vw;
+  }
+}

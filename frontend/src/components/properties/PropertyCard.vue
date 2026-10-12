@@ -1,15 +1,26 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useCardTilt } from '@/composables/useCardTilt'
+import PaymentAlertBadge from '@/components/payments/PaymentAlertBadge.vue'
 import PropertyCardControls from '@/components/properties/PropertyCardControls.vue'
+import type { PaymentAlert } from '@/types/payment'
 import type { Property } from '@/types/property'
 
-defineProps<{
-  property: Property
-}>()
+withDefaults(
+  defineProps<{
+    property: Property
+    paymentAlert?: PaymentAlert
+    isTrackingActive?: boolean
+    isTrackingBusy?: boolean
+  }>(),
+  { paymentAlert: 'NONE', isTrackingActive: false, isTrackingBusy: false },
+)
 
 defineEmits<{
   'open-detail': [propertyId: string]
+  'add-apartment': [propertyId: string]
+  'activate-tracking': [propertyId: string]
+  'deactivate-tracking': [propertyId: string]
   'edit-property': [property: Property]
   'delete-property': [property: Property]
 }>()
@@ -39,6 +50,7 @@ const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
           </button>
         </h3>
         <p class="property-card__address">{{ property.address }}</p>
+        <PaymentAlertBadge class="property-card__payment-alert" :alert="paymentAlert" />
       </div>
     </div>
 
@@ -50,7 +62,12 @@ const { tiltStyle, onPointerMove, onPointerLeave } = useCardTilt()
     </div>
 
     <PropertyCardControls
+      :is-tracking-active="isTrackingActive"
+      :is-tracking-busy="isTrackingBusy"
       @manage-tenants="$emit('open-detail', property.id)"
+      @add-apartment="$emit('add-apartment', property.id)"
+      @activate-tracking="$emit('activate-tracking', property.id)"
+      @deactivate-tracking="$emit('deactivate-tracking', property.id)"
       @edit="$emit('edit-property', property)"
       @delete="$emit('delete-property', property)"
     />

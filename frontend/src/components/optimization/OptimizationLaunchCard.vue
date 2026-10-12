@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import Button from 'primevue/button'
+import Message from 'primevue/message'
 import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from 'vue-i18n'
 import { useOptimizationStore } from '@/stores/optimization'
@@ -14,6 +15,10 @@ const store = useOptimizationStore()
 const { isExhausted } = useDemoQuota('aiOptimizations')
 
 const ruleKeys = ['window', 'locked', 'recurring', 'travel'] as const
+const UNAVAILABLE_MESSAGE_ID = 'optimization-launch-card-unavailable'
+
+const unavailableReason = computed(() => (store.availability?.available === false ? store.availability.reason : null))
+const isUnavailable = computed(() => store.availability?.available === false)
 
 /** Asks the user to confirm the run, naming its possible cost, before the AI is called. */
 function confirmStart() {
@@ -53,12 +58,23 @@ const lastRunSummary = computed(() => {
 
     <DemoQuotaHint resource="aiOptimizations" />
 
+    <Message
+      v-if="isUnavailable"
+      :id="UNAVAILABLE_MESSAGE_ID"
+      class="optimization-launch-card__unavailable"
+      severity="warn"
+      icon="pi pi-exclamation-triangle"
+    >
+      {{ t(`optimization.launch.unavailable.${unavailableReason ?? 'unknown'}`) }}
+    </Message>
+
     <Button
       class="optimization-launch-card__start"
       icon="pi pi-play"
       :label="store.isRunning ? t('optimization.launch.running') : t('optimization.launch.button')"
       :loading="store.isRunning"
-      :disabled="store.isRunning || isExhausted"
+      :disabled="store.isRunning || isExhausted || isUnavailable"
+      :aria-describedby="isUnavailable ? UNAVAILABLE_MESSAGE_ID : undefined"
       @click="confirmStart"
     />
 

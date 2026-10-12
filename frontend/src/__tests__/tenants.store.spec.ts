@@ -3,9 +3,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import { AxiosError, type AxiosResponse } from 'axios'
 import { useTenantsStore } from '@/stores/tenants'
 import { useAuthStore } from '@/stores/auth'
+import { usePaymentsStore } from '@/stores/payments'
 import * as apartmentService from '@/services/apartmentService'
 import * as propertyService from '@/services/propertyService'
-import type { Apartment, ApartmentWithTenantPayload } from '@/types/apartment'
+import type { Apartment, ApartmentUpdatePayload, NewApartmentPayload } from '@/types/apartment'
 
 vi.mock('@/services/apartmentService')
 vi.mock('@/services/propertyService')
@@ -25,16 +26,22 @@ function createApartment(overrides: Partial<Apartment> = {}): Apartment {
   }
 }
 
-const payload: ApartmentWithTenantPayload = {
+const tenant = { firstName: 'Erika', lastName: 'Mustermann' }
+
+const payload: NewApartmentPayload = {
   apartment: { floor: 2, areaSquareMeters: 64.5, totalRent: 850, coldRent: 650, additionalCosts: 200 },
-  tenant: { firstName: 'Erika', lastName: 'Mustermann' },
+  tenant,
 }
+
+const updatePayload: ApartmentUpdatePayload = { apartment: payload.apartment, rentEffectiveMonth: null }
 
 beforeEach(() => {
   setActivePinia(createPinia())
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
   vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
   vi.mocked(apartmentService.createApartment).mockReset().mockResolvedValue(createApartment())
+  vi.mocked(apartmentService.updateApartment).mockReset().mockResolvedValue(createApartment())
+  vi.mocked(apartmentService.deleteApartment).mockReset().mockResolvedValue()
   vi.mocked(apartmentService.addTenant).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.updateTenant).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.deleteTenant).mockReset().mockResolvedValue()
@@ -48,7 +55,9 @@ describe('useTenantsStore', () => {
     expect(store.hasLoadError).toBe(false)
     expect(store.hasSaveError).toBe(false)
     expect(store.hasDeleteError).toBe(false)
-    expect(store.isFormDialogOpen).toBe(false)
+    expect(store.hasApartmentDeleteError).toBe(false)
+    expect(store.isApartmentFormDialogOpen).toBe(false)
+    expect(store.isTenantFormDialogOpen).toBe(false)
   })
 
   it('fetches the apartments of a property into its own entry', async () => {
@@ -100,10 +109,19 @@ describe('useTenantsStore', () => {
     expect(store.hasSaveError).toBe(false)
   })
 
+  it('creates a vacant apartment without a tenant', async () => {
+    const store = useTenantsStore()
+
+    const succeeded = await store.createApartment('property-1', { apartment: payload.apartment })
+
+    expect(succeeded).toBe(true)
+    expect(apartmentService.createApartment).toHaveBeenCalledWith('property-1', { apartment: payload.apartment })
+  })
+
   it('reloads the properties after a change so their tenant counts stay current', async () => {
     const store = useTenantsStore()
 
-    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    await store.addTenant('property-1', 'apartment-1', tenant)
 
     expect(propertyService.fetchProperties).toHaveBeenCalledTimes(1)
   })
@@ -117,23 +135,120 @@ describe('useTenantsStore', () => {
     expect(propertyService.fetchProperties).not.toHaveBeenCalled()
   })
 
+  it('updates an apartment and reloads the property afterwards', async () => {
+    vi.mocked(apartmentService.fetchApartments).mockResolvedValue([createApartment({ totalRent: 900 })])
+    const store = useTenantsStore()
+
+    const succeeded = await store.updateApartment('property-1', 'apartment-1', updatePayload)
+
+    expect(succeeded).toBe(true)
+    expect(apartmentService.updateApartment).toHaveBeenCalledWith('apartment-1', updatePayload)
+    expect(store.apartmentsByProperty['property-1']?.[0]?.totalRent).toBe(900)
+    expect(propertyService.fetchProperties).toHaveBeenCalledTimes(1)
+  })
+
+  it('records a save error when updating an apartment fails', async () => {
+    vi.mocked(apartmentService.updateApartment).mockRejectedValue(new Error('400'))
+    const store = useTenantsStore()
+
+    const succeeded = await store.updateApartment('property-1', 'apartment-1', updatePayload)
+
+    expect(succeeded).toBe(false)
+    expect(store.hasSaveError).toBe(true)
+    expect(apartmentService.fetchApartments).not.toHaveBeenCalled()
+  })
+
+  it('deletes an apartment, drops it from the cache even if the reload fails and reloads the properties', async () => {
+    vi.mocked(apartmentService.fetchApartments).mockRejectedValue(new Error('Network Error'))
+    const store = useTenantsStore()
+    store.apartmentsByProperty = { 'property-1': [createApartment(), createApartment({ id: 'apartment-2' })] }
+
+    const succeeded = await store.deleteApartment('property-1', 'apartment-1')
+
+    expect(succeeded).toBe(true)
+    expect(apartmentService.deleteApartment).toHaveBeenCalledWith('apartment-1')
+    expect(store.apartmentsByProperty['property-1']?.map((apartment) => apartment.id)).toEqual(['apartment-2'])
+    expect(propertyService.fetchProperties).toHaveBeenCalledTimes(1)
+    expect(store.hasApartmentDeleteError).toBe(false)
+  })
+
+  it('keeps the cached apartment and records an apartment delete error when deleting it fails', async () => {
+    vi.mocked(apartmentService.deleteApartment).mockRejectedValue(new Error('500'))
+    const store = useTenantsStore()
+    store.apartmentsByProperty = { 'property-1': [createApartment()] }
+
+    const succeeded = await store.deleteApartment('property-1', 'apartment-1')
+
+    expect(succeeded).toBe(false)
+    expect(store.hasApartmentDeleteError).toBe(true)
+    expect(store.hasDeleteError).toBe(false)
+    expect(store.apartmentsByProperty['property-1']).toHaveLength(1)
+    expect(propertyService.fetchProperties).not.toHaveBeenCalled()
+  })
+
+  it('clears an apartment delete error with the next fetch', async () => {
+    vi.mocked(apartmentService.deleteApartment).mockRejectedValue(new Error('500'))
+    const store = useTenantsStore()
+    await store.deleteApartment('property-1', 'apartment-1')
+
+    await store.fetchApartments('property-1')
+
+    expect(store.hasApartmentDeleteError).toBe(false)
+  })
+
   it('adds a tenant to an apartment and reloads the property afterwards', async () => {
     const store = useTenantsStore()
 
-    const succeeded = await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    const succeeded = await store.addTenant('property-1', 'apartment-1', tenant)
 
     expect(succeeded).toBe(true)
-    expect(apartmentService.addTenant).toHaveBeenCalledWith('apartment-1', payload.tenant)
+    expect(apartmentService.addTenant).toHaveBeenCalledWith('apartment-1', tenant)
     expect(apartmentService.fetchApartments).toHaveBeenCalledWith('property-1')
   })
 
-  it('updates a tenant together with their apartment', async () => {
+  it('renames a tenant', async () => {
     const store = useTenantsStore()
 
-    const succeeded = await store.updateTenant('property-1', 'tenant-1', payload)
+    const succeeded = await store.updateTenant('property-1', 'tenant-1', tenant)
 
     expect(succeeded).toBe(true)
-    expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', payload)
+    expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', tenant)
+  })
+
+  it('reloads an already loaded rent payment table after a tenant change, since it can alter what the table shows', async () => {
+    const store = useTenantsStore()
+    const paymentsStore = usePaymentsStore()
+    paymentsStore.overviewsByProperty = { 'property-1': { year: 2026, trackingStart: '2026-01', tenants: [], formerTenantPayments: [] } }
+    const fetchYear = vi.spyOn(paymentsStore, 'fetchYear').mockResolvedValue()
+    const fetchAlerts = vi.spyOn(paymentsStore, 'fetchAlerts').mockResolvedValue()
+
+    await store.updateTenant('property-1', 'tenant-1', tenant)
+
+    expect(fetchYear).toHaveBeenCalledWith('property-1')
+    expect(fetchAlerts).toHaveBeenCalled()
+  })
+
+  it('reloads an already loaded rent payment table after an apartment was changed or deleted', async () => {
+    const store = useTenantsStore()
+    const paymentsStore = usePaymentsStore()
+    paymentsStore.overviewsByProperty = { 'property-1': { year: 2026, trackingStart: '2026-01', tenants: [], formerTenantPayments: [] } }
+    const fetchYear = vi.spyOn(paymentsStore, 'fetchYear').mockResolvedValue()
+    const fetchAlerts = vi.spyOn(paymentsStore, 'fetchAlerts').mockResolvedValue()
+
+    await store.updateApartment('property-1', 'apartment-1', updatePayload)
+    await store.deleteApartment('property-1', 'apartment-1')
+
+    expect(fetchYear).toHaveBeenCalledTimes(2)
+    expect(fetchAlerts).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not load a rent payment table that was never opened after a tenant update', async () => {
+    const store = useTenantsStore()
+    const fetchYear = vi.spyOn(usePaymentsStore(), 'fetchYear').mockResolvedValue()
+
+    await store.updateTenant('property-1', 'tenant-1', tenant)
+
+    expect(fetchYear).not.toHaveBeenCalled()
   })
 
   it('records a save error and skips the reload when a save fails', async () => {
@@ -186,54 +301,75 @@ describe('useTenantsStore', () => {
     expect(apartmentService.fetchApartments).not.toHaveBeenCalled()
   })
 
-  it('opens the form for a new tenant with a new apartment', () => {
+  it('opens the apartment form for a new apartment', () => {
     const store = useTenantsStore()
 
-    store.openCreateDialog('property-1')
+    store.openCreateApartmentDialog('property-1')
 
-    expect(store.formTarget).toEqual({ mode: 'create', propertyId: 'property-1' })
-    expect(store.isFormDialogOpen).toBe(true)
+    expect(store.apartmentFormTarget).toEqual({ mode: 'create', propertyId: 'property-1' })
+    expect(store.isApartmentFormDialogOpen).toBe(true)
+    expect(store.isTenantFormDialogOpen).toBe(false)
   })
 
-  it('opens the form for a further tenant of an apartment', () => {
+  it('opens the apartment form for editing an apartment', () => {
+    const store = useTenantsStore()
+    const apartment = createApartment()
+
+    store.openEditApartmentDialog(apartment)
+
+    expect(store.apartmentFormTarget).toEqual({ mode: 'edit', apartment })
+  })
+
+  it('opens the tenant form for a further tenant of an apartment', () => {
     const store = useTenantsStore()
     const apartment = createApartment()
 
     store.openAddTenantDialog(apartment)
 
-    expect(store.formTarget).toEqual({ mode: 'add', apartment })
+    expect(store.tenantFormTarget).toEqual({ mode: 'add', apartment })
+    expect(store.isTenantFormDialogOpen).toBe(true)
+    expect(store.isApartmentFormDialogOpen).toBe(false)
   })
 
-  it('opens the form for editing a tenant', () => {
+  it('opens the tenant form for renaming a tenant', () => {
     const store = useTenantsStore()
     const apartment = createApartment()
-    const tenant = apartment.tenants[0]!
+    const existingTenant = apartment.tenants[0]!
 
-    store.openEditDialog(apartment, tenant)
+    store.openEditTenantDialog(apartment, existingTenant)
 
-    expect(store.formTarget).toEqual({ mode: 'edit', apartment, tenant })
+    expect(store.tenantFormTarget).toEqual({ mode: 'edit', apartment, tenant: existingTenant })
   })
 
-  it('clears the save error when a form is opened', async () => {
+  it('clears the save error when either form is opened', async () => {
     vi.mocked(apartmentService.createApartment).mockRejectedValue(new Error('409'))
+    vi.mocked(apartmentService.addTenant).mockRejectedValue(new Error('409'))
     const store = useTenantsStore()
+
     await store.createApartment('property-1', payload)
+    expect(store.hasSaveError).toBe(true)
+    store.openCreateApartmentDialog('property-1')
+    expect(store.hasSaveError).toBe(false)
 
-    store.openCreateDialog('property-1')
-
+    await store.addTenant('property-1', 'apartment-1', tenant)
+    expect(store.hasSaveError).toBe(true)
+    store.openAddTenantDialog(createApartment())
     expect(store.hasSaveError).toBe(false)
   })
 
-  it('closes the form when its visibility is set to false', () => {
+  it('closes the forms when their visibility is set to false', () => {
     const store = useTenantsStore()
-    store.openCreateDialog('property-1')
+    store.openCreateApartmentDialog('property-1')
+    store.openAddTenantDialog(createApartment())
 
-    store.isFormDialogOpen = false
+    store.isApartmentFormDialogOpen = false
+    store.isTenantFormDialogOpen = false
 
-    expect(store.formTarget).toBeNull()
+    expect(store.apartmentFormTarget).toBeNull()
+    expect(store.tenantFormTarget).toBeNull()
   })
 
-  it('refreshes the remaining tenant creations of a demo account only after a successful creation', async () => {
+  it('refreshes the remaining tenant creations of a demo account only after a successful creation of a tenant', async () => {
     const refreshDemoQuota = vi.spyOn(useAuthStore(), 'refreshDemoQuota').mockResolvedValue()
     const store = useTenantsStore()
     vi.mocked(apartmentService.createApartment).mockRejectedValueOnce(new Error('403'))
@@ -241,10 +377,13 @@ describe('useTenantsStore', () => {
     expect(refreshDemoQuota).not.toHaveBeenCalled()
 
     await store.createApartment('property-1', payload)
-    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    await store.addTenant('property-1', 'apartment-1', tenant)
     expect(refreshDemoQuota).toHaveBeenCalledTimes(2)
 
-    await store.updateTenant('property-1', 'tenant-1', payload)
+    await store.createApartment('property-1', { apartment: payload.apartment })
+    await store.updateApartment('property-1', 'apartment-1', updatePayload)
+    await store.deleteApartment('property-1', 'apartment-1')
+    await store.updateTenant('property-1', 'tenant-1', tenant)
     await store.deleteTenant('property-1', 'tenant-1')
     expect(refreshDemoQuota).toHaveBeenCalledTimes(2)
   })
@@ -255,10 +394,10 @@ describe('useTenantsStore', () => {
     vi.mocked(apartmentService.addTenant).mockRejectedValueOnce(limitError)
     const store = useTenantsStore()
 
-    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    await store.addTenant('property-1', 'apartment-1', tenant)
     expect(store.lastChangeErrorMessage).toBe('An apartment can have at most 10 tenants.')
 
-    await store.addTenant('property-1', 'apartment-1', payload.tenant)
+    await store.addTenant('property-1', 'apartment-1', tenant)
     expect(store.lastChangeErrorMessage).toBeNull()
   })
 
@@ -295,7 +434,8 @@ describe('useTenantsStore', () => {
   it('forgets everything on reset', async () => {
     const store = useTenantsStore()
     store.apartmentsByProperty = { 'property-1': [createApartment()] }
-    store.openCreateDialog('property-1')
+    store.openCreateApartmentDialog('property-1')
+    store.openAddTenantDialog(createApartment())
     vi.mocked(apartmentService.fetchApartments).mockRejectedValue(new Error('x'))
     await store.fetchApartments('property-1')
 
@@ -303,6 +443,7 @@ describe('useTenantsStore', () => {
 
     expect(store.apartmentsByProperty).toEqual({})
     expect(store.hasLoadError).toBe(false)
-    expect(store.formTarget).toBeNull()
+    expect(store.apartmentFormTarget).toBeNull()
+    expect(store.tenantFormTarget).toBeNull()
   })
 })

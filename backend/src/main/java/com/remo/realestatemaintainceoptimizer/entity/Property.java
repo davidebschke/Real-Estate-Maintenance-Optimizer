@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.LocalDate;
+import java.time.YearMonth;
 
 /**
  * A managed real-estate object ("Objekt"), persisted as one row of the {@code properties} table.
@@ -32,6 +34,9 @@ public class Property {
     private Double latitude;
 
     private Double longitude;
+
+    @Column(name = "rent_tracking_start")
+    private LocalDate rentTrackingStart;
 
     @Version
     private Long version;
@@ -65,6 +70,30 @@ public class Property {
         this.address = newAddress;
         this.latitude = newLatitude;
         this.longitude = newLongitude;
+    }
+
+    /**
+     * Activates the rent payment check from the given month on, keeping an earlier start if it was already activated.
+     */
+    public void activateRentTracking(YearMonth month) {
+        if (rentTrackingStart == null) {
+            this.rentTrackingStart = month.atDay(1);
+        }
+    }
+
+    /**
+     * Deactivates the rent payment check, so no payment is judged or stored any more until it is activated again; already stored payments stay.
+     */
+    @SuppressWarnings("PMD.NullAssignment")
+    public void deactivateRentTracking() {
+        this.rentTrackingStart = null;
+    }
+
+    /**
+     * Returns the first month whose rent payments are checked, or null while the rent payment check is not activated.
+     */
+    public YearMonth rentTrackingStart() {
+        return rentTrackingStart == null ? null : YearMonth.from(rentTrackingStart);
     }
 
     public String id() {

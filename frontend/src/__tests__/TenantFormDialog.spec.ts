@@ -35,7 +35,6 @@ beforeEach(() => {
   i18n.global.locale.value = 'de'
   vi.mocked(apartmentService.fetchApartments).mockReset().mockResolvedValue([])
   vi.mocked(propertyService.fetchProperties).mockReset().mockResolvedValue([])
-  vi.mocked(apartmentService.createApartment).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.addTenant).mockReset().mockResolvedValue(createApartment())
   vi.mocked(apartmentService.updateTenant).mockReset().mockResolvedValue(createApartment())
   document.body.innerHTML = ''
@@ -76,7 +75,7 @@ function bodyField(selector: string): DOMWrapper<Element> {
   return new DOMWrapper(document.body.querySelector(selector) as Element)
 }
 
-/** Types a value into a field and leaves it, which is when a PrimeVue number input commits its value. */
+/** Types a value into a field and leaves it. */
 async function enter(selector: string, value: string) {
   const field = bodyField(selector)
   await field.setValue(value)
@@ -88,144 +87,89 @@ function buttonLabelled(wrapper: DialogWrapper, label: string) {
   return wrapper.findAllComponents(Button).find((button) => button.text() === label)!
 }
 
-/** Fills every field of the form of a new tenant with a new apartment. */
-async function fillAllFields() {
-  await enter('#tenant-first-name', 'Erika')
+/** Fills both name fields of the form. */
+async function fillNames() {
+  await enter('#tenant-first-name', 'Max')
   await enter('#tenant-last-name', 'Mustermann')
-  await enter('#tenant-floor', '2')
-  await enter('#tenant-area', '64,5')
-  await enter('#tenant-totalRent', '850')
-  await enter('#tenant-coldRent', '650')
-  await enter('#tenant-additionalCosts', '200')
 }
 
 describe('TenantFormDialog', () => {
-  it('separates the tenant data from the apartment data', async () => {
-    await mountDialog((store) => store.openCreateDialog('property-1'))
+  it('shows only the name fields, without any apartment data', async () => {
+    await mountDialog((store) => store.openAddTenantDialog(createApartment()))
 
-    const headings = Array.from(document.body.querySelectorAll('.tenant-form-dialog__section-heading')).map(
-      (heading) => heading.textContent,
-    )
-    expect(headings).toEqual(['Daten des Mieters', 'Daten der Wohnung'])
-    expect(document.body.textContent).toContain('Neuen Mieter anlegen')
+    expect(document.body.textContent).toContain('Mieter hinzufügen')
+    expect(document.body.querySelector('#tenant-first-name')).not.toBeNull()
+    expect(document.body.querySelector('#tenant-last-name')).not.toBeNull()
+    expect(document.body.querySelector('#tenant-floor')).toBeNull()
+    expect(document.body.querySelector('.tenant-form-dialog__section-heading')).toBeNull()
   })
 
   it('limits both name fields to their maximum length', async () => {
-    await mountDialog((store) => store.openCreateDialog('property-1'))
+    await mountDialog((store) => store.openAddTenantDialog(createApartment()))
 
     expect(bodyField('#tenant-first-name').attributes('maxlength')).toBe('50')
     expect(bodyField('#tenant-last-name').attributes('maxlength')).toBe('50')
   })
 
-  it('keeps the submit button disabled until every field is filled', async () => {
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
-
-    await enter('#tenant-first-name', 'Erika')
-    await enter('#tenant-last-name', 'Mustermann')
-    await enter('#tenant-floor', '2')
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
-
-    await fillAllFields()
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeUndefined()
-  })
-
-  it('shows the required-field hints only for fields that were left empty after being touched', async () => {
-    await mountDialog((store) => store.openCreateDialog('property-1'))
-    expect(document.body.querySelector('.tenant-form-dialog__field-error')).toBeNull()
-
-    await bodyField('#tenant-first-name').trigger('blur')
-    await bodyField('#tenant-area').trigger('blur')
-    await bodyField('#tenant-totalRent').trigger('blur')
-    await flushPromises()
-
-    const errors = Array.from(document.body.querySelectorAll('.tenant-form-dialog__field-error')).map(
-      (error) => error.textContent?.trim(),
-    )
-    expect(errors).toEqual([
-      'Bitte einen Vornamen eingeben.',
-      'Bitte eine Wohnfläche größer als 0 eingeben.',
-      'Bitte einen Betrag eingeben.',
-    ])
-  })
-
-  it('creates the apartment with its first tenant and closes the dialog', async () => {
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    await enter('#tenant-first-name', '  Erika ')
-    await enter('#tenant-last-name', 'Mustermann')
-    await enter('#tenant-floor', '2')
-    await enter('#tenant-area', '64,5')
-    await enter('#tenant-totalRent', '850')
-    await enter('#tenant-coldRent', '650')
-    await enter('#tenant-additionalCosts', '200')
-
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
-    await flushPromises()
-
-    expect(apartmentService.createApartment).toHaveBeenCalledWith('property-1', {
-      apartment: { floor: 2, areaSquareMeters: 64.5, totalRent: 850, coldRent: 650, additionalCosts: 200 },
-      tenant: { firstName: 'Erika', lastName: 'Mustermann' },
-    })
-    expect(wrapper.emitted('update:visible')?.slice(-1)).toEqual([[false]])
-  })
-
-  it('accepts a basement floor and the ground floor', async () => {
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    await fillAllFields()
-
-    await enter('#tenant-floor', '0')
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeUndefined()
-
-    await enter('#tenant-floor', '-1')
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeUndefined()
-  })
-
-  it('shows the apartment data read-only when adding a further tenant and sends only the tenant', async () => {
+  it('keeps the submit button disabled until both names are filled', async () => {
     const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
-
-    expect(document.body.textContent).toContain('Weiteren Mieter hinzufügen')
-    expect(document.body.textContent).toContain('Die Wohnungsdaten gelten für alle Mieter dieser Wohnung.')
-    expect(bodyField('#tenant-floor').attributes('disabled')).toBeDefined()
-    expect((bodyField('#tenant-floor').element as HTMLInputElement).value).toBe('2')
-    expect(bodyField('#tenant-first-name').attributes('disabled')).toBeUndefined()
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeDefined()
 
     await enter('#tenant-first-name', 'Max')
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeDefined()
+
     await enter('#tenant-last-name', 'Mustermann')
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeUndefined()
+  })
+
+  it('shows the required-field hints only for names that were left empty after being touched', async () => {
+    await mountDialog((store) => store.openAddTenantDialog(createApartment()))
+    expect(document.body.querySelector('.tenant-name-fields__error')).toBeNull()
+
+    await bodyField('#tenant-first-name').trigger('blur')
+    await flushPromises()
+
+    const errors = Array.from(document.body.querySelectorAll('.tenant-name-fields__error')).map(
+      (error) => error.textContent?.trim(),
+    )
+    expect(errors).toEqual(['Bitte einen Vornamen eingeben.'])
+  })
+
+  it('adds a tenant to the apartment and closes the dialog', async () => {
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
+    await enter('#tenant-first-name', '  Max ')
+    await enter('#tenant-last-name', 'Mustermann')
+
     await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
     await flushPromises()
 
     expect(apartmentService.addTenant).toHaveBeenCalledWith('apartment-1', { firstName: 'Max', lastName: 'Mustermann' })
-    expect(apartmentService.createApartment).not.toHaveBeenCalled()
+    expect(wrapper.emitted('update:visible')?.slice(-1)).toEqual([[false]])
   })
 
-  it('pre-fills tenant and apartment when editing and saves both', async () => {
+  it('pre-fills the name when renaming and saves only the names', async () => {
     const apartment = createApartment()
-    const wrapper = await mountDialog((store) => store.openEditDialog(apartment, apartment.tenants[0]!))
+    const wrapper = await mountDialog((store) => store.openEditTenantDialog(apartment, apartment.tenants[0]!))
 
     expect(document.body.textContent).toContain('Mieter bearbeiten')
     expect((bodyField('#tenant-first-name').element as HTMLInputElement).value).toBe('Erika')
     expect((bodyField('#tenant-last-name').element as HTMLInputElement).value).toBe('Mustermann')
-    expect(bodyField('#tenant-floor').attributes('disabled')).toBeUndefined()
     expect(buttonLabelled(wrapper, 'Speichern').attributes('disabled')).toBeUndefined()
 
     await enter('#tenant-last-name', 'Musterfrau')
-    await enter('#tenant-floor', '3')
     await buttonLabelled(wrapper, 'Speichern').trigger('click')
     await flushPromises()
 
-    expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', {
-      apartment: { floor: 3, areaSquareMeters: 64.5, totalRent: 850, coldRent: 650, additionalCosts: 200 },
-      tenant: { firstName: 'Erika', lastName: 'Musterfrau' },
-    })
+    expect(apartmentService.updateTenant).toHaveBeenCalledWith('tenant-1', { firstName: 'Erika', lastName: 'Musterfrau' })
     expect(wrapper.emitted('update:visible')?.slice(-1)).toEqual([[false]])
   })
 
   it('stays open and shows an error when saving fails', async () => {
-    vi.mocked(apartmentService.createApartment).mockRejectedValue(new Error('500'))
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    await fillAllFields()
+    vi.mocked(apartmentService.addTenant).mockRejectedValue(new Error('500'))
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
+    await fillNames()
 
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
     await flushPromises()
 
     expect(document.body.querySelector('.tenant-form-dialog__error')?.textContent).toBe(
@@ -237,11 +181,11 @@ describe('TenantFormDialog', () => {
   it('shows the localized message the backend gave for a failed save', async () => {
     const limitError = new AxiosError('Request failed with status code 409')
     limitError.response = { status: 409, data: { message: 'Eine Wohnung kann höchstens 10 Mieter haben.' } } as AxiosResponse
-    vi.mocked(apartmentService.createApartment).mockRejectedValue(limitError)
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    await fillAllFields()
+    vi.mocked(apartmentService.addTenant).mockRejectedValue(limitError)
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
+    await fillNames()
 
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
+    await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
     await flushPromises()
 
     expect(document.body.querySelector('.tenant-form-dialog__error')?.textContent?.trim()).toBe(
@@ -250,75 +194,65 @@ describe('TenantFormDialog', () => {
   })
 
   it('sends the form only once when the submit button is clicked twice in a row', async () => {
-    let resolveCreate!: (apartment: Apartment) => void
-    vi.mocked(apartmentService.createApartment).mockImplementation(
-      () => new Promise((resolve) => (resolveCreate = resolve)),
-    )
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
-    await fillAllFields()
+    let resolveAdd!: (apartment: Apartment) => void
+    vi.mocked(apartmentService.addTenant).mockImplementation(() => new Promise((resolve) => (resolveAdd = resolve)))
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
+    await fillNames()
 
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
-    resolveCreate(createApartment())
+    await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
+    await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeDefined()
+    resolveAdd(createApartment())
     await flushPromises()
 
-    expect(apartmentService.createApartment).toHaveBeenCalledOnce()
+    expect(apartmentService.addTenant).toHaveBeenCalledOnce()
   })
 
-  it('shows no decimals for the floor', async () => {
-    await mountDialog((store) => store.openCreateDialog('property-1'))
-
-    await enter('#tenant-floor', '2,5')
-
-    expect(Number.isInteger(Number((bodyField('#tenant-floor').element as HTMLInputElement).value.replace(',', '.')))).toBe(true)
-  })
-
-  it('tells a demo account how many more tenants it may create and blocks creating once they are used up', async () => {
+  it('tells a demo account how many more tenants it may create and blocks adding once they are used up', async () => {
     logInDemoAccount(1)
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
     expect(document.body.querySelector('.demo-quota-hint')?.textContent).toContain('noch einen weiteren Mieter')
-    await fillAllFields()
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeUndefined()
+    await fillNames()
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeUndefined()
 
     logInDemoAccount(0)
     await flushPromises()
 
     expect(document.body.querySelector('.demo-quota-hint--exhausted')).not.toBeNull()
-    expect(buttonLabelled(wrapper, 'Mieter anlegen').attributes('disabled')).toBeDefined()
-    await buttonLabelled(wrapper, 'Mieter anlegen').trigger('click')
-    expect(apartmentService.createApartment).not.toHaveBeenCalled()
+    expect(buttonLabelled(wrapper, 'Mieter hinzufügen').attributes('disabled')).toBeDefined()
+    await buttonLabelled(wrapper, 'Mieter hinzufügen').trigger('click')
+    expect(apartmentService.addTenant).not.toHaveBeenCalled()
   })
 
-  it('still lets a demo account without tenant creations left edit a tenant', async () => {
+  it('still lets a demo account without tenant creations left rename a tenant', async () => {
     logInDemoAccount(0)
     const apartment = createApartment()
-    const wrapper = await mountDialog((store) => store.openEditDialog(apartment, apartment.tenants[0]!))
+    const wrapper = await mountDialog((store) => store.openEditTenantDialog(apartment, apartment.tenants[0]!))
 
     expect(document.body.querySelector('.demo-quota-hint')).toBeNull()
     expect(buttonLabelled(wrapper, 'Speichern').attributes('disabled')).toBeUndefined()
   })
 
   it('closes without saving when cancelled', async () => {
-    const wrapper = await mountDialog((store) => store.openCreateDialog('property-1'))
+    const wrapper = await mountDialog((store) => store.openAddTenantDialog(createApartment()))
 
     new DOMWrapper(document.body.querySelector('.tenant-form-dialog__cancel') as Element).trigger('click')
     await flushPromises()
 
     expect(wrapper.emitted('update:visible')?.slice(-1)).toEqual([[false]])
-    expect(apartmentService.createApartment).not.toHaveBeenCalled()
+    expect(apartmentService.addTenant).not.toHaveBeenCalled()
   })
 
-  it('starts blank again when reopened after an edit', async () => {
+  it('starts blank again when reopened after a rename', async () => {
     const apartment = createApartment()
-    const wrapper = await mountDialog((store) => store.openEditDialog(apartment, apartment.tenants[0]!))
+    const wrapper = await mountDialog((store) => store.openEditTenantDialog(apartment, apartment.tenants[0]!))
     await wrapper.setProps({ visible: false })
 
-    useTenantsStore().openCreateDialog('property-1')
+    useTenantsStore().openAddTenantDialog(apartment)
     await wrapper.setProps({ visible: true })
     await flushPromises()
 
     expect((bodyField('#tenant-first-name').element as HTMLInputElement).value).toBe('')
-    expect((bodyField('#tenant-floor').element as HTMLInputElement).value).toBe('')
+    expect((bodyField('#tenant-last-name').element as HTMLInputElement).value).toBe('')
   })
 })

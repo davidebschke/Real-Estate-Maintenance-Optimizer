@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
+import PaymentAlertBadge from '@/components/payments/PaymentAlertBadge.vue'
 import { useApartmentFormatting } from '@/composables/useApartmentFormatting'
 import type { Apartment, Tenant } from '@/types/apartment'
+import type { ActivePaymentAlert } from '@/types/payment'
 
-defineProps<{ apartment: Apartment }>()
+withDefaults(defineProps<{ apartment: Apartment; alertByTenant?: Record<string, ActivePaymentAlert> }>(), {
+  alertByTenant: () => ({}),
+})
 
 defineEmits<{
+  'edit-apartment': [apartment: Apartment]
+  'delete-apartment': [apartment: Apartment]
   'add-tenant': [apartment: Apartment]
   'edit-tenant': [apartment: Apartment, tenant: Tenant]
   'delete-tenant': [apartment: Apartment, tenant: Tenant]
@@ -14,6 +20,11 @@ defineEmits<{
 
 const { t } = useI18n()
 const { formatFloor, formatArea, formatMoney } = useApartmentFormatting()
+
+/** Returns the localized floor label naming an apartment in its accessible button labels. */
+function apartmentName(apartment: Apartment): string {
+  return formatFloor(apartment.floor)
+}
 
 /** Returns the tenant's first and last name as one display name. */
 function fullName(tenant: Tenant): string {
@@ -26,6 +37,22 @@ function fullName(tenant: Tenant): string {
     <header class="apartment-card__header">
       <h4 class="apartment-card__floor">{{ formatFloor(apartment.floor) }}</h4>
       <span class="apartment-card__area">{{ formatArea(apartment.areaSquareMeters) }}</span>
+      <button
+        type="button"
+        class="apartment-card__edit"
+        :aria-label="t('tenants.apartment.editApartmentButton', { name: apartmentName(apartment) })"
+        @click="$emit('edit-apartment', apartment)"
+      >
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="apartment-card__delete"
+        :aria-label="t('tenants.apartment.deleteApartmentButton', { name: apartmentName(apartment) })"
+        @click="$emit('delete-apartment', apartment)"
+      >
+        <i class="pi pi-trash" aria-hidden="true"></i>
+      </button>
     </header>
 
     <dl class="apartment-card__figures">
@@ -44,9 +71,13 @@ function fullName(tenant: Tenant): string {
     </dl>
 
     <h5 class="apartment-card__tenants-heading">{{ t('tenants.apartment.tenantsHeading') }}</h5>
-    <ul class="apartment-card__tenants">
+    <p v-if="apartment.tenants.length === 0" class="apartment-card__vacancy">
+      {{ t('tenants.apartment.vacancyNote') }}
+    </p>
+    <ul v-else class="apartment-card__tenants">
       <li v-for="tenant in apartment.tenants" :key="tenant.id" class="apartment-card__tenant">
         <span class="apartment-card__tenant-name">{{ fullName(tenant) }}</span>
+        <PaymentAlertBadge :alert="alertByTenant[tenant.id] ?? 'NONE'" />
         <button
           type="button"
           class="apartment-card__tenant-edit"

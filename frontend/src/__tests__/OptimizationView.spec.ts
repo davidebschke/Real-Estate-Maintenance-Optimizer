@@ -16,6 +16,7 @@ beforeEach(() => {
   vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
   setActivePinia(createPinia())
   vi.mocked(optimizationService.fetchPendingProposals).mockReset().mockResolvedValue([])
+  vi.mocked(optimizationService.fetchAvailability).mockReset().mockResolvedValue({ available: true, reason: null })
 })
 
 afterEach(() => {
@@ -42,6 +43,15 @@ describe('OptimizationView', () => {
     await mountView()
 
     expect(optimizationService.fetchPendingProposals).toHaveBeenCalledTimes(1)
+  })
+
+  it('loads the availability when opened and blocks the start while the routing is off', async () => {
+    vi.mocked(optimizationService.fetchAvailability).mockResolvedValue({ available: false, reason: 'ROUTING_DISABLED' })
+    const wrapper = await mountView()
+
+    expect(optimizationService.fetchAvailability).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.optimization-launch-card__unavailable').exists()).toBe(true)
+    expect(wrapper.find('.optimization-launch-card__start').attributes('disabled')).toBeDefined()
   })
 
   it('renders the English heading when the locale is switched', async () => {

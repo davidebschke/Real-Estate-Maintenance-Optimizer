@@ -6,9 +6,11 @@ import { i18n } from '@/i18n'
 import PropertiesView from '@/views/PropertiesView.vue'
 import * as propertyService from '@/services/propertyService'
 import * as appointmentService from '@/services/appointmentService'
+import * as paymentService from '@/services/paymentService'
 
 vi.mock('@/services/propertyService')
 vi.mock('@/services/appointmentService')
+vi.mock('@/services/paymentService')
 vi.mock('primevue/useconfirm')
 
 beforeEach(() => {
@@ -16,6 +18,7 @@ beforeEach(() => {
   i18n.global.locale.value = 'de'
   vi.mocked(propertyService.fetchProperties).mockResolvedValue([])
   vi.mocked(appointmentService.fetchAppointments).mockResolvedValue([])
+  vi.mocked(paymentService.fetchPaymentAlerts).mockResolvedValue([])
   vi.mocked(useConfirm).mockReturnValue({ require: vi.fn() } as never)
 })
 

@@ -53,6 +53,23 @@ describe('ApartmentCard', () => {
     ])
   })
 
+  it('shows a payment alert badge only for the tenants that have an alert', () => {
+    const wrapper = mount(ApartmentCard, {
+      props: { apartment: createApartment(), alertByTenant: { 'tenant-2': 'OVERDUE' } },
+      global: { plugins: [i18n, PrimeVue] },
+    })
+
+    const tenants = wrapper.findAll('.apartment-card__tenant')
+    expect(tenants[0]!.find('.payment-alert-badge').exists()).toBe(false)
+    expect(tenants[1]!.find('.payment-alert-badge').text()).toBe('Zahlung überfällig')
+  })
+
+  it('shows no payment alert badge without alerts', () => {
+    const wrapper = mountCard(createApartment())
+
+    expect(wrapper.find('.payment-alert-badge').exists()).toBe(false)
+  })
+
   it('emits the apartment when another tenant is to be added', async () => {
     const apartment = createApartment()
     const wrapper = mountCard(apartment)
@@ -87,11 +104,60 @@ describe('ApartmentCard', () => {
     expect(wrapper.find('.apartment-card__tenant-delete').attributes('aria-label')).toBe('Mieter Erika Mustermann löschen')
   })
 
+  it('emits the apartment when it is to be edited', async () => {
+    const apartment = createApartment()
+    const wrapper = mountCard(apartment)
+
+    await wrapper.find('.apartment-card__edit').trigger('click')
+
+    expect(wrapper.emitted('edit-apartment')).toEqual([[apartment]])
+  })
+
+  it('emits the apartment when it is to be deleted', async () => {
+    const apartment = createApartment()
+    const wrapper = mountCard(apartment)
+
+    await wrapper.find('.apartment-card__delete').trigger('click')
+
+    expect(wrapper.emitted('delete-apartment')).toEqual([[apartment]])
+  })
+
+  it('names the apartment by its floor in the accessible labels of its edit and delete buttons', () => {
+    const wrapper = mountCard(createApartment())
+
+    expect(wrapper.find('.apartment-card__edit').attributes('aria-label')).toBe('Wohnung 2. Stockwerk bearbeiten')
+    expect(wrapper.find('.apartment-card__delete').attributes('aria-label')).toBe('Wohnung 2. Stockwerk löschen')
+  })
+
+  it('shows a vacancy note instead of the tenant list for an apartment without tenants', () => {
+    const wrapper = mountCard(createApartment({ tenants: [] }))
+
+    expect(wrapper.find('.apartment-card__vacancy').text()).toBe('Leerstand – noch kein Mieter')
+    expect(wrapper.find('.apartment-card__tenants').exists()).toBe(false)
+  })
+
+  it('shows no vacancy note while the apartment has tenants', () => {
+    const wrapper = mountCard(createApartment())
+
+    expect(wrapper.find('.apartment-card__vacancy').exists()).toBe(false)
+  })
+
+  it('still offers adding a tenant to a vacant apartment', async () => {
+    const apartment = createApartment({ tenants: [] })
+    const wrapper = mountCard(apartment)
+
+    await wrapper.find('.apartment-card__add-tenant').trigger('click')
+
+    expect(wrapper.emitted('add-tenant')).toEqual([[apartment]])
+  })
+
   it('labels the ground floor and renders English texts when the locale is switched', () => {
     i18n.global.locale.value = 'en'
-    const wrapper = mountCard(createApartment({ floor: 0 }))
+    const wrapper = mountCard(createApartment({ floor: 0, tenants: [] }))
 
     expect(wrapper.find('.apartment-card__floor').text()).toBe('Ground floor')
-    expect(wrapper.find('.apartment-card__add-tenant').text()).toBe('Add another tenant')
+    expect(wrapper.find('.apartment-card__add-tenant').text()).toBe('Add tenant')
+    expect(wrapper.find('.apartment-card__vacancy').text()).toBe('Vacant – no tenant yet')
+    expect(wrapper.find('.apartment-card__edit').attributes('aria-label')).toBe('Edit apartment Ground floor')
   })
 })

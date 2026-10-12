@@ -9,17 +9,21 @@ import AppointmentFormDialog from '@/components/appointments/AppointmentFormDial
 import AppointmentDetailDrawer from '@/components/appointments/AppointmentDetailDrawer.vue'
 import PropertyFormDialog from '@/components/properties/PropertyFormDialog.vue'
 import PropertyDetailDrawer from '@/components/properties/PropertyDetailDrawer.vue'
+import ApartmentFormDialog from '@/components/tenants/ApartmentFormDialog.vue'
 import TenantFormDialog from '@/components/tenants/TenantFormDialog.vue'
+import PaymentScanPreviewDialog from '@/components/payments/PaymentScanPreviewDialog.vue'
 import DemoAccountBanner from '@/components/auth/DemoAccountBanner.vue'
 import { useAppointmentsStore } from '@/stores/appointments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
+import { usePaymentsStore } from '@/stores/payments'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const appointmentsStore = useAppointmentsStore()
 const propertiesStore = usePropertiesStore()
 const tenantsStore = useTenantsStore()
+const paymentsStore = usePaymentsStore()
 const authStore = useAuthStore()
 
 /** Whether the full app shell is shown; the login screen renders on its own instead, and a protected page without session renders nothing until the guard redirected to the login screen. */
@@ -61,7 +65,9 @@ const isPropertyDetailVisible = computed({
       v-model:visible="isPropertyDetailVisible"
       :property-id="propertiesStore.activeDetailPropertyId"
     />
-    <TenantFormDialog v-model:visible="tenantsStore.isFormDialogOpen" />
+    <ApartmentFormDialog v-model:visible="tenantsStore.isApartmentFormDialogOpen" />
+    <TenantFormDialog v-model:visible="tenantsStore.isTenantFormDialogOpen" />
+    <PaymentScanPreviewDialog v-model:visible="paymentsStore.isPreviewOpen" />
     <ConfirmDialog />
     <Toast />
   </div>

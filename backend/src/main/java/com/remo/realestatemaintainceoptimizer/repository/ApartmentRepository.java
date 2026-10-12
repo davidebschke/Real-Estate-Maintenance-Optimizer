@@ -22,6 +22,12 @@ public interface ApartmentRepository extends JpaRepository<Apartment, String> {
     List<Apartment> findAllByPropertyId(String propertyId);
 
     /**
+     * Returns every apartment of the properties owned by the given account together with its tenants.
+     */
+    @EntityGraph(attributePaths = "tenants")
+    List<Apartment> findAllByPropertyOwnerId(String ownerId);
+
+    /**
      * Returns the apartment with the given id if its property is owned by the given account.
      */
     Optional<Apartment> findByIdAndPropertyOwnerId(String id, String ownerId);

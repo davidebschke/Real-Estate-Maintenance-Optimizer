@@ -10,6 +10,7 @@ const store = useOptimizationStore()
 
 onMounted(() => {
   store.fetchPendingProposals()
+  store.loadAvailability()
 })
 </script>
 

@@ -5,20 +5,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.AiDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.AiUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.CreationQuotaExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.InvalidCredentialsException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalNotPendingException;
 import com.remo.realestatemaintainceoptimizer.exception.OptimizationProposalOutdatedException;
 import com.remo.realestatemaintainceoptimizer.exception.RateLimitExceededException;
+import com.remo.realestatemaintainceoptimizer.exception.RentStatementTooLargeException;
+import com.remo.realestatemaintainceoptimizer.exception.RentTrackingNotActiveException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingDisabledException;
 import com.remo.realestatemaintainceoptimizer.exception.RoutingUnavailableException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -26,8 +31,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Verifies that persistence conflicts surfacing at commit time are answered with a localized 409 instead of a generic 500, authentication and limit failures with their localized 401, 403 and 429, and AI optimization failures with their localized 404, 409, 501 and 503.
@@ -43,7 +50,8 @@ class GlobalExceptionHandlerTest {
         messageSource.setDefaultEncoding("UTF-8");
         messageSource.setFallbackToSystemLocale(false);
         mockMvc = MockMvcBuilders.standaloneSetup(new FailingController())
-                .setControllerAdvice(new GlobalExceptionHandler(messageSource))
+                .setControllerAdvice(new GlobalExceptionHandler(messageSource, new PaymentProperties(
+                        5, "claude-haiku-5-5", 8192, DataSize.ofMegabytes(5), 10, 200, ZoneId.of("Europe/Berlin"))))
                 .build();
     }
 
@@ -160,7 +168,7 @@ class GlobalExceptionHandlerTest {
     void disabledAiReturnsALocalizedNotImplemented() throws Exception {
         mockMvc.perform(get("/ai-disabled").header("Accept-Language", "de"))
                 .andExpect(status().isNotImplemented())
-                .andExpect(jsonPath("$.message", equalTo("Die KI-Optimierung ist auf diesem Server nicht aktiviert.")));
+                .andExpect(jsonPath("$.message", equalTo("Die KI-Funktion ist auf diesem Server nicht aktiviert.")));
     }
 
     @Test
@@ -168,7 +176,7 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/ai-unavailable").header("Accept-Language", "en"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.message", equalTo(
-                        "The AI optimization is unavailable right now. Please try again later.")));
+                        "The AI function is unavailable right now. Please try again later.")));
     }
 
     @Test
@@ -224,8 +232,82 @@ class GlobalExceptionHandlerTest {
                         "Für diesen Account läuft bereits eine Optimierung. Bitte warten Sie auf ihr Ergebnis.")));
     }
 
+    @Test
+    void anInvalidRentRequestReturnsALocalizedBadRequest() throws Exception {
+        mockMvc.perform(get("/statement-not-pdf").header("Accept-Language", "de"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", equalTo("Die hochgeladene Datei ist kein PDF-Dokument.")));
+    }
+
+    @Test
+    void anInactiveRentCheckReturnsALocalizedConflict() throws Exception {
+        mockMvc.perform(get("/rent-tracking-inactive").header("Accept-Language", "en"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", equalTo("The rent payment check is not activated for this property yet.")));
+    }
+
+    @Test
+    void aTooLargeStatementReturnsALocalizedContentTooLarge() throws Exception {
+        mockMvc.perform(get("/statement-too-large").header("Accept-Language", "en"))
+                .andExpect(status().isContentTooLarge())
+                .andExpect(jsonPath("$.message", equalTo("The uploaded statement is too large. The maximum size is 5 MB.")));
+    }
+
+    @Test
+    void anUploadExceedingTheServletLimitWithoutAKnownSizeReportsTheConfiguredLimit() throws Exception {
+        mockMvc.perform(get("/upload-too-large").header("Accept-Language", "de"))
+                .andExpect(status().isContentTooLarge())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Der hochgeladene Kontoauszug ist zu groß. Die maximale Größe beträgt 5 MB.")));
+    }
+
+    @Test
+    void tooManyStatementScansReturnALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/too-many-payment-scans").header("Accept-Language", "en"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo("Too many statement scans. Please try again in an hour.")));
+    }
+
+    @Test
+    void anExhaustedDailyScanQuotaReturnsALocalizedTooManyRequests() throws Exception {
+        mockMvc.perform(get("/payment-scan-quota-exhausted").header("Accept-Language", "de"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message", equalTo(
+                        "Das Tageslimit für Kontoauszug-Scans ist erreicht. Bitte versuchen Sie es morgen erneut.")));
+    }
+
     @RestController
     static class FailingController {
+
+        @GetMapping("/statement-not-pdf")
+        void statementNotPdf() {
+            throw new InvalidRentRequestException(InvalidRentRequestException.REASON_STATEMENT_NOT_PDF);
+        }
+
+        @GetMapping("/rent-tracking-inactive")
+        void rentTrackingInactive() {
+            throw new RentTrackingNotActiveException("property-1");
+        }
+
+        @GetMapping("/statement-too-large")
+        void statementTooLarge() {
+            throw new RentStatementTooLargeException(5L * 1024 * 1024);
+        }
+
+        @GetMapping("/upload-too-large")
+        void uploadTooLarge() {
+            throw new MaxUploadSizeExceededException(-1);
+        }
+
+        @GetMapping("/too-many-payment-scans")
+        void tooManyPaymentScans() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_TOO_MANY_PAYMENT_SCANS);
+        }
+
+        @GetMapping("/payment-scan-quota-exhausted")
+        void paymentScanQuotaExhausted() {
+            throw new RateLimitExceededException(RateLimitExceededException.REASON_PAYMENT_SCAN_QUOTA_EXHAUSTED);
+        }
 
         @GetMapping("/optimization-in-progress")
         void optimizationInProgress() {

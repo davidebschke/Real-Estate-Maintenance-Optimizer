@@ -3,9 +3,15 @@ import { computed, watch } from 'vue'
 import Drawer from 'primevue/drawer'
 import Button from 'primevue/button'
 import { useI18n } from 'vue-i18n'
+import FormerTenantPaymentList from '@/components/payments/FormerTenantPaymentList.vue'
+import PaymentUploadButton from '@/components/payments/PaymentUploadButton.vue'
+import RentTrackingActivation from '@/components/payments/RentTrackingActivation.vue'
+import TenantPaymentTable from '@/components/payments/TenantPaymentTable.vue'
 import ApartmentCard from '@/components/tenants/ApartmentCard.vue'
+import { usePaymentsStore } from '@/stores/payments'
 import { usePropertiesStore } from '@/stores/properties'
 import { useTenantsStore } from '@/stores/tenants'
+import { useApartmentDeleteConfirmation } from '@/composables/useApartmentDeleteConfirmation'
 import { useTenantDeleteConfirmation } from '@/composables/useTenantDeleteConfirmation'
 import type { Apartment, Tenant } from '@/types/apartment'
 
@@ -15,7 +21,9 @@ const props = defineProps<{ propertyId: string | null }>()
 const { t } = useI18n()
 const propertiesStore = usePropertiesStore()
 const tenantsStore = useTenantsStore()
-const { confirmDelete } = useTenantDeleteConfirmation()
+const paymentsStore = usePaymentsStore()
+const { confirmDelete: confirmTenantDelete } = useTenantDeleteConfirmation()
+const { confirmDelete: confirmApartmentDelete } = useApartmentDeleteConfirmation()
 
 const property = computed(
   () => propertiesStore.properties.find((candidate) => candidate.id === props.propertyId) ?? null,
@@ -23,10 +31,20 @@ const property = computed(
 
 const apartments = computed(() => (props.propertyId ? (tenantsStore.apartmentsByProperty[props.propertyId] ?? []) : []))
 
+const paymentOverview = computed(() => (props.propertyId ? paymentsStore.overviewsByProperty[props.propertyId] : undefined))
+const isPaymentOverviewCurrent = computed(() => paymentOverview.value?.year === paymentsStore.selectedYear)
+const paymentTenants = computed(() => (isPaymentOverviewCurrent.value ? (paymentOverview.value?.tenants ?? []) : []))
+const formerTenantPayments = computed(() =>
+  isPaymentOverviewCurrent.value ? (paymentOverview.value?.formerTenantPayments ?? []) : [],
+)
+const isTrackingActive = computed(() => Boolean(paymentOverview.value?.trackingStart))
+
 watch(
   () => props.propertyId,
   (propertyId) => {
-    if (propertyId) tenantsStore.fetchApartments(propertyId)
+    if (!propertyId) return
+    tenantsStore.fetchApartments(propertyId)
+    paymentsStore.fetchYear(propertyId)
   },
   { immediate: true },
 )
@@ -36,16 +54,24 @@ function close() {
   visible.value = false
 }
 
-/** Opens the tenant form for a new tenant together with a new apartment of this property. */
-function createTenant() {
-  if (props.propertyId) tenantsStore.openCreateDialog(props.propertyId)
+/** Opens the apartment form for a new apartment of this property. */
+function createApartment() {
+  if (props.propertyId) tenantsStore.openCreateApartmentDialog(props.propertyId)
+}
+
+/** Shows the rent payment table of this property for another year. */
+function changePaymentYear(year: number) {
+  if (props.propertyId) paymentsStore.changeYear(props.propertyId, year)
 }
 
 /** Asks for delete confirmation, then deletes the tenant. */
-function requestDelete(apartment: Apartment, tenant: Tenant) {
-  confirmDelete(tenant, apartment.tenants.length === 1, () =>
-    tenantsStore.deleteTenant(apartment.propertyId, tenant.id),
-  )
+function requestTenantDelete(apartment: Apartment, tenant: Tenant) {
+  confirmTenantDelete(tenant, () => tenantsStore.deleteTenant(apartment.propertyId, tenant.id))
+}
+
+/** Asks for delete confirmation, then deletes the apartment together with its tenants. */
+function requestApartmentDelete(apartment: Apartment) {
+  confirmApartmentDelete(apartment, () => tenantsStore.deleteApartment(apartment.propertyId, apartment.id))
 }
 </script>
 
@@ -65,7 +91,7 @@ function requestDelete(apartment: Apartment, tenant: Tenant) {
       </div>
 
       <section class="property-detail-drawer__section">
-        <h3>{{ t('tenants.detail.tenantsHeading') }}</h3>
+        <h3>{{ t('tenants.detail.apartmentsHeading') }}</h3>
 
         <p v-if="tenantsStore.hasLoadError" class="property-detail-drawer__error">
           {{ t('tenants.detail.loadError') }}
@@ -73,7 +99,10 @@ function requestDelete(apartment: Apartment, tenant: Tenant) {
         <p v-if="tenantsStore.hasDeleteError" class="property-detail-drawer__error">
           {{ t('tenants.detail.deleteError') }}
         </p>
-        <p v-else-if="apartments.length === 0 && !tenantsStore.hasLoadError" class="property-detail-drawer__empty">
+        <p v-if="tenantsStore.hasApartmentDeleteError" class="property-detail-drawer__error">
+          {{ t('tenants.detail.apartmentDeleteError') }}
+        </p>
+        <p v-if="apartments.length === 0 && !tenantsStore.hasLoadError" class="property-detail-drawer__empty">
           {{ t('tenants.detail.empty') }}
         </p>
 
@@ -81,9 +110,12 @@ function requestDelete(apartment: Apartment, tenant: Tenant) {
           v-for="apartment in apartments"
           :key="apartment.id"
           :apartment="apartment"
+          :alert-by-tenant="paymentsStore.alertByTenant"
+          @edit-apartment="tenantsStore.openEditApartmentDialog"
+          @delete-apartment="requestApartmentDelete"
           @add-tenant="tenantsStore.openAddTenantDialog"
-          @edit-tenant="tenantsStore.openEditDialog"
-          @delete-tenant="requestDelete"
+          @edit-tenant="tenantsStore.openEditTenantDialog"
+          @delete-tenant="requestTenantDelete"
         />
 
         <Button
@@ -91,8 +123,34 @@ function requestDelete(apartment: Apartment, tenant: Tenant) {
           :label="t('tenants.detail.createButton')"
           icon="pi pi-plus"
           size="small"
-          @click="createTenant"
+          @click="createApartment"
         />
+      </section>
+
+      <section class="property-detail-drawer__section">
+        <h3>{{ t('payments.table.heading') }}</h3>
+
+        <RentTrackingActivation
+          v-if="paymentOverview"
+          :property-id="property.id"
+          :tracking-start="paymentOverview.trackingStart"
+        />
+
+        <PaymentUploadButton v-if="isTrackingActive" :property-id="property.id" />
+
+        <p v-if="paymentsStore.hasYearLoadError" class="property-detail-drawer__error">
+          {{ t('payments.table.loadError') }}
+        </p>
+
+        <TenantPaymentTable
+          v-if="isTrackingActive || !paymentOverview"
+          :year="paymentsStore.selectedYear"
+          :tenants="paymentTenants"
+          :is-loading="paymentsStore.isYearLoading"
+          @change-year="changePaymentYear"
+        />
+
+        <FormerTenantPaymentList v-if="formerTenantPayments.length > 0" :payments="formerTenantPayments" />
       </section>
     </template>
   </Drawer>

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import {
   acceptProposal,
+  fetchAvailability,
   fetchPendingProposals,
   fetchSavingsStatistics,
   rejectProposal,
@@ -60,6 +61,15 @@ describe('optimizationService', () => {
     })
   })
 
+  it('fetches whether the optimization is available and why not', async () => {
+    vi.mocked(axios.get).mockResolvedValue({ data: { available: false, reason: 'ROUTING_DISABLED' } })
+
+    const availability = await fetchAvailability()
+
+    expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/api\/optimizations\/availability$/))
+    expect(availability).toEqual({ available: false, reason: 'ROUTING_DISABLED' })
+  })
+
   it('fetches the pending proposals', async () => {
     vi.mocked(axios.get).mockResolvedValue({ data: [proposalDto] })
 
@@ -109,5 +119,11 @@ describe('optimizationService', () => {
     vi.mocked(axios.post).mockRejectedValue(new Error('network error'))
 
     await expect(startOptimizationRun()).rejects.toThrow('network error')
+  })
+
+  it('propagates a failed availability request to the caller', async () => {
+    vi.mocked(axios.get).mockRejectedValue(new Error('network error'))
+
+    await expect(fetchAvailability()).rejects.toThrow('network error')
   })
 })

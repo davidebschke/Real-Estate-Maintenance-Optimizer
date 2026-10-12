@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type {
+  OptimizationAvailability,
   OptimizationProposal,
   OptimizationProposalStatus,
   OptimizationRun,
@@ -49,6 +50,12 @@ interface SavingsStatisticsDto {
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+
+/** Asks the server whether the AI optimization is available, i.e. whether the AI and the road routing it needs are switched on. */
+export async function fetchAvailability(): Promise<OptimizationAvailability> {
+  const { data } = await axios.get<OptimizationAvailability>(`${apiBaseUrl}/api/optimizations/availability`)
+  return { available: data.available, reason: data.reason }
+}
 
 /** Starts an AI optimization run of the logged-in account, returning the proposals awaiting confirmation. */
 export async function startOptimizationRun(): Promise<OptimizationRun> {

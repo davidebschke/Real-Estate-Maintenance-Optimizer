@@ -1,0 +1,29 @@
+.tenant-name-fields {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tenant-name-fields__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tenant-name-fields__field label {
+  color: var(--remo-calendar-text-color, #f5f5f5);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tenant-name-fields__error {
+  color: #f87171;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+@media (max-width: 30rem) {
+  .tenant-name-fields {
+    grid-template-columns: 1fr;
+  }
+}

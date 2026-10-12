@@ -15,6 +15,11 @@
       "running": "The AI is planning your appointments …",
       "lastRun": "Last run: {analyzed} appointments checked, {candidates} possible moves assessed, {proposals} proposals.",
       "noProposals": "The AI found no move that saves driving time or kilometres.",
+      "unavailable": {
+        "AI_DISABLED": "The AI appointment optimization is unavailable because the AI feature is not enabled on this server.",
+        "ROUTING_DISABLED": "The AI appointment optimization is unavailable because road routing is not enabled on this server.",
+        "unknown": "The AI appointment optimization is currently unavailable on this server."
+      },
       "error": "The optimization could not be started.",
       "confirm": {
         "header": "Start AI optimization",
@@ -39,6 +44,7 @@
     },
     "banner": {
       "pending": "The AI has no open proposal. | The AI has one proposal that saves driving time. | The AI has {count} proposals that save driving time.",
+      "unavailable": "The AI appointment optimization is currently unavailable on this server.",
       "idle": "The AI can optimize your appointments from {minLeadDays} days ahead by driving time and kilometres.",
       "reviewButton": "Review proposals",
       "openButton": "Open optimization"

@@ -15,7 +15,7 @@ export interface ApartmentDetails {
   additionalCosts: number
 }
 
-/** An apartment of a property together with the tenants living in it. */
+/** An apartment of a property together with the tenants living in it, none while it is vacant. */
 export interface Apartment extends ApartmentDetails {
   id: string
   propertyId: string
@@ -25,8 +25,14 @@ export interface Apartment extends ApartmentDetails {
 /** The personal data of a tenant. */
 export type TenantDetails = Pick<Tenant, 'firstName' | 'lastName'>
 
-/** Payload combining the data of an apartment with the data of one tenant, used to create an apartment and to edit a tenant. */
-export interface ApartmentWithTenantPayload {
+/** Payload to create an apartment, optionally together with its first tenant (without one the apartment is vacant). */
+export interface NewApartmentPayload {
   apartment: ApartmentDetails
-  tenant: TenantDetails
+  tenant?: TenantDetails
+}
+
+/** Payload to update an apartment, with the `YYYY-MM` month from which a changed total rent applies (null for the current month). */
+export interface ApartmentUpdatePayload {
+  apartment: ApartmentDetails
+  rentEffectiveMonth: string | null
 }

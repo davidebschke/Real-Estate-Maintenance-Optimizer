@@ -11,6 +11,8 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.OnDelete;
@@ -46,6 +48,12 @@ public class Apartment {
 
     @Column(name = "additional_costs", nullable = false, precision = 9, scale = 2)
     private BigDecimal additionalCosts;
+
+    @Column(name = "rent_tracking_from")
+    private LocalDate rentTrackingFrom;
+
+    @Column(name = "initial_rent", precision = 9, scale = 2)
+    private BigDecimal initialRent;
 
     @OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tenant> tenants = new ArrayList<>();
@@ -90,6 +98,36 @@ public class Apartment {
     }
 
     /**
+     * Remembers the month this apartment was created in, so its rent is only judged from then on.
+     */
+    public void startRentTracking(YearMonth month) {
+        this.rentTrackingFrom = month.atDay(1);
+    }
+
+    /**
+     * Remembers the total rent before the first recorded rent change, keeping it if one was already remembered.
+     */
+    public void rememberInitialRent(BigDecimal rent) {
+        if (initialRent == null) {
+            this.initialRent = rent;
+        }
+    }
+
+    /**
+     * Returns the total rent this apartment had before its first recorded rent change, which is its current total rent while the rent never changed.
+     */
+    public BigDecimal rentBeforeChanges() {
+        return initialRent == null ? totalRent : initialRent;
+    }
+
+    /**
+     * Returns the month this apartment's rent is judged from at the earliest, or null for an apartment without a recorded creation month.
+     */
+    public YearMonth rentTrackingFrom() {
+        return rentTrackingFrom == null ? null : YearMonth.from(rentTrackingFrom);
+    }
+
+    /**
      * Adds a new tenant with the given id and name to this apartment and returns it.
      */
     public Tenant addTenant(String tenantId, String firstName, String lastName) {
@@ -103,13 +141,6 @@ public class Apartment {
      */
     public void removeTenant(Tenant tenant) {
         tenants.remove(tenant);
-    }
-
-    /**
-     * Returns whether exactly one tenant lives in this apartment.
-     */
-    public boolean hasSingleTenant() {
-        return tenants.size() == 1;
     }
 
     public String id() {

@@ -19,7 +19,9 @@ import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.ai.AdvisorCandidate;
 import com.remo.realestatemaintainceoptimizer.ai.AdvisorSelection;
 import com.remo.realestatemaintainceoptimizer.ai.OptimizationAdvisor;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationAvailabilityResponse;
 import com.remo.realestatemaintainceoptimizer.dto.OptimizationRunResponse;
+import com.remo.realestatemaintainceoptimizer.dto.OptimizationUnavailableReason;
 import com.remo.realestatemaintainceoptimizer.entity.Appointment;
 import com.remo.realestatemaintainceoptimizer.entity.OptimizationProposalStatus;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
@@ -53,7 +55,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 /**
  * Verifies an optimization run end to end against a real PostgreSQL database with a stubbed travel matrix and AI: stored proposals and savings, untouched appointments, superseded proposals, sequential re-validation of the AI's selection, the single run of a demo account and the run limit.
  */
-@SpringBootTest
+@SpringBootTest(properties = {"remo.routing.enabled=true", "remo.routing.api-key=test-key"})
 @Import(TestcontainersConfiguration.class)
 class OptimizationServiceTest {
 
@@ -117,6 +119,15 @@ class OptimizationServiceTest {
         Appointment movable = appointmentRepository.save(appointment(eastProperty, DAY_ONE.atTime(10, 0), false));
         appointmentRepository.save(appointment(eastProperty, DAY_TWO.atTime(8, 0), true));
         return movable;
+    }
+
+    @Test
+    void reportsTheOptimizationAsAvailableOnlyWhileTheAiIsSwitchedOn() {
+        when(advisor.isEnabled()).thenReturn(true, false);
+
+        assertThat(service.availability()).isEqualTo(new OptimizationAvailabilityResponse(true, null));
+        assertThat(service.availability())
+                .isEqualTo(new OptimizationAvailabilityResponse(false, OptimizationUnavailableReason.AI_DISABLED));
     }
 
     @Test

@@ -8,6 +8,8 @@ export interface Property {
   longitude: number | null
   /** Number of tenants living in the apartments of this property. */
   tenantCount: number
+  /** The month (`YYYY-MM`) from which the rent payment check applies, or null while it is not activated. */
+  rentTrackingStart: string | null
 }
 
 /** Payload for creating a new property. */

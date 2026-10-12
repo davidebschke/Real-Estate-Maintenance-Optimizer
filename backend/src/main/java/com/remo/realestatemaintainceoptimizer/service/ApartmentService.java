@@ -1,26 +1,36 @@
 package com.remo.realestatemaintainceoptimizer.service;
 
+import com.remo.realestatemaintainceoptimizer.config.PaymentProperties;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentResponse;
+import com.remo.realestatemaintainceoptimizer.dto.ApartmentUpdateRequest;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentWithTenantRequest;
+import com.remo.realestatemaintainceoptimizer.dto.RentPaymentRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantDetailsRequest;
 import com.remo.realestatemaintainceoptimizer.dto.TenantResponse;
 import com.remo.realestatemaintainceoptimizer.entity.Apartment;
+import com.remo.realestatemaintainceoptimizer.entity.ApartmentRentChange;
 import com.remo.realestatemaintainceoptimizer.entity.Property;
 import com.remo.realestatemaintainceoptimizer.entity.Tenant;
 import com.remo.realestatemaintainceoptimizer.exception.AccountNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.ApartmentNotFoundException;
+import com.remo.realestatemaintainceoptimizer.exception.InvalidRentRequestException;
 import com.remo.realestatemaintainceoptimizer.exception.PropertyNotFoundException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantLimitExceededException;
 import com.remo.realestatemaintainceoptimizer.exception.TenantNotFoundException;
+import com.remo.realestatemaintainceoptimizer.repository.ApartmentRentChangeRepository;
 import com.remo.realestatemaintainceoptimizer.repository.ApartmentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.PropertyRepository;
+import com.remo.realestatemaintainceoptimizer.repository.RentPaymentRepository;
 import com.remo.realestatemaintainceoptimizer.repository.TenantRepository;
 import com.remo.realestatemaintainceoptimizer.repository.UserRepository;
+import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import org.hibernate.Hibernate;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +39,11 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
+@EnableConfigurationProperties(PaymentProperties.class)
 public class ApartmentService {
 
     static final int MAX_APARTMENTS_PER_PROPERTY = 500;
+    static final int MAX_APARTMENTS_PER_DEMO_PROPERTY = 20;
     static final int MAX_TENANTS_PER_APARTMENT = 10;
 
     private static final Comparator<TenantResponse> TENANT_ORDER = Comparator
@@ -48,16 +60,25 @@ public class ApartmentService {
     private final TenantRepository tenantRepository;
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
+    private final RentPaymentRepository rentPaymentRepository;
+    private final ApartmentRentChangeRepository rentChangeRepository;
+    private final PaymentProperties paymentProperties;
 
     public ApartmentService(
             ApartmentRepository apartmentRepository,
             TenantRepository tenantRepository,
             PropertyRepository propertyRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            RentPaymentRepository rentPaymentRepository,
+            ApartmentRentChangeRepository rentChangeRepository,
+            PaymentProperties paymentProperties) {
         this.apartmentRepository = apartmentRepository;
         this.tenantRepository = tenantRepository;
         this.propertyRepository = propertyRepository;
         this.userRepository = userRepository;
+        this.rentPaymentRepository = rentPaymentRepository;
+        this.rentChangeRepository = rentChangeRepository;
+        this.paymentProperties = paymentProperties;
     }
 
     /**
@@ -73,13 +94,15 @@ public class ApartmentService {
     }
 
     /**
-     * Creates a new apartment in the given property together with its first tenant, rejecting it when the property already has the maximum number of apartments or a demo account used up its tenant creations.
+     * Creates a new apartment in the given property, vacant or together with its first tenant, rejecting it when the property already has the maximum number of apartments or a demo account used up its tenant creations.
      */
     public ApartmentResponse create(String ownerId, String propertyId, ApartmentWithTenantRequest request) {
         Property property = loadPropertyOrThrow(ownerId, propertyId);
-        if (apartmentRepository.countByPropertyId(propertyId) >= MAX_APARTMENTS_PER_PROPERTY) {
-            throw new TenantLimitExceededException(
-                    TenantLimitExceededException.REASON_APARTMENT_LIMIT, MAX_APARTMENTS_PER_PROPERTY);
+        int apartmentLimit = userRepository.findById(ownerId)
+                .orElseThrow(() -> new AccountNotFoundException(ownerId))
+                .demoAccount() ? MAX_APARTMENTS_PER_DEMO_PROPERTY : MAX_APARTMENTS_PER_PROPERTY;
+        if (apartmentRepository.countByPropertyId(propertyId) >= apartmentLimit) {
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT, apartmentLimit);
         }
         ApartmentDetailsRequest details = request.apartment();
         Apartment apartment = new Apartment(
@@ -90,12 +113,15 @@ public class ApartmentService {
                 details.totalRent(),
                 details.coldRent(),
                 details.additionalCosts());
-        addTenantTo(ownerId, apartment, request.tenant());
+        apartment.startRentTracking(YearMonth.now(paymentProperties.zone()));
+        if (request.tenant() != null) {
+            addTenantTo(ownerId, apartment, request.tenant());
+        }
         return toResponse(apartmentRepository.save(apartment));
     }
 
     /**
-     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants or a demo account used up its tenant creations; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
+     * Adds a tenant to an existing apartment, which starts its rent being judged from the current month on while it was vacant, rejecting it when the apartment already has the maximum number of tenants or a demo account used up its tenant creations; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
      */
     public ApartmentResponse addTenant(String ownerId, String apartmentId, TenantDetailsRequest request) {
         Apartment apartment = apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
@@ -104,29 +130,58 @@ public class ApartmentService {
             throw new TenantLimitExceededException(
                     TenantLimitExceededException.REASON_TENANT_LIMIT, MAX_TENANTS_PER_APARTMENT);
         }
+        if (apartment.tenants().isEmpty()) {
+            apartment.startRentTracking(YearMonth.now(paymentProperties.zone()));
+        }
         addTenantTo(ownerId, apartment, request);
         return toResponse(apartment);
     }
 
     /**
-     * Updates the name of the given tenant together with the data of their apartment, which is shared with every other tenant of it.
+     * Updates the name of the given tenant.
      */
-    public ApartmentResponse updateTenant(String ownerId, String tenantId, ApartmentWithTenantRequest request) {
+    public ApartmentResponse updateTenant(String ownerId, String tenantId, TenantDetailsRequest request) {
         Tenant tenant = loadTenantOrThrow(ownerId, tenantId);
-        tenant.updateName(request.tenant().firstName(), request.tenant().lastName());
+        tenant.updateName(request.firstName(), request.lastName());
+        return toResponse(tenant.apartment());
+    }
+
+    /**
+     * Updates the data of the given apartment, shared by all its tenants; a changed total rent applies from the requested month on, or from the current month if none is given, replacing every later rent change, while earlier months keep their rent; the apartment is locked meanwhile so concurrent edits cannot mix up the rent history.
+     */
+    public ApartmentResponse updateApartment(String ownerId, String apartmentId, ApartmentUpdateRequest request) {
+        Apartment apartment = apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
+                .orElseThrow(() -> new ApartmentNotFoundException(apartmentId));
+        YearMonth currentMonth = YearMonth.now(paymentProperties.zone());
+        YearMonth effectiveMonth = request.rentEffectiveMonth() == null ? currentMonth : request.rentEffectiveMonth();
+        if (effectiveMonth.isAfter(currentMonth) || effectiveMonth.getYear() < RentPaymentRequest.FIRST_YEAR) {
+            throw new InvalidRentRequestException(InvalidRentRequestException.REASON_INVALID_RENT_MONTH);
+        }
         ApartmentDetailsRequest details = request.apartment();
-        Apartment apartment = tenant.apartment();
+        BigDecimal previousRent = apartment.totalRent();
         apartment.updateDetails(
                 details.floor(),
                 details.areaSquareMeters(),
                 details.totalRent(),
                 details.coldRent(),
                 details.additionalCosts());
+        recordRentChange(apartment, previousRent, effectiveMonth);
         return toResponse(apartment);
     }
 
     /**
-     * Deletes the given tenant, together with their apartment if they were its last tenant; the apartment is locked meanwhile so concurrent deletions cannot leave it without tenants, and unwrapped from its lazy proxy because Spring Data would mistake that for a new entity and skip the delete.
+     * Deletes the given apartment together with its tenants, their payments and its rent history; the apartment is locked meanwhile, and unwrapped from its lazy proxy because Spring Data would mistake that for a new entity and skip the delete.
+     */
+    public void deleteApartment(String ownerId, String apartmentId) {
+        Apartment apartment = Hibernate.unproxy(
+                apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
+                        .orElseThrow(() -> new ApartmentNotFoundException(apartmentId)),
+                Apartment.class);
+        apartmentRepository.delete(apartment);
+    }
+
+    /**
+     * Deletes the given tenant and notes their name on their payments, which stay with the apartment; the apartment stays too, even without a tenant, and is locked meanwhile so concurrent changes of its tenants run one after another, and unwrapped from its lazy proxy.
      */
     public void deleteTenant(String ownerId, String tenantId) {
         String apartmentId = loadTenantOrThrow(ownerId, tenantId).apartment().id();
@@ -138,11 +193,20 @@ public class ApartmentService {
                 .filter(candidate -> candidate.id().equals(tenantId))
                 .findFirst()
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
-        if (apartment.hasSingleTenant()) {
-            apartmentRepository.delete(apartment);
-        } else {
-            apartment.removeTenant(tenant);
+        rentPaymentRepository.markTenantAsFormer(tenantId, tenant.lastName() + ", " + tenant.firstName());
+        apartment.removeTenant(tenant);
+    }
+
+    /**
+     * Records the apartment's new total rent as valid from the given month on, remembering the rent before its first change and dropping every rent change from that month on, so earlier months keep their rent; nothing is recorded while the rent is unchanged.
+     */
+    private void recordRentChange(Apartment apartment, BigDecimal previousRent, YearMonth effectiveMonth) {
+        if (previousRent.compareTo(apartment.totalRent()) == 0) {
+            return;
         }
+        apartment.rememberInitialRent(previousRent);
+        rentChangeRepository.deleteFrom(apartment.id(), effectiveMonth.atDay(1));
+        rentChangeRepository.save(new ApartmentRentChange(UUID.randomUUID().toString(), apartment, effectiveMonth, apartment.totalRent()));
     }
 
     private void addTenantTo(String ownerId, Apartment apartment, TenantDetailsRequest request) {
