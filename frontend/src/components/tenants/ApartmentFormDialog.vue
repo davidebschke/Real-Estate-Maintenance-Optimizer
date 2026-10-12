@@ -134,7 +134,7 @@ async function submit() {
     } else {
       succeeded = await store.updateApartment(target.apartment.propertyId, target.apartment.id, {
         apartment,
-        rentEffectiveMonth: isRentChanged.value ? form.rentEffectiveMonth : null,
+        rentEffectiveMonth: isRentChanged.value && form.rentEffectiveMonth !== currentMonthKey(openedAt.value) ? form.rentEffectiveMonth : null,
       })
     }
   } finally {

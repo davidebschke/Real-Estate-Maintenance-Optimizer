@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
+import com.remo.realestatemaintainceoptimizer.RentFixtures;
 import com.remo.realestatemaintainceoptimizer.TestAccounts;
 import com.remo.realestatemaintainceoptimizer.TestcontainersConfiguration;
 import com.remo.realestatemaintainceoptimizer.dto.ApartmentDetailsRequest;
@@ -194,6 +195,34 @@ class ApartmentServiceTest {
         assertThat(vacant.tenants()).isEmpty();
         assertThat(service.listByProperty(demo.id(), "demo-property")).singleElement().satisfies(apartment -> assertThat(apartment.tenants()).isEmpty());
         assertThat(userRepository.findById(demo.id()).orElseThrow().remainingTenantCreations()).isEqualTo(1);
+    }
+
+    @Test
+    void addingATenantToAVacantApartmentRestartsItsRentJudgmentFromTheCurrentMonth() {
+        Apartment vacant = RentFixtures.saveApartment(apartmentRepository, propertyRepository.findById("property-1").orElseThrow(), "vacant-1", "600.00");
+        vacant.startRentTracking(CURRENT_MONTH.minusMonths(4));
+        apartmentRepository.save(vacant);
+
+        service.addTenant(owner.id(), "vacant-1", new TenantDetailsRequest("Erika", "Mustermann"));
+        service.addTenant(owner.id(), "vacant-1", new TenantDetailsRequest("Max", "Mustermann"));
+
+        assertThat(apartmentRepository.findAllByPropertyId("property-1").getFirst().rentTrackingFrom()).isEqualTo(CURRENT_MONTH);
+    }
+
+    @Test
+    void aDemoAccountCanCreateOnlyAFewApartmentsPerProperty() {
+        User demo = TestAccounts.saveDemoAccount(userRepository, Instant.now().plusSeconds(3600), 0, 0, 5);
+        propertyRepository.save(new Property("demo-property", demo.id(), "Demo Objekt", "Demostr. 1", "pi-building"));
+        ApartmentWithTenantRequest vacant = new ApartmentWithTenantRequest(
+                new ApartmentDetailsRequest(1, new BigDecimal("50.00"), new BigDecimal("600.00"), new BigDecimal("450.00"), new BigDecimal("150.00")),
+                null);
+        for (int index = 0; index < ApartmentService.MAX_APARTMENTS_PER_DEMO_PROPERTY; index++) {
+            service.create(demo.id(), "demo-property", vacant);
+        }
+
+        assertThatThrownBy(() -> service.create(demo.id(), "demo-property", vacant))
+                .isInstanceOfSatisfying(TenantLimitExceededException.class,
+                        exception -> assertThat(exception.limit()).isEqualTo(ApartmentService.MAX_APARTMENTS_PER_DEMO_PROPERTY));
     }
 
     @Test

@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ApartmentService {
 
     static final int MAX_APARTMENTS_PER_PROPERTY = 500;
+    static final int MAX_APARTMENTS_PER_DEMO_PROPERTY = 20;
     static final int MAX_TENANTS_PER_APARTMENT = 10;
 
     private static final Comparator<TenantResponse> TENANT_ORDER = Comparator
@@ -97,9 +98,11 @@ public class ApartmentService {
      */
     public ApartmentResponse create(String ownerId, String propertyId, ApartmentWithTenantRequest request) {
         Property property = loadPropertyOrThrow(ownerId, propertyId);
-        if (apartmentRepository.countByPropertyId(propertyId) >= MAX_APARTMENTS_PER_PROPERTY) {
-            throw new TenantLimitExceededException(
-                    TenantLimitExceededException.REASON_APARTMENT_LIMIT, MAX_APARTMENTS_PER_PROPERTY);
+        int apartmentLimit = userRepository.findById(ownerId)
+                .orElseThrow(() -> new AccountNotFoundException(ownerId))
+                .demoAccount() ? MAX_APARTMENTS_PER_DEMO_PROPERTY : MAX_APARTMENTS_PER_PROPERTY;
+        if (apartmentRepository.countByPropertyId(propertyId) >= apartmentLimit) {
+            throw new TenantLimitExceededException(TenantLimitExceededException.REASON_APARTMENT_LIMIT, apartmentLimit);
         }
         ApartmentDetailsRequest details = request.apartment();
         Apartment apartment = new Apartment(
@@ -118,7 +121,7 @@ public class ApartmentService {
     }
 
     /**
-     * Adds a further tenant to an existing apartment, rejecting it when the apartment already has the maximum number of tenants or a demo account used up its tenant creations; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
+     * Adds a tenant to an existing apartment, which starts its rent being judged from the current month on while it was vacant, rejecting it when the apartment already has the maximum number of tenants or a demo account used up its tenant creations; the apartment is locked meanwhile so concurrent additions cannot exceed that maximum together.
      */
     public ApartmentResponse addTenant(String ownerId, String apartmentId, TenantDetailsRequest request) {
         Apartment apartment = apartmentRepository.findByIdAndOwnerIdForUpdate(apartmentId, ownerId)
@@ -126,6 +129,9 @@ public class ApartmentService {
         if (apartment.tenants().size() >= MAX_TENANTS_PER_APARTMENT) {
             throw new TenantLimitExceededException(
                     TenantLimitExceededException.REASON_TENANT_LIMIT, MAX_TENANTS_PER_APARTMENT);
+        }
+        if (apartment.tenants().isEmpty()) {
+            apartment.startRentTracking(YearMonth.now(paymentProperties.zone()));
         }
         addTenantTo(ownerId, apartment, request);
         return toResponse(apartment);
