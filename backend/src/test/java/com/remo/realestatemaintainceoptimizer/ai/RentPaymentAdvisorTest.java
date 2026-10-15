@@ -13,9 +13,11 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.PdfFileContent;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.anthropic.AnthropicChatRequestParameters;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.FinishReason;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -196,6 +198,32 @@ class RentPaymentAdvisorTest {
             assertThatThrownBy(() -> advisorAnswering(answer).extractPayments(PDF))
                     .as(answer).isInstanceOf(AiUnavailableException.class);
         }
+    }
+
+    @Test
+    void switchesTheThinkingOfTheModelOffSoItDoesNotConsumeTheTokenBudget() {
+        advisorAnswering("{\"payments\":[]}").extractPayments(PDF);
+
+        assertThat(requests).singleElement().satisfies(request ->
+                assertThat(request.parameters()).isInstanceOfSatisfying(AnthropicChatRequestParameters.class,
+                        parameters -> assertThat(parameters.thinkingType()).isEqualTo("disabled")));
+    }
+
+    @Test
+    void anAnswerCutOffAtTheTokenLimitBecomesAnAiUnavailableException() {
+        ChatModel truncating = new ChatModel() {
+            @Override
+            public ChatResponse doChat(ChatRequest request) {
+                return ChatResponse.builder()
+                        .aiMessage(AiMessage.from("{\"payments\":[{\"paymentDate\":\"2026-10-02\",\"amount\":8"))
+                        .finishReason(FinishReason.LENGTH)
+                        .build();
+            }
+        };
+
+        assertThatThrownBy(() -> advisor(truncating, ENABLED).extractPayments(PDF))
+                .isInstanceOf(AiUnavailableException.class)
+                .hasMessageContaining("token limit");
     }
 
     @Test

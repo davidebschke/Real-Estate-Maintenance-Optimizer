@@ -12,10 +12,11 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.pdf.PdfFile;
+import dev.langchain4j.model.anthropic.AnthropicChatRequestParameters;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.FinishReason;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ public class RentPaymentAdvisor {
     static final BigDecimal MAX_AMOUNT = new BigDecimal("9999999.99");
     static final int MAX_AMOUNT_SCALE = 6;
     static final String PDF_MIME_TYPE = "application/pdf";
+    static final String THINKING_DISABLED = "disabled";
 
     static final String SYSTEM_PROMPT = """
             You read bank statements of a landlord. Extract every incoming payment (credit, money received) that could be \
@@ -124,7 +126,8 @@ public class RentPaymentAdvisor {
                 .messages(
                         SystemMessage.from(SYSTEM_PROMPT),
                         UserMessage.from(TextContent.from(USER_PROMPT), PdfFileContent.from(pdfFile)))
-                .parameters(ChatRequestParameters.builder()
+                .parameters(AnthropicChatRequestParameters.builder()
+                        .thinkingType(THINKING_DISABLED)
                         .modelName(paymentProperties.scanModel())
                         .maxOutputTokens(paymentProperties.scanMaxTokens())
                         .build())
@@ -139,6 +142,12 @@ public class RentPaymentAdvisor {
         if (response == null || response.aiMessage() == null || response.aiMessage().text() == null) {
             log.warn("AI payment scan answer was empty");
             throw new AiUnavailableException("The AI model returned no text");
+        }
+        if (response.finishReason() == FinishReason.LENGTH) {
+            if (log.isWarnEnabled()) {
+                log.warn("AI payment scan answer was cut off at the limit of {} output tokens", paymentProperties.scanMaxTokens());
+            }
+            throw new AiUnavailableException("AI payment scan answer exceeded the output token limit");
         }
         return response.aiMessage().text();
     }

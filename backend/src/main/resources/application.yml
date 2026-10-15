@@ -104,7 +104,7 @@ remo:
     due-day: 5
     # Claude model reading the bank statement PDFs; claude-sonnet-5-5 is the fallback if the Haiku model cannot read PDFs
     scan-model: ${REMO_PAYMENTS_SCAN_MODEL:claude-haiku-5-5}
-    scan-max-tokens: 8192
+    scan-max-tokens: 16384
     max-statement-size: 5MB
     max-scans-per-account-per-hour: 10
     max-scans-per-day: 200

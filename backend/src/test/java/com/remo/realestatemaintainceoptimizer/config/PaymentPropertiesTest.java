@@ -25,7 +25,7 @@ class PaymentPropertiesTest {
 
         assertThat(properties.dueDay()).isEqualTo(5);
         assertThat(properties.scanModel()).isEqualTo("claude-haiku-5-5");
-        assertThat(properties.scanMaxTokens()).isEqualTo(8192);
+        assertThat(properties.scanMaxTokens()).isEqualTo(16384);
         assertThat(properties.maxStatementSize()).isEqualTo(DataSize.ofMegabytes(5));
         assertThat(properties.maxScansPerAccountPerHour()).isEqualTo(10);
         assertThat(properties.maxScansPerDay()).isEqualTo(200);

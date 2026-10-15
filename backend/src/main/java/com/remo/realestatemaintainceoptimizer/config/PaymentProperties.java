@@ -12,7 +12,7 @@ import org.springframework.util.unit.DataSize;
 public record PaymentProperties(
         @DefaultValue("5") int dueDay,
         @DefaultValue("claude-haiku-5-5") String scanModel,
-        @DefaultValue("8192") int scanMaxTokens,
+        @DefaultValue("16384") int scanMaxTokens,
         @DefaultValue("5MB") DataSize maxStatementSize,
         @DefaultValue("10") int maxScansPerAccountPerHour,
         @DefaultValue("200") int maxScansPerDay,
