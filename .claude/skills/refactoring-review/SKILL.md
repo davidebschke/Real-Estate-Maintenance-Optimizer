@@ -5,7 +5,7 @@ description: Review the files a branch added or changed for refactoring opportun
 
 # Refactoring Review
 
-Implements the "Post-Implementation Refactoring Review" required by [`.claude/rules/refactoring.md`](../../rules/refactoring.md) and [`.claude/rules/git-workflow.md`](../../rules/git-workflow.md). It runs after the implementation commit and before the `code-review` skill.
+Implements the "Post-Implementation Refactoring Review" required by [`.claude/rules/refactoring.md`](../../rules/refactoring.md) and [`.claude/rules/git-workflow.md`](../../rules/git-workflow.md). It runs after the implementation commit and the opened pull request, and before the `code-review` skill.
 
 ## When to use this skill
 
@@ -25,6 +25,7 @@ After finishing any non-trivial implementation task and committing it, before th
 7. **Commit** each applied move group as its own `refactor:` commit (Conventional Commits, with the AI-assistance footer from `coding-conventions.md`), separate from the implementation commit. Keep the message to the smell and the move, and state "No behaviour change".
 8. **Sync documentation**: if files, components or responsibilities moved or were added, update the backend/frontend readmes (DE and EN) and `.claude/rules/folder-structure.md` (use the `folder-structure-sync` and `docs-consistency-check` skills), and commit that as `docs:`.
 9. **Report** to the user: applied moves (one line each), rejected candidates with reasons, and follow-ups. Do not claim a clean result for code you did not read.
+10. **Comment on the PR**: post the same outcome with `gh pr comment` as soon as the findings are sorted (step 3), i.e. before step 5 applies any move, even when nothing was found or the review was skipped as trivial (then with the reason); push the `refactor:` commits afterwards.
 
 ## Effort level
 

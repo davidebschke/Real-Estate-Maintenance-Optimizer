@@ -71,4 +71,4 @@ Every non-trivial implementation gets a refactoring review of **the files it add
 - **Apply the rule of three and YAGNI before extracting**: a helper with a single caller, or two short lines in two places, is recorded as "considered and rejected" with the reason, not extracted.
 - Larger duplication in untouched code (e.g. three near-identical dialog stylesheets) is reported as a follow-up issue, not fixed in the same branch (Boy Scout Rule above).
 - Commit every applied move group as its own `refactor:` commit, separate from the implementation commit and from later review-fix commits, and update the readmes and `folder-structure.md` when files or responsibilities moved.
-- The outcome — applied moves, rejected candidates with reasons, follow-ups — is reported to the user.
+- The outcome — applied moves, rejected candidates with reasons, follow-ups — is posted as a comment on the pull request, which already exists at this point (see `.claude/rules/git-workflow.md`, "Pull Request Before the Reviews"), before the moves are applied, and reported to the user.

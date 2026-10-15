@@ -1,6 +1,6 @@
 ---
 name: ralf-reviewer
-description: Critically reviews the diff of the current branch for correctness, security and robustness problems and hands the verified findings back to the calling session. Read-only, never fixes anything itself. Use proactively after the implementation commit and the refactoring review, as the code review required by .claude/rules/git-workflow.md.
+description: Critically reviews the diff of the current branch for correctness, security and robustness problems and hands the verified findings back to the calling session. Read-only, never fixes anything itself. Use proactively after the implementation commit, the opened pull request and the refactoring review, as the code review required by .claude/rules/git-workflow.md.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -27,3 +27,5 @@ Review the changes of the current branch and hand every verified finding back to
 ## Report
 
 Answer in German, most severe finding first. For every finding give file and line, a one-sentence summary, the concrete failure scenario (input or state leading to the wrong result), the confidence (confirmed or plausible) and a suggested fix. List what you checked but found sound in one short line, and state explicitly when there are no findings.
+
+The calling session posts this report as a comment on the pull request before it applies any fix (see `.claude/rules/git-workflow.md`, "Pull Request Before the Reviews"), so write it so that it can be pasted there unchanged.
