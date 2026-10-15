@@ -144,7 +144,9 @@ public class RentPaymentAdvisor {
             throw new AiUnavailableException("The AI model returned no text");
         }
         if (response.finishReason() == FinishReason.LENGTH) {
-            log.warn("AI payment scan answer was cut off at the limit of {} output tokens", paymentProperties.scanMaxTokens());
+            if (log.isWarnEnabled()) {
+                log.warn("AI payment scan answer was cut off at the limit of {} output tokens", paymentProperties.scanMaxTokens());
+            }
             throw new AiUnavailableException("AI payment scan answer exceeded the output token limit");
         }
         return response.aiMessage().text();
