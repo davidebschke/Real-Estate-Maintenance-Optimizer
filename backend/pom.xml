@@ -23,7 +23,7 @@
         <!-- LTS target per CLAUDE.md tech stack -->
         <java.version>25</java.version>
         <jjwt.version>0.13.0</jjwt.version>
-        <langchain4j.version>1.22.0</langchain4j.version>
+        <langchain4j.version>1.23.0</langchain4j.version>
     </properties>
 
     <dependencies>
