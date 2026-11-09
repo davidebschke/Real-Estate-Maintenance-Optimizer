@@ -27,7 +27,7 @@
     "vue": "^3.5.45",
     "vue-cal": "^4.10.2",
     "vue-i18n": "^11.0.0",
-    "vue-router": "^5.2.0"
+    "vue-router": "^5.4.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
