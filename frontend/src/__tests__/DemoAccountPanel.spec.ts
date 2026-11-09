@@ -14,7 +14,12 @@ vi.mock('@/services/authService', async (importOriginal) => {
   return { ...actual, createDemoAccount: vi.fn<typeof actual.createDemoAccount>() }
 })
 
+const availability = vi.hoisted(() => ({ DEMO_ACCOUNT_AVAILABLE: true }))
+
+vi.mock('@/utils/demoAccountAvailability', () => availability)
+
 beforeEach(() => {
+  availability.DEMO_ACCOUNT_AVAILABLE = true
   setActivePinia(createPinia())
   vi.mocked(authService.createDemoAccount).mockReset()
   i18n.global.locale.value = 'de'
@@ -81,5 +86,16 @@ describe('DemoAccountPanel', () => {
     await flushPromises()
 
     expect(wrapper.find('[role="alert"]').text()).toContain('konnte nicht erstellt werden')
+  })
+
+  it('disables the button and explains the missing API key while the demo account is unavailable', async () => {
+    availability.DEMO_ACCOUNT_AVAILABLE = false
+    const wrapper = mountPanel()
+
+    await wrapper.findComponent(Button).trigger('click')
+
+    expect(wrapper.find('[role="status"]').text()).toContain('API-Key für die KI-Funktionen')
+    expect(wrapper.findComponent(Button).attributes('disabled')).toBeDefined()
+    expect(authService.createDemoAccount).not.toHaveBeenCalled()
   })
 })

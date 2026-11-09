@@ -50,7 +50,7 @@ test.describe('authentication', () => {
     )
   })
 
-  test('a demo account starts with example data, explains its limits and is gone after logging out', async ({
+  test.fixme('a demo account starts with example data, explains its limits and is gone after logging out', async ({
     page,
   }) => {
     await page.goto('/login')

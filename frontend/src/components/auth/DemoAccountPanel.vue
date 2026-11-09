@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { toAuthFailureReason } from '@/services/authService'
 import type { AuthFailureReason } from '@/types/auth'
+import { DEMO_ACCOUNT_AVAILABLE } from '@/utils/demoAccountAvailability'
 
 /** Every fact about the demo account the user is told before creating one, with its icon. */
 const FEATURES = [
@@ -30,7 +31,7 @@ const submitLabel = computed(() => {
 
 /** Creates the demo account, showing the success state before notifying the parent, or the failure reason. */
 async function createDemoAccount() {
-  if (status.value !== 'idle') return
+  if (!DEMO_ACCOUNT_AVAILABLE || status.value !== 'idle') return
 
   status.value = 'submitting'
   failureReason.value = null
@@ -57,6 +58,10 @@ async function createDemoAccount() {
       </li>
     </ul>
 
+    <p v-if="!DEMO_ACCOUNT_AVAILABLE" class="demo-account-panel__notice" role="status">
+      {{ t('auth.demo.unavailable') }}
+    </p>
+
     <p v-if="failureReason" class="demo-account-panel__error" role="alert">
       {{ t(`auth.demo.errors.${failureReason}`) }}
     </p>
@@ -68,7 +73,7 @@ async function createDemoAccount() {
       :label="submitLabel"
       :icon="status === 'success' ? 'pi pi-check' : 'pi pi-play'"
       :loading="status === 'submitting'"
-      :disabled="status !== 'idle'"
+      :disabled="!DEMO_ACCOUNT_AVAILABLE || status !== 'idle'"
       @click="createDemoAccount"
     />
   </div>
